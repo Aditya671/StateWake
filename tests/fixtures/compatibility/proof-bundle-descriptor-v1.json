@@ -1,0 +1,30 @@
+{
+  "attestation_artifact_id": "attestation.json",
+  "attestation_digest": "3d0e1ab513cd2d92774d1f85a7c119cd46b523f07b47693c274a82f40637eb43",
+  "attestation_id": "attestation-fixture-1",
+  "attestation_trust_context": null,
+  "bundle_type": "reliability-proof",
+  "decision": "accept",
+  "digest": "3de93b29d40ee379676f8011e97e1704cde1a056fc546c30f4cd2d53315fca71",
+  "evidence_chain_artifact_id": "chain.json",
+  "evidence_chain_digest": "75dc4f4000732bc7371c4737ff079fa2f9d7d085474451a6c6f8094f33b01402",
+  "evidence_chain_id": "chain-fixture-1",
+  "format_version": "1",
+  "lineage_closure": null,
+  "reliability_state": "reliable",
+  "sources": [
+    {
+      "artifact_id": "chain.json",
+      "digest": "75dc4f4000732bc7371c4737ff079fa2f9d7d085474451a6c6f8094f33b01402",
+      "reference_digest": "75dc4f4000732bc7371c4737ff079fa2f9d7d085474451a6c6f8094f33b01402",
+      "reference_key": "chain",
+      "source": "chain.json"
+    }
+  ],
+  "state_history_artifact_id": "state-history.json",
+  "subject_id": "system-fixture",
+  "transition_digest": "74e8e0c618bbb31292716094173b70ba6c97aa297f709c321188bb300233ab31",
+  "transition_id": "transition-fixture-1",
+  "verification_report_artifact_id": "report.json",
+  "verification_report_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+}

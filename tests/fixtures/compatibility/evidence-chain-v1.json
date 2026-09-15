@@ -1,0 +1,61 @@
+{
+  "attestation_ref": null,
+  "chain_id": "chain-fixture-1",
+  "comparison_ref": null,
+  "decision": "accept",
+  "decision_basis_ref": null,
+  "decision_rationale": [
+    "fixture verified"
+  ],
+  "digest": "75dc4f4000732bc7371c4737ff079fa2f9d7d085474451a6c6f8094f33b01402",
+  "evidence": [
+    {
+      "digest": "141dc295fcbe9946edd422221e2b66311f3f06c2f472fc916b610c2bedc26691",
+      "identity": "1e2c7c7d7a6a66445a9f78b756e73b3c3a82554e83dd66f8e5506a044f1b76e1",
+      "kind": "evidence",
+      "receipt_ref": {
+        "digest": "d4e694e2177f71dc280f119658681bc2d523c3779bab62a98882d1c06bdab0e5",
+        "identity": "1e2c7c7d7a6a66445a9f78b756e73b3c3a82554e83dd66f8e5506a044f1b76e1",
+        "kind": "receipt",
+        "receipt_ref": null,
+        "source": "receipt.json"
+      },
+      "source": "artifact.json"
+    }
+  ],
+  "format_version": "1",
+  "integrity": {
+    "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "identity": "int-1",
+    "kind": "integrity",
+    "receipt_ref": null,
+    "source": "integrity.json"
+  },
+  "provenance": {
+    "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "identity": "prov-1",
+    "kind": "provenance",
+    "receipt_ref": null,
+    "source": "provenance.json"
+  },
+  "reconciliation_binding_ref": null,
+  "reconciliation_ref": null,
+  "reconciliation_state": "verified",
+  "recovery_ref": null,
+  "reliability_state": "reliable",
+  "run": {
+    "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "identity": "run-1",
+    "kind": "run",
+    "receipt_ref": null,
+    "source": "run.json"
+  },
+  "state": {
+    "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "identity": "state-1",
+    "kind": "state",
+    "receipt_ref": null,
+    "source": "state.json"
+  },
+  "verification_status": "verified"
+}

@@ -1,0 +1,445 @@
+{
+  "contract_version": "1",
+  "package_version": "0.1.0",
+  "import_path": "statewake",
+  "symbols": [
+    {
+      "name": "AnchorDiscrepancyError",
+      "kind": "exception",
+      "module": "statewake.domain.trust_anchor",
+      "signature": null
+    },
+    {
+      "name": "Ed25519TrustCheckpointVerifier",
+      "kind": "type",
+      "module": "statewake.domain.trust_anchor",
+      "signature": "(public_keys: 'Mapping[str, bytes]') -> 'None'"
+    },
+    {
+      "name": "JsonTrustAnchorStore",
+      "kind": "type",
+      "module": "statewake.adapters.trust_anchor",
+      "signature": "(root: 'Path', verifier: 'TrustCheckpointVerifier') -> 'None'"
+    },
+    {
+      "name": "TrustAnchor",
+      "kind": "protocol",
+      "module": "statewake.domain.trust_anchor",
+      "signature": "(*args, **kwargs)"
+    },
+    {
+      "name": "TrustAnchorError",
+      "kind": "exception",
+      "module": "statewake.domain.trust_anchor",
+      "signature": null
+    },
+    {
+      "name": "TrustCheckpoint",
+      "kind": "type",
+      "module": "statewake.domain.trust_anchor",
+      "signature": "(checkpoint_id: 'str', subject_id: 'str', issued_at: 'str', history_tip_digest: 'str', history_record_count: 'int', signing_key_id: 'str', signing_key_digest: 'str', signature: 'str', previous_checkpoint_digest: 'str | None' = None, format_version: 'str' = '1') -> None"
+    },
+    {
+      "name": "compare_local_tip",
+      "kind": "function",
+      "module": "statewake.domain.trust_anchor",
+      "signature": "(checkpoint: 'TrustCheckpoint', *, history_tip_digest: 'str', history_record_count: 'int') -> 'None'"
+    },
+    {
+      "name": "create_trust_checkpoint",
+      "kind": "function",
+      "module": "statewake.domain.trust_anchor",
+      "signature": "(*, checkpoint_id: 'str', subject_id: 'str', issued_at: 'str', history_tip_digest: 'str', history_record_count: 'int', signing_key_id: 'str', signing_key_digest: 'str', signature: 'bytes', previous_checkpoint_digest: 'str | None' = None) -> 'TrustCheckpoint'"
+    },
+    {
+      "name": "ensure_checkpoint_sequence",
+      "kind": "function",
+      "module": "statewake.domain.trust_anchor",
+      "signature": "(previous: 'TrustCheckpoint | None', current: 'TrustCheckpoint') -> 'None'"
+    },
+    {
+      "name": "AgentRunLogAdapter",
+      "kind": "type",
+      "module": "statewake.adapters.first_party_evidence",
+      "signature": "(ingestion: 'LocalEvidenceIngestionAdapter', context: 'EvidenceAdapterContext') -> 'None'"
+    },
+    {
+      "name": "CICDArtifactAdapter",
+      "kind": "type",
+      "module": "statewake.adapters.first_party_evidence",
+      "signature": "(ingestion: 'LocalEvidenceIngestionAdapter', context: 'EvidenceAdapterContext') -> 'None'"
+    },
+    {
+      "name": "AgentEvidenceAdapter",
+      "kind": "type",
+      "module": "statewake.sdk",
+      "signature": "(client: 'StateWakeClient') -> 'None'"
+    },
+    {
+      "name": "AgentRunEvidence",
+      "kind": "type",
+      "module": "statewake.sdk",
+      "signature": "(run_id: 'str', model_id: 'str', prompt_ref: 'str | None' = None, retrieval_ref: 'str | None' = None, tool_call_ref: 'str | None' = None, tool_result_ref: 'str | None' = None, policy_decision_ref: 'str | None' = None, output_ref: 'str | None' = None, evaluator_ref: 'str | None' = None) -> None"
+    },
+    {
+      "name": "BatchEvidenceAdapter",
+      "kind": "type",
+      "module": "statewake.sdk",
+      "signature": "(client: 'StateWakeClient') -> 'None'"
+    },
+    {
+      "name": "BatchRun",
+      "kind": "type",
+      "module": "statewake.sdk",
+      "signature": "(run_id: 'str', input_ref: 'str', output_ref: 'str', schema_version: 'str | None' = None, row_count: 'int | None' = None, failure_checkpoint: 'str | None' = None) -> None"
+    },
+    {
+      "name": "DatabaseChange",
+      "kind": "type",
+      "module": "statewake.sdk",
+      "signature": "(transaction_id: 'str', entity_ref: 'str', expected_mutation: 'Mapping[str, JsonValue]', observed_result: 'Mapping[str, JsonValue]', read_at: 'datetime') -> None"
+    },
+    {
+      "name": "DatabaseEvidenceAdapter",
+      "kind": "type",
+      "module": "statewake.sdk",
+      "signature": "(client: 'StateWakeClient') -> 'None'"
+    },
+    {
+      "name": "IdentityConflictError",
+      "kind": "exception",
+      "module": "statewake.sdk",
+      "signature": null
+    },
+    {
+      "name": "IntegrationContext",
+      "kind": "type",
+      "module": "statewake.sdk",
+      "signature": "(producer_id: 'str', producer_version: 'str | None' = None, run_id: 'str | None' = None, metadata: 'Mapping[str, str]' = <factory>) -> None"
+    },
+    {
+      "name": "InvalidEvidenceError",
+      "kind": "exception",
+      "module": "statewake.sdk",
+      "signature": null
+    },
+    {
+      "name": "ClaimProfileEvaluation",
+      "kind": "type",
+      "module": "statewake.services.reliability_claim_profile_service",
+      "signature": "(profile_id: 'str', profile_version: 'str', satisfied: 'bool', passed_conditions: 'tuple[str, ...]', failed_conditions: 'tuple[str, ...]', allowed_decisions: 'tuple[str, ...]') -> None"
+    },
+    {
+      "name": "EvidenceAdapterContext",
+      "kind": "type",
+      "module": "statewake.adapters.first_party_evidence",
+      "signature": "(producer_id: 'str', producer_version: 'str | None' = None, source_event_id: 'str | None' = None, run_id: 'str | None' = None, metadata: 'Mapping[str, str]' = <factory>) -> None"
+    },
+    {
+      "name": "EvidenceRetentionAdapter",
+      "kind": "protocol",
+      "module": "statewake.domain.retention",
+      "signature": "(*args, **kwargs)"
+    },
+    {
+      "name": "EvidenceRetentionRequirement",
+      "kind": "type",
+      "module": "statewake.domain.retention",
+      "signature": "(artifact_id: 'str', retain_until: 'datetime', legal_hold: 'bool' = False, policy_id: 'str' = 'default') -> None"
+    },
+    {
+      "name": "EvaluationOutputAdapter",
+      "kind": "type",
+      "module": "statewake.adapters.first_party_evidence",
+      "signature": "(ingestion: 'LocalEvidenceIngestionAdapter', context: 'EvidenceAdapterContext') -> 'None'"
+    },
+    {
+      "name": "ExternalEvidenceAdmission",
+      "kind": "type",
+      "module": "statewake.domain.evidence_admission",
+      "signature": "(receipt_id: 'str', receipt_digest: 'str', artifact_digest: 'str', artifact_size: 'int', producer_type: 'str', producer_id: 'str', source_event_id: 'str | None', run_id: 'str | None', evidence_reference: 'EvidenceReference') -> None"
+    },
+    {
+      "name": "ExternalEvidenceReceipt",
+      "kind": "type",
+      "module": "statewake.domain.evidence_receipt",
+      "signature": "(producer_type: 'str', producer_id: 'str', artifact_digest: 'str', artifact_size: 'int', captured_at: 'datetime', source_ref: 'str', source_event_id: 'str | None' = None, producer_version: 'str | None' = None, run_id: 'str | None' = None, provenance_ref: 'EvidenceReference | None' = None, metadata: 'dict[str, str]' = <factory>, receipt_id: 'str' = '', digest: 'str' = '') -> None"
+    },
+    {
+      "name": "ReliabilityEvidenceChain",
+      "kind": "type",
+      "module": "statewake.domain.reliability_evidence",
+      "signature": "(chain_id: 'str', run: 'EvidenceReference', state: 'EvidenceReference', evidence: 'tuple[EvidenceReference, ...]', provenance: 'EvidenceReference', integrity: 'EvidenceReference', verification_status: 'str' = 'unverified', reliability_state: 'str' = 'unknown', reconciliation_state: 'str' = 'pending', reconciliation_ref: 'EvidenceReference | None' = None, recovery_ref: 'EvidenceReference | None' = None, attestation_ref: 'EvidenceReference | None' = None, decision_basis_ref: 'EvidenceReference | None' = None, comparison_ref: 'EvidenceReference | None' = None, reconciliation_binding_ref: 'EvidenceReference | None' = None, decision: 'str' = 'undecided', decision_rationale: 'tuple[str, ...]' = ()) -> None"
+    },
+    {
+      "name": "ReliabilityOutcomeAttestation",
+      "kind": "type",
+      "module": "statewake.domain.reliability_attestation",
+      "signature": "(attestation_id: 'str', subject_id: 'str', occurred_at: 'str', actor: 'str', evidence_chain_id: 'str', evidence_chain_digest: 'str', transition_id: 'str', transition_digest: 'str', reliability_state: 'str', decision: 'str', verification_status: 'str', reconciliation_state: 'str', decision_rationale: 'tuple[str, ...]' = (), signing_key_id: 'str | None' = None, previous_digest: 'str' = '', digest: 'str' = '') -> None"
+    },
+    {
+      "name": "ReliabilityOutcomeVerificationReport",
+      "kind": "type",
+      "module": "statewake.domain.reliability_outcome_verification",
+      "signature": "(attestation_id: 'str', subject_id: 'str', verified: 'bool', checks: 'tuple[str, ...]', failures: 'tuple[str, ...]' = ()) -> None"
+    },
+    {
+      "name": "ReliabilityDecisionBasis",
+      "kind": "type",
+      "module": "statewake.domain.reliability_decision_basis",
+      "signature": "(format_version: 'str', basis_type: 'str', basis_id: 'str', version: 'str', decision: 'str', reliability_state: 'str', rationale: 'tuple[str, ...]' = (), input_digests: 'tuple[str, ...]' = (), policy_id: 'str | None' = None, policy_version: 'str | None' = None, policy_digest: 'str | None' = None, digest: 'str' = '') -> None"
+    },
+    {
+      "name": "OperationalBundle",
+      "kind": "type",
+      "module": "statewake.domain.operations",
+      "signature": "(bundle_id: 'str', manifest_id: 'str', agent_name: 'str', engine_version: 'str', created_at: 'datetime', artifacts: 'tuple[OperationalArtifact, ...]', retention_policy: 'RetentionPolicy | None' = None) -> None"
+    },
+    {
+      "name": "FileEvidenceAdapter",
+      "kind": "type",
+      "module": "statewake.adapters.first_party_evidence",
+      "signature": "(ingestion: 'LocalEvidenceIngestionAdapter', context: 'EvidenceAdapterContext') -> 'None'"
+    },
+    {
+      "name": "IncidentRecoveryRecordAdapter",
+      "kind": "type",
+      "module": "statewake.adapters.first_party_evidence",
+      "signature": "(ingestion: 'LocalEvidenceIngestionAdapter', context: 'EvidenceAdapterContext') -> 'None'"
+    },
+    {
+      "name": "KeyLifecycleProvider",
+      "kind": "protocol",
+      "module": "statewake.domain.key_management",
+      "signature": "(*args, **kwargs)"
+    },
+    {
+      "name": "NullReliabilityFailureHook",
+      "kind": "type",
+      "module": "statewake.domain.operational_hooks",
+      "signature": "()"
+    },
+    {
+      "name": "OpenTelemetryTraceAdapter",
+      "kind": "type",
+      "module": "statewake.adapters.first_party_evidence",
+      "signature": "(ingestion: 'LocalEvidenceIngestionAdapter', context: 'EvidenceAdapterContext') -> 'None'"
+    },
+    {
+      "name": "PersistenceFailureError",
+      "kind": "exception",
+      "module": "statewake.sdk",
+      "signature": null
+    },
+    {
+      "name": "QueueEvidenceAdapter",
+      "kind": "type",
+      "module": "statewake.sdk",
+      "signature": "(client: 'StateWakeClient') -> 'None'"
+    },
+    {
+      "name": "QueueMessage",
+      "kind": "type",
+      "module": "statewake.sdk",
+      "signature": "(message_id: 'str', payload: 'bytes', delivery_attempt: 'int' = 1, partition: 'str | None' = None, sequence_number: 'int | None' = None, published_at: 'datetime | None' = None) -> None"
+    },
+    {
+      "name": "StateWakeClient",
+      "kind": "type",
+      "module": "statewake.sdk",
+      "signature": "(ingestion: 'EvidenceIngestionAdapter', context: 'IntegrationContext') -> 'None'"
+    },
+    {
+      "name": "StateWakeIntegrationError",
+      "kind": "exception",
+      "module": "statewake.sdk",
+      "signature": null
+    },
+    {
+      "name": "WebhookEvent",
+      "kind": "type",
+      "module": "statewake.sdk",
+      "signature": "(request_id: 'str', body: 'bytes', content_type: 'str', signature: 'str | None' = None, delivery_attempt: 'int | None' = None) -> None"
+    },
+    {
+      "name": "WebhookEvidenceAdapter",
+      "kind": "type",
+      "module": "statewake.sdk",
+      "signature": "(client: 'StateWakeClient') -> 'None'"
+    },
+    {
+      "name": "ReliabilityClaimProfile",
+      "kind": "type",
+      "module": "statewake.domain.reliability_claim_profile",
+      "signature": "(profile_id: 'str', version: 'str', title: 'str', required_evidence_kinds: 'tuple[str, ...]', required_verification_conditions: 'tuple[str, ...]', allowed_decisions: 'tuple[str, ...]', required_rationale: 'bool' = True, required_reconciliation_states: 'tuple[str, ...]' = (), required_reliability_states: 'tuple[str, ...]' = (), description: 'str' = '') -> None"
+    },
+    {
+      "name": "ReliabilityFailureEvent",
+      "kind": "type",
+      "module": "statewake.domain.operational_hooks",
+      "signature": "(event_type: 'str', operation: 'str', subject_id: 'str | None', message: 'str', occurred_at: 'str') -> None"
+    },
+    {
+      "name": "ReliabilityFailureHook",
+      "kind": "protocol",
+      "module": "statewake.domain.operational_hooks",
+      "signature": "(*args, **kwargs)"
+    },
+    {
+      "name": "ReliabilityStateSnapshot",
+      "kind": "type",
+      "module": "statewake.domain.reliability_state",
+      "signature": "(subject_id: 'str', state: 'str', transition_id: 'str | None', transition_digest: 'str | None', evidence_chain_id: 'str | None') -> None"
+    },
+    {
+      "name": "ReliabilityStateTransition",
+      "kind": "type",
+      "module": "statewake.domain.reliability_state",
+      "signature": "(transition_id: 'str', subject_id: 'str', from_state: 'str', to_state: 'str', occurred_at: 'datetime', actor: 'str', evidence_chain_id: 'str', evidence_chain_digest: 'str', decision: 'str', rationale: 'tuple[str, ...]' = (), previous_transition_digest: 'str' = '', digest: 'str' = '') -> None"
+    },
+    {
+      "name": "ReliabilityVerificationReport",
+      "kind": "type",
+      "module": "statewake.domain.reliability_verification_report",
+      "signature": "(format_version: 'str', claim: 'str', decision: 'str', profile_id: 'str', profile_version: 'str', verified: 'bool', evidence_included: 'tuple[str, ...]', evidence_omitted: 'tuple[str, ...]', checks_passed: 'tuple[str, ...]', checks_failed: 'tuple[str, ...]', source_identities: 'tuple[str, ...]', rationale: 'tuple[str, ...]', caveats: 'tuple[str, ...]', recovery_status: 'str', verifier_version: 'str', generated_at: 'str') -> None"
+    },
+    {
+      "name": "SigningKeyReference",
+      "kind": "type",
+      "module": "statewake.domain.key_management",
+      "signature": "(key_id: 'str', provider: 'str', algorithm: 'str' = 'Ed25519', version: 'str | None' = None, public_key_digest: 'str | None' = None) -> None"
+    },
+    {
+      "name": "SigningProvider",
+      "kind": "protocol",
+      "module": "statewake.domain.key_management",
+      "signature": "(*args, **kwargs)"
+    },
+    {
+      "name": "admit_evidence",
+      "kind": "function",
+      "module": "statewake.public_api",
+      "signature": "(receipt: 'ExternalEvidenceReceipt', *, artifact_path: 'Path', receipt_path: 'Path | None' = None, expected_run_id: 'str | None' = None, expected_producer_type: 'str | None' = None, expected_producer_id: 'str | None' = None) -> 'ExternalEvidenceAdmission'"
+    },
+    {
+      "name": "build_evidence_chain",
+      "kind": "function",
+      "module": "statewake.public_api",
+      "signature": "(*, run_id: 'str', run_path: 'Path', state_id: 'str', state_path: 'Path', evidence_paths: 'tuple[Path, ...]', provenance_path: 'Path', integrity_proof_path: 'Path', verification_status: 'str' = 'verified', reliability_state: 'str' = 'reliable', reconciliation_state: 'str' = 'verified', reconciliation_path: 'Path | None' = None, recovery_path: 'Path | None' = None, attestation_path: 'Path | None' = None, decision_basis_path: 'Path | None' = None, decision_basis_kind: 'str' = 'decision-basis', decision: 'str' = 'accept', rationale: 'tuple[str, ...]' = (), evidence_receipt_paths: 'Mapping[str, Path] | None' = None, comparison_path: 'Path | None' = None, reconciliation_binding_path: 'Path | None' = None) -> 'ReliabilityEvidenceChain'"
+    },
+    {
+      "name": "build_release_proof",
+      "kind": "function",
+      "module": "statewake.services.release_proof_service",
+      "signature": "(*, attestation_path: 'Path', evidence_chain_path: 'Path', history_path: 'Path', evidence_root: 'Path', output: 'Path', profile: 'ReliabilityClaimProfile | None' = None, profile_path: 'Path | None' = None, report_path: 'Path | None' = None) -> 'tuple[OperationalBundle, ReliabilityVerificationReport, ClaimProfileEvaluation]'"
+    },
+    {
+      "name": "build_reliability_decision_basis",
+      "kind": "function",
+      "module": "statewake.services.reliability_decision_basis_service",
+      "signature": "(chain: 'ReliabilityEvidenceChain', profile: 'ReliabilityClaimProfile', *, basis_id: 'str | None' = None, version: 'str | None' = None) -> 'ReliabilityDecisionBasis'"
+    },
+    {
+      "name": "evaluate_claim_profile",
+      "kind": "function",
+      "module": "statewake.services.reliability_claim_profile_service",
+      "signature": "(chain: 'ReliabilityEvidenceChain', profile: 'ReliabilityClaimProfile') -> 'ClaimProfileEvaluation'"
+    },
+    {
+      "name": "get_builtin_claim_profile",
+      "kind": "function",
+      "module": "statewake.services.reliability_claim_profile_service",
+      "signature": "(profile_id: 'str', version: 'str' = '1') -> 'ReliabilityClaimProfile'"
+    },
+    {
+      "name": "load_claim_profile",
+      "kind": "function",
+      "module": "statewake.services.reliability_claim_profile_service",
+      "signature": "(path: 'Path') -> 'ReliabilityClaimProfile'"
+    },
+    {
+      "name": "load_evidence_chain",
+      "kind": "function",
+      "module": "statewake.public_api",
+      "signature": "(path: 'Path') -> 'ReliabilityEvidenceChain'"
+    },
+    {
+      "name": "load_outcome_attestation",
+      "kind": "function",
+      "module": "statewake.public_api",
+      "signature": "(path: 'Path') -> 'ReliabilityOutcomeAttestation'"
+    },
+    {
+      "name": "prepare_reliability_decision_basis",
+      "kind": "function",
+      "module": "statewake.services.reliability_decision_basis_service",
+      "signature": "(chain: 'ReliabilityEvidenceChain', profile: 'ReliabilityClaimProfile', *, basis_path: 'Path', output_chain_path: 'Path', basis_id: 'str | None' = None, version: 'str | None' = None) -> 'ReliabilityEvidenceChain'"
+    },
+    {
+      "name": "public_key_digest",
+      "kind": "function",
+      "module": "statewake.domain.key_management",
+      "signature": "(public_key: 'bytes') -> 'str'"
+    },
+    {
+      "name": "read_reliability_state",
+      "kind": "function",
+      "module": "statewake.public_api",
+      "signature": "(subject_id: 'str', *, history_path: 'Path') -> 'ReliabilityStateSnapshot'"
+    },
+    {
+      "name": "render_verification_report",
+      "kind": "function",
+      "module": "statewake.services.release_proof_service",
+      "signature": "(report: 'ReliabilityVerificationReport') -> 'str'"
+    },
+    {
+      "name": "verify_evidence_chain",
+      "kind": "function",
+      "module": "statewake.public_api",
+      "signature": "(chain: 'ReliabilityEvidenceChain', *, root: 'Path') -> 'None'"
+    },
+    {
+      "name": "verify_outcome",
+      "kind": "function",
+      "module": "statewake.public_api",
+      "signature": "(attestation: 'ReliabilityOutcomeAttestation', chain: 'ReliabilityEvidenceChain', *, subject_id: 'str', history_path: 'Path', evidence_root: 'Path') -> 'ReliabilityOutcomeVerificationReport'"
+    },
+    {
+      "name": "write_claim_profile",
+      "kind": "function",
+      "module": "statewake.services.reliability_claim_profile_service",
+      "signature": "(profile: 'ReliabilityClaimProfile', path: 'Path') -> 'None'"
+    },
+    {
+      "name": "write_evidence_chain",
+      "kind": "function",
+      "module": "statewake.public_api",
+      "signature": "(chain: 'ReliabilityEvidenceChain', path: 'Path') -> 'None'"
+    },
+    {
+      "name": "write_outcome_attestation",
+      "kind": "function",
+      "module": "statewake.public_api",
+      "signature": "(attestation: 'ReliabilityOutcomeAttestation', path: 'Path') -> 'None'"
+    },
+    {
+      "name": "write_verification_report",
+      "kind": "function",
+      "module": "statewake.services.release_proof_service",
+      "signature": "(report: 'ReliabilityVerificationReport', path: 'Path') -> 'None'"
+    },
+    {
+      "name": "__version__",
+      "kind": "constant",
+      "module": null,
+      "signature": null
+    },
+    {
+      "name": "__public_api_contract_version__",
+      "kind": "constant",
+      "module": null,
+      "signature": null
+    }
+  ]
+}

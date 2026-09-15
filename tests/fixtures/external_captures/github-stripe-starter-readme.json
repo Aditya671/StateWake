@@ -1,0 +1,11 @@
+{
+  "capture_kind": "bounded_projection",
+  "capture_scope": "stored_payload_is_bounded_projection_not_full_external_response",
+  "captured_at": "2026-09-13T23:40:00+00:00",
+  "content_hex": "5374726970652053616d706c6520426c75657072696e740a0a546869732069732061207265706f20746f2068656c7020796f752067657420737461727465642077697468206372656174696e6720612073616d706c652e0a",
+  "content_sha256": "cc6905b3db24f467b7cb607c0d6da04c76505ceecdb81f7eeb46359a5cf717f1",
+  "reference": "blob:3d5da6c39c2d08fe8cb4a7b88a24795b1d995b5f",
+  "reference_kind": "git_blob_reference",
+  "source_url": "https://github.com/stripe-samples/starter/blob/main/README.md",
+  "system": "github-rest"
+}

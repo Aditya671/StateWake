@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality-and-tests:
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - run: uv python install ${{ matrix.python-version }}
+      - run: uv lock --check
+      - run: uv sync --locked --python ${{ matrix.python-version }}
+      - name: Execute SDLC check profile
+        run: uv run python scripts/release/run_sdlc_validation.py --profile check
+      - run: uv run statewake version
+      - run: uv run python docs/examples/first-evidence-chain.py
+      - run: uv build
+      - run: uv run python scripts/release/verify_package_boundary.py
+
+  windows-quality-and-tests:
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - run: uv python install ${{ matrix.python-version }}
+      - run: uv lock --check
+      - run: uv sync --locked --python ${{ matrix.python-version }}
+
+      - name: Execute SDLC check profile
+        run: uv run python scripts/release/run_sdlc_validation.py --profile check
+
+      - name: Build package
+        run: uv build --no-sources
+
+      - name: Verify package boundary
+        run: uv run python scripts/release/verify_package_boundary.py dist
+
+      - name: Run failure lab
+        run: uv run python scripts/testing/failure_lab.py --ci

@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-reliability.dev/schemas/contract-v0.1.schema.json",
+  "title": "Agent Contract v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "name", "purpose"],
+  "properties": {
+    "apiVersion": {"type": "string"},
+    "kind": {"const": "AgentContract"},
+    "name": {"type": "string", "minLength": 1},
+    "purpose": {"type": "string", "minLength": 1},
+    "authorities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["tool"],
+        "properties": {
+          "tool": {"type": "string", "minLength": 1},
+          "actions": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "constraints": {"type": "array", "items": {"type": "string"}},
+    "advisory_constraints": {"type": "array", "items": {"type": "string"}},
+    "required_steps": {"type": "array", "items": {"type": "string"}},
+    "escalation_conditions": {"type": "array", "items": {"type": "string"}},
+    "success_criteria": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "expression"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1},
+          "expression": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  }
+}

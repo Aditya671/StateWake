@@ -1,0 +1,97 @@
+[project]
+name = "statewake-ai"
+version = "0.1.0"
+description = "Evidence-backed reliability infrastructure for AI systems."
+keywords = ["ai", "reliability", "agents", "evidence", "provenance", "verification"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Testing",
+]
+license-files = ["LICENSE"]
+readme = "README.md"
+license = "Apache-2.0"
+authors = [{ name = "Aditya Gupta" }]
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "pynacl==1.6.2",
+    "opentelemetry-api==1.44.0",
+    "filelock==3.32.4",
+]
+
+[project.urls]
+Homepage = "https://github.com/Aditya671/StateWake"
+Repository = "https://github.com/Aditya671/StateWake"
+Issues = "https://github.com/Aditya671/StateWake/issues"
+Documentation = "https://github.com/Aditya671/StateWake/tree/main/docs"
+Changelog = "https://github.com/Aditya671/StateWake/blob/main/CHANGELOG.md"
+Security = "https://github.com/Aditya671/StateWake/blob/main/SECURITY.md"
+"Third-Party Notices" = "https://github.com/Aditya671/StateWake/blob/main/THIRD_PARTY_NOTICES.md"
+
+[dependency-groups]
+dev = [
+    "ruff==0.16.5",
+    "pytest==9.1.1",
+    "pyright==1.1.414",
+]
+
+[project.scripts]
+statewake = "statewake.cli.main:main"
+
+[build-system]
+requires = ["uv_build>=0.9.0,<1.0"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "."]
+
+[tool.uv.build-backend]
+module-name = "statewake"
+module-root = "src"
+source-exclude = ["**/__pycache__/**", "*.pyc", "*.pyo"]
+
+[[tool.uv.index]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/"
+publish-url = "https://test.pypi.org/legacy/"
+check-url = "https://test.pypi.org/simple/"
+explicit = true
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+exclude = ["repository history", "dist", ".venv", ".pytest_cache"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W", "F", "I", "N", "UP", "B", "A", "C4", "DTZ", "D",
+]
+ignore = ["D203", "D213", "E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["D"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
+[tool.pyright]
+include = ["src"]
+exclude = ["**/node_modules", "**/.*", ".venv","**/__pycache__", "dist", "repository history", "tests"]
+pythonVersion = "3.11"
+typeCheckingMode = "strict"
+reportMissingImports = true
+reportMissingTypeStubs = false
+reportUnknownMemberType = true
+reportUnknownVariableType = true
+reportUnknownArgumentType = true
+reportUntypedFunctionDecorator = true
+reportUntypedBaseClass = true
+reportPrivateUsage = true

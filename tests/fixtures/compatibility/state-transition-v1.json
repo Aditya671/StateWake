@@ -1,0 +1,16 @@
+{
+  "actor": "fixture",
+  "decision": "accept",
+  "digest": "74e8e0c618bbb31292716094173b70ba6c97aa297f709c321188bb300233ab31",
+  "evidence_chain_digest": "75dc4f4000732bc7371c4737ff079fa2f9d7d085474451a6c6f8094f33b01402",
+  "evidence_chain_id": "chain-fixture-1",
+  "from_state": "unknown",
+  "occurred_at": "2026-09-11T12:00:00+00:00",
+  "previous_transition_digest": "",
+  "rationale": [
+    "fixture verified"
+  ],
+  "subject_id": "system-fixture",
+  "to_state": "reliable",
+  "transition_id": "transition-fixture-1"
+}

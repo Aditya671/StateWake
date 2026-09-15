@@ -1,0 +1,19 @@
+{
+  "basis_id": "basis-fixture-1",
+  "basis_type": "manual",
+  "decision": "accept",
+  "digest": "f709d5e93cf526c2a970778eda7a1f0e4c0fb03358383bc4787476f467148bab",
+  "format_version": "1",
+  "input_digests": [
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  ],
+  "policy_digest": null,
+  "policy_id": null,
+  "policy_version": null,
+  "rationale": [
+    "fixture verified"
+  ],
+  "reliability_state": "reliable",
+  "version": "1.0"
+}

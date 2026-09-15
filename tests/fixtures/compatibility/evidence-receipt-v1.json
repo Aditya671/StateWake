@@ -1,0 +1,16 @@
+{
+  "artifact_digest": "141dc295fcbe9946edd422221e2b66311f3f06c2f472fc916b610c2bedc26691",
+  "artifact_size": 28,
+  "captured_at": "2026-09-11T12:00:00+00:00",
+  "digest": "d4e694e2177f71dc280f119658681bc2d523c3779bab62a98882d1c06bdab0e5",
+  "format_version": "1",
+  "metadata": {},
+  "producer_id": "compat",
+  "producer_type": "fixture",
+  "producer_version": null,
+  "provenance_ref": null,
+  "receipt_id": "1e2c7c7d7a6a66445a9f78b756e73b3c3a82554e83dd66f8e5506a044f1b76e1",
+  "run_id": "run-1",
+  "source_event_id": "event-1",
+  "source_ref": "fixture://compat/1"
+}
