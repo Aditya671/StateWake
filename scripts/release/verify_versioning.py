@@ -13,7 +13,7 @@ if str(PROJECT_CONFIG_BOOTSTRAP) not in sys.path:
 from config.project_paths import PROJECT_ROOT  # noqa: E402
 
 ROOT = PROJECT_ROOT
-EXPECTED_VERSION = "0.1.0"
+EXPECTED_VERSION = "0.1.1"
 EXPECTED_DISTRIBUTION = "statewake-ai"
 EXPECTED_IMPORT_PACKAGE = "statewake"
 EXPECTED_API_CONTRACT_VERSION = "1"
@@ -64,8 +64,8 @@ def main() -> None:
     )
     assert api_contract_version == EXPECTED_API_CONTRACT_VERSION
     assert 'statewake = "statewake.cli.main:main"' in pyproject
-    assert "## [v0.1.0]" in changelog
-    assert "public package baseline is **v0.1.0**" in readme
+    assert "## [v0.1.1]" in changelog
+    assert "public package baseline is **v0.1.1**" in readme
     assert "statewake-ai" in readme
     assert "https://github.com/Aditya671/StateWake" in readme
     assert "https://github.com/Aditya671/StateWake/tree/main/docs/user-guide" in readme

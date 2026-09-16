@@ -7,7 +7,7 @@ StateWake helps AI systems establish a verifiable record of what happened, what 
 It is designed to integrate with existing AI runtimes, evaluation systems, telemetry, CI/CD, storage, and operational tooling. It does not replace them.
 
 **Project:** [GitHub repository](https://github.com/Aditya671/StateWake)  
-**Version:** `v0.1.0`  
+**Version:** `v0.1.1`  
 **License:** Apache-2.0
 
 ## Why StateWake
@@ -67,7 +67,7 @@ python -m pip install statewake-ai
 For the current TestPyPI release, use:
 
 ```bash
-python -m pip install --index-url https://test.pypi.org/simple/ --no-deps statewake-ai==v0.1.0
+python -m pip install --index-url https://test.pypi.org/simple/ --no-deps statewake-ai==v0.1.1
 ```
 
 See the repository for the dependency and development setup used by the project.
@@ -159,7 +159,7 @@ Project-level documents:
 
 ## Versioning
 
-The current public package baseline is **v0.1.0**. Historical implementation identifiers are retained only as development provenance.
+The current public package baseline is **v0.1.1**. Historical implementation identifiers are retained only as development provenance.
 
 See the project's versioning policy in the repository documentation:
 

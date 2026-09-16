@@ -1,5 +1,16 @@
 # Changelog
 
+## [v0.1.1] — Production/Stable packaging promotion
+
+StateWake v0.1.1 promotes the verified v0.1.0 public package baseline to the `Development Status :: 5 - Production/Stable` classifier. This is a backward-compatible packaging and release-governance patch; no intentional public API or data-contract break is introduced.
+
+### Release boundary
+
+- Promoted package metadata from Beta to Production/Stable.
+- Synchronized `pyproject.toml`, `statewake.__version__`, `uv.lock`, active release documentation, and executable release-version gates on `0.1.1`.
+- Preserved the v0.1.0 public API contract version (`1`).
+- Preserved v0.1.0 as the immutable preceding public release; no historical release artifact is overwritten.
+
 All notable StateWake changes are recorded here. Historical implementation records remain in `repository history` and are not current release authority.
 
 ## [v0.1.0] — Strict quality and reliability hardening

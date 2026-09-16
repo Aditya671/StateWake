@@ -2,7 +2,7 @@
 
 ## Current position
 
-**v0.1.0 — canonical development baseline after Parts 1–7**
+**v0.1.1 — canonical Production/Stable baseline**
 
 The historical phase sequence is implementation evidence, not a roadmap authority. The current product is governed by the V1 architecture in `docs/architecture/ARCHITECTURE.md` and the source architecture in `docs/architecture/ARCHITECTURE.md` and ADR 0003.
 

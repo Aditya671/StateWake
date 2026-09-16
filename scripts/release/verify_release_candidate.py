@@ -18,7 +18,7 @@ if str(PROJECT_CONFIG_BOOTSTRAP) not in sys.path:
 from config.project_paths import PROJECT_ROOT, VERIFICATION_PATH  # noqa: E402
 
 ROOT = PROJECT_ROOT
-EXPECTED_VERSION = "0.1.0"
+EXPECTED_VERSION = "0.1.1"
 REQUIRED_DOCS = (
     "docs/user-guide/index.md",
     "docs/user-guide/release.md",
@@ -84,10 +84,10 @@ def static_contract() -> dict[str, object]:
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     package = (ROOT / "src/statewake/__init__.py").read_text(encoding="utf-8")
     missing = [path for path in REQUIRED_DOCS if not (ROOT / path).is_file()]
-    if 'version = "0.1.0"' not in pyproject:
-        raise GateFailureError("release candidate version is not v0.1.0")
-    if '__version__ = "0.1.0"' not in package:
-        raise GateFailureError("package version is not 0.1.0")
+    if 'version = "0.1.1"' not in pyproject:
+        raise GateFailureError("release candidate version is not v0.1.1")
+    if '__version__ = "0.1.1"' not in package:
+        raise GateFailureError("package version is not 0.1.1")
     if missing:
         raise GateFailureError("missing release documents: " + ", ".join(missing))
     return {"name": "release-contract", "status": "passed", "missing": []}
