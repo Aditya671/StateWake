@@ -2,15 +2,15 @@
 
 ## Current package version
 
-**StateWake: `v0.1.0`**
+**StateWake: `v0.1.1`**
 
-`v0.1.0` is the current canonical development package baseline after the StateWake architecture was reconciled and the verified Parts 1–7 frontier was promoted. Historical `0.0.x`–`0.6.x` identifiers are implementation provenance and do not define the current public version.
+`v0.1.1` is the current canonical production/stable package baseline. `v0.1.0` remains the preceding public package baseline and is not modified. Historical `0.0.x`–`0.6.x` identifiers are implementation provenance and do not define the current public version.
 
 ## Version sources of truth
 
 The package version is defined in `pyproject.toml` and exposed as `statewake.__version__`. Release automation and tests must verify these values agree with each other.
 
-`uv.lock` must resolve the same project version. Documentation must refer to the current version as `v0.1.0` unless explicitly describing historical implementation evidence.
+`uv.lock` must resolve the same project version. Documentation must refer to the current version as `v0.1.1` unless explicitly describing historical implementation evidence.
 
 ## Semantic versioning policy
 
@@ -23,7 +23,7 @@ The package version is defined in `pyproject.toml` and exposed as `statewake.__v
 
 The repository accumulated a long implementation sequence from `0.0.0` through `0.5.58`. Those numbers remain in historical documentation where they explain how an implementation was produced, but they are not independent public compatibility guarantees.
 
-The current StateWake product line starts at `v0.1.0` after the public identity and package boundary were reconciled.
+The current StateWake product line remains compatible with the `v0.1.0` public baseline; `v0.1.1` promotes that baseline to Production/Stable through a backward-compatible packaging/governance patch.
 
 ## Release gates
 

@@ -2,7 +2,7 @@
 
 ## Current development baseline
 
-**StateWake v0.1.0 — canonical development baseline**
+**StateWake v0.1.1 — Production/Stable baseline**
 
 Distribution: `statewake-ai`
 

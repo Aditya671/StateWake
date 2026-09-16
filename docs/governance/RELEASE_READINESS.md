@@ -2,7 +2,7 @@
 
 ## Decision: RELEASE-CANDIDATE PROCESS VERIFIED; PUBLIC RELEASE NOT AUTHORIZED
 
-**Current package baseline:** `v0.1.0`  
+**Current package baseline:** `v0.1.1`  
 **Current identity:** StateWake / `statewake-ai` / `statewake` / `statewake` CLI
 
 This document describes the current release boundary. Historical release-verification snapshots are retained under `repository historyhistorical-evaluations/` and are not current release authorities.

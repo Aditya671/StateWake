@@ -14,7 +14,7 @@ execution → evidence → provenance → integrity → verification
 
 ## Current baseline
 
-**StateWake v0.1.0** is the locked public developer/package baseline.
+**StateWake v0.1.1** is the locked public Production/Stable package baseline.
 
 The active product boundary is defined by `docs/architecture/ARCHITECTURE.md`. The public integration boundary is the `statewake` Python package plus the intentionally thin `statewake.server:app` WSGI adapter.
 
