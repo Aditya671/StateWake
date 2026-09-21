@@ -222,7 +222,7 @@ class TestCryptographicTrustMigration(unittest.TestCase):
         self.assertEqual(payload["verifier_compatibility"], ["1", "2"])
 
     def test_portable_cryptographic_trust_verifier_runs(self) -> None:
-        root = Path(__file__).resolve().parents[1]
+        root = Path(__file__).resolve().parents[2]
         completed = subprocess.run(
             [
                 sys.executable,

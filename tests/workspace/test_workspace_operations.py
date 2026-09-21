@@ -47,7 +47,14 @@ def test_storage_report_does_not_follow_symlinks(tmp_path: Path) -> None:
     outside.write_bytes(b"secret outside workspace")
     with StateWakeWorkspace.open(tmp_path / "workspace") as workspace:
         link = workspace.configuration.artifact_root / "escape"
-        link.symlink_to(outside)
+        try:
+            link.symlink_to(outside)
+        except OSError as exc:
+            if getattr(exc, "winerror", None) == 1314:
+                pytest.skip(
+                    "creating symlinks requires Windows developer mode or privilege"
+                )
+            raise
         report = workspace.storage_report()
         assert report.artifact_bytes == 0
 

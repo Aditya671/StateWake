@@ -30,7 +30,7 @@ from statewake.services.reliability_recovery_service import (
     verify_reliability_recovery_outcome,
 )
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def _sha(value: bytes) -> str:

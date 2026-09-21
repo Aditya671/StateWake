@@ -122,7 +122,7 @@ def test_deadline_is_bounded() -> None:
 
 def test_server_uses_bounded_json_loader() -> None:
     """Confirm the HTTP adapter uses the containment loader at its JSON boundary."""
-    source = Path(__file__).parents[1] / "src/statewake/server.py"
+    source = Path(__file__).resolve().parents[2] / "src/statewake/server.py"
     text = source.read_text(encoding="utf-8")
     assert "load_bounded_json(raw" in text
     assert "runtime_limits" in text

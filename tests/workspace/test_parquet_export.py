@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
+from unittest.mock import patch
 
 import pytest
 
@@ -18,13 +19,9 @@ from statewake.workspace.parquet_export import (
 def test_missing_pyarrow_is_classified() -> None:
     import statewake.workspace.parquet_export as module
 
-    original = module.__dict__.pop("pyarrow", None)
-    try:
+    with patch.dict("sys.modules", {"pyarrow": None}):
         with pytest.raises(ParquetExportError, match="PyArrow"):
             module._load_pyarrow()
-    finally:
-        if original is not None:
-            module.__dict__["pyarrow"] = original
 
 
 def test_partition_columns_are_bounded() -> None:

@@ -21,17 +21,17 @@ import organization, and diagnostics on the native server path.
 ## Commands
 
 ```bash
-uvx ruff check src tests scripts
-uvx ruff format --check src tests scripts
+uvx ruff check src tests scripts docs
+uvx ruff format --check src tests scripts docs
 uv run mypy
 ```
 
-Ruff and mypy are configured in `pyproject.toml`. Mypy checks all active Python
-code under `src/`, `tests/`, and `scripts/`. It applies strict rules to source
-and scripts, with fixture-friendly overrides for `tests/` so dynamic test
-doubles do not require exhaustive annotations. Imports from third-party
-packages without type information are excluded from mypy diagnostics;
-StateWake code remains checked.
+Ruff and mypy are configured in `pyproject.toml` and check active Python code
+under `src/`, `tests/`, `scripts/`, and `docs/`. Mypy applies strict rules to
+source, scripts, and documentation examples, with fixture-friendly overrides
+for `tests/` so dynamic test doubles do not require exhaustive annotations.
+Imports from third-party packages without type information are excluded from
+mypy diagnostics; StateWake code remains checked.
 
 ## Documentation requirement
 

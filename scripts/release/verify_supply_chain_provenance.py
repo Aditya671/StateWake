@@ -39,13 +39,21 @@ REQUIRED_WORKFLOW_MARKERS = (
 )
 EXCLUDED_TREE_PARTS = {
     ".git",
+    ".mypy_cache",
     ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
     "__pycache__",
     "dist",
     "build",
     "verification",
 }
-EXCLUDED_TREE_FILES = {"candidate-fingerprint.txt", "verification_manifest.txt"}
+EXCLUDED_TREE_FILES = {
+    "candidate-fingerprint.txt",
+    "verification_manifest.txt",
+    "test_results.txt",
+    "pytest_fresh.txt",
+}
 
 
 class SupplyChainProvenanceError(ValueError):
@@ -70,6 +78,7 @@ def source_tree_digest(root: Path = ROOT) -> str:
         for path in root.rglob("*")
         if path.is_file()
         and not any(part in EXCLUDED_TREE_PARTS for part in path.parts)
+        and path.name not in EXCLUDED_TREE_FILES
         and path.name not in EXCLUDED_TREE_FILES
     )
     for path in paths:

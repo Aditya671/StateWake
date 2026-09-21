@@ -110,7 +110,7 @@ def test_artifact_substitution_is_rejected(tmp_path: Path) -> None:
 def test_source_drift_is_rejected(tmp_path: Path) -> None:
     """Verify provenance cannot be reused after an input-source change."""
     record, artifact = _record(tmp_path)
-    original = ROOT / "docs" / "security" / "TIER8_SUPPLY_CHAIN_RELEASE_ASSURANCE.md"
+    original = ROOT / "docs" / "security" / "supply_chain_release_assurance.md"
     original_bytes = original.read_bytes()
     try:
         original.write_bytes(original_bytes + b"\n# temporary test drift\n")
@@ -155,7 +155,20 @@ def test_verification_manifest_detects_source_hash_drift(tmp_path: Path) -> None
     import shutil
 
     root = tmp_path / "candidate"
-    shutil.copytree(ROOT, root)
+    shutil.copytree(
+        ROOT,
+        root,
+        ignore=shutil.ignore_patterns(
+            ".git",
+            ".mypy_cache",
+            ".pytest_cache",
+            ".ruff_cache",
+            ".venv",
+            "__pycache__",
+            "build",
+            "dist",
+        ),
+    )
     target = root / "README.md"
     target.write_text(target.read_text(encoding="utf-8") + "\n", encoding="utf-8")
     with pytest.raises(SupplyChainProvenanceError, match="verification manifest"):

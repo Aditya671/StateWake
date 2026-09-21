@@ -1,6 +1,7 @@
 """Regression tests for optional DuckDB analytical access."""
 
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -149,8 +150,9 @@ def test_missing_optional_dependency_is_classified(tmp_path: Path) -> None:
     source = tmp_path / "records.parquet"
     source.write_bytes(b"x")
 
-    with pytest.raises(analytical.AnalyticalAccessError, match="optional duckdb"):
-        analytical.query_parquet(source, "SELECT * FROM __STATEWAKE_PARQUET__")
+    with patch.dict("sys.modules", {"duckdb": None}):
+        with pytest.raises(analytical.AnalyticalAccessError, match="optional duckdb"):
+            analytical.query_parquet(source, "SELECT * FROM __STATEWAKE_PARQUET__")
 
 
 def test_workspace_exposes_analytical_boundary_without_repository_mutation(

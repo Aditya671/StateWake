@@ -76,7 +76,10 @@ def tree_digest() -> str:
     digest = hashlib.sha256()
     excluded = {
         ".git",
+        ".mypy_cache",
         ".pytest_cache",
+        ".ruff_cache",
+        ".venv",
         "__pycache__",
         "dist",
         "build",

@@ -43,8 +43,8 @@ uv build
 ## Quality tooling
 
 Ruff and mypy are repository quality gates. Their configuration is stored in
-`pyproject.toml`; mypy checks active Python code under `src/`, `tests/`, and
-`scripts/`, with fixture-friendly overrides for tests.
+`pyproject.toml`; mypy checks active Python code under `src/`, `tests/`,
+`scripts/`, and `docs/`, with fixture-friendly overrides for tests.
 
 ## Guiding rule
 

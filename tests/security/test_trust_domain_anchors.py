@@ -18,7 +18,7 @@ from statewake.domain.trust_anchor import (
     compare_local_tip,
 )
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def _checkpoint(identifier: str, previous: str | None = None) -> TrustCheckpoint:

@@ -17,7 +17,7 @@ def test_security_assurance_is_not_a_release() -> None:
     """Tier 4 assurance evidence must not alter release identity or status."""
     version_source = (PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8")
     assurance = (
-        PROJECT_ROOT / "docs" / "security" / "TIER4_SECURITY_ASSURANCE.md"
+        PROJECT_ROOT / "docs" / "security" / "security_assurance_boundary.md"
     ).read_text(encoding="utf-8")
 
     assert 'version = "0.3.0"' in version_source

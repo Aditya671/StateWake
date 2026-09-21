@@ -62,7 +62,8 @@ def test_xlsx_write_and_reopen_round_trip(tmp_path: Path) -> None:
     assert row[0] == "record-1"
     assert row[6] is None
     assert row[8] is None
-    assert row[10] == datetime(2026, 1, 1, 12, tzinfo=UTC)
+    assert row[10].replace(tzinfo=UTC) == datetime(2026, 1, 1, 12, tzinfo=UTC)
+    assert row[10].tzinfo is None
     workbook.close()
 
 
@@ -170,8 +171,10 @@ def test_xlsx_normalizes_aware_datetimes_to_utc(tmp_path: Path) -> None:
     row = tuple(
         next(workbook[XLSX_RECORD_SHEET].iter_rows(min_row=2, values_only=True))
     )
-    assert row[10] == datetime(2026, 1, 1, 12, tzinfo=UTC)
-    assert row[15] == datetime(2026, 1, 1, 12, tzinfo=UTC)
+    assert row[10].replace(tzinfo=UTC) == datetime(2026, 1, 1, 12, tzinfo=UTC)
+    assert row[10].tzinfo is None
+    assert row[15].replace(tzinfo=UTC) == datetime(2026, 1, 1, 12, tzinfo=UTC)
+    assert row[15].tzinfo is None
     workbook.close()
 
 
