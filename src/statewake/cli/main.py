@@ -35,6 +35,7 @@ from ..services.reliability_attestation_service import (
 )
 from ..services.reliability_claim_profile_service import (
     get_builtin_claim_profile,
+    list_builtin_claim_profiles,
     load_claim_profile,
 )
 from ..services.reliability_comparison_service import (
@@ -87,6 +88,7 @@ SUPPORTED_COMMANDS: Final[tuple[str, ...]] = (
     "reliability-proof-completeness-verify",
     "reliability-decision-basis-build",
     "release-proof",
+    "claim-profiles",
 )
 
 
@@ -325,6 +327,10 @@ def build_parser() -> argparse.ArgumentParser:
     _add_evidence_chain_parser(subparsers)
     _add_state_and_attestation_parsers(subparsers)
     _add_proof_parsers(subparsers)
+    profiles = subparsers.add_parser(
+        "claim-profiles", help="List built-in claim profiles."
+    )
+    profiles.add_argument("--id", dest="profile_id")
     return parser
 
 
@@ -456,8 +462,17 @@ def _run_dispatch(args: argparse.Namespace) -> None:
         ),
         "reliability-decision-basis-build": lambda a: _run_decision_basis(a),
         "release-proof": lambda a: _run_release_proof(a),
+        "claim-profiles": lambda a: _run_claim_profiles(a),
     }
     handlers[args.command](args)
+
+
+def _run_claim_profiles(args: argparse.Namespace) -> None:
+    """List built-in claim profiles or return one exact profile."""
+    if args.profile_id:
+        _json(get_builtin_claim_profile(args.profile_id).to_dict())
+        return
+    _json([profile.to_dict() for profile in list_builtin_claim_profiles()])
 
 
 def _run_evidence_verify(args: argparse.Namespace) -> None:

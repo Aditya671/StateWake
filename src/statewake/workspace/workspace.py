@@ -11,9 +11,14 @@ from uuid import uuid4
 from ..domain.data_lifecycle import DataLifecycleDecision, DataLifecyclePolicy
 from ..services.persistence import atomic_write_text
 from .analytical import AnalyticalQueryResult
+from .backup import WorkspaceBackupResult, create_workspace_backup
 from .configuration import WorkspaceConfiguration
 from .csv_export import CsvExportResult
 from .integration import WorkspaceIngestionAdapter
+from .integrity_sweep import (
+    WorkspaceIntegritySweepResult,
+    sweep_workspace_payload_integrity,
+)
 from .json_export import JsonExportResult
 from .lifecycle import WorkspaceLifecycleResult
 from .models import (
@@ -34,6 +39,7 @@ from .parquet_export import ParquetExportResult
 from .portable_bundle import PortableBundleResult
 from .projections import DatasetProjection
 from .repository import StateWakeRepository
+from .restore import WorkspaceRestoreResult, restore_workspace_backup
 from .sqlite_repository import SqliteWorkspaceRepository
 from .verification import WorkspaceVerificationReport
 from .xlsx_export import XlsxExportResult
@@ -83,7 +89,7 @@ class StateWakeWorkspace:
     @classmethod
     def open(
         cls,
-        root: Path | str = Path(".statewake"),
+        root: Path | str = Path("data/statewake"),
         *,
         repository: StateWakeRepository | None = None,
     ) -> StateWakeWorkspace:
@@ -103,6 +109,27 @@ class StateWakeWorkspace:
                 transaction.set_workspace_metadata(identity, _statewake_version())
             workspace.recover()
         return workspace
+
+    @classmethod
+    def restore_backup(
+        cls,
+        backup_path: Path | str,
+        root: Path | str,
+        *,
+        overwrite: bool = False,
+    ) -> WorkspaceRestoreResult:
+        """Restore a verified workspace backup without weakening workspace validation."""
+        result = restore_workspace_backup(
+            Path(backup_path),
+            Path(root).expanduser().resolve(strict=False),
+            overwrite=overwrite,
+        )
+        workspace = cls.open(result.workspace_root)
+        report = workspace.verify()
+        workspace.close()
+        if report is not None and report.has_errors:
+            raise WorkspaceError("restored workspace failed verification.")
+        return result
 
     @property
     def configuration(self) -> WorkspaceConfiguration:
@@ -351,6 +378,27 @@ class StateWakeWorkspace:
             return self._ingestion.export_portable_bundle(
                 query, output, max_sensitivity=max_sensitivity
             )
+
+    def backup(self, output: Path) -> WorkspaceBackupResult:
+        """Create a verified portable backup of the durable workspace directory."""
+        if self._closed:
+            raise WorkspaceError("workspace is closed.")
+        with self.operation_lock():
+            verification = self.verify()
+            if verification is not None and verification.has_errors:
+                raise WorkspaceError("workspace backup requires a verified workspace.")
+            return create_workspace_backup(
+                self.root,
+                output,
+                workspace_id=self.identity.workspace_id,
+                schema_version=self.identity.schema_version,
+            )
+
+    def integrity_sweep(self) -> WorkspaceIntegritySweepResult:
+        """Verify content-addressed payloads in the workspace artifact store."""
+        if self._closed:
+            raise WorkspaceError("workspace is closed.")
+        return sweep_workspace_payload_integrity(self.root)
 
     def apply_retention(
         self,

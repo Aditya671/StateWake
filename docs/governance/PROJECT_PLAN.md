@@ -6,13 +6,13 @@ Maintain a coherent, verifiable reliability infrastructure layer for AI systems 
 
 ## Current baseline
 
-**StateWake v0.3.0** is the current package baseline.
+**StateWake v0.4.0** is the current package baseline.
 
 The completed release sequence is:
 
 1. **v0.1.1** — Production/Stable packaging promotion.
 2. **v0.2.0** — cybersecurity completion through V3 Tier 15.
-3. **v0.3.0** — Persistence & Dataset Architecture completion through Tier 15.
+3. **v0.4.0** — Persistence & Dataset Architecture completion through Tier 15.
 
 ## Maintenance priorities
 

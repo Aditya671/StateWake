@@ -65,4 +65,4 @@ Tier 5 evidence is sufficient when StateWake can determine, from executable evid
 
 ## Development-only boundary
 
-The current package identity is `v0.3.0`. This tier is a promoted development assurance baseline only. No release tag, publication, or release artifact is authorized by this document.
+The current package identity is `v0.4.0`. This tier is a promoted development assurance baseline only. No release tag, publication, or release artifact is authorized by this document.

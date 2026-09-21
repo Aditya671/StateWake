@@ -9,10 +9,8 @@ import hashlib
 import json
 import sys
 from pathlib import Path
+from typing import Protocol, cast
 from zipfile import BadZipFile, ZipFile
-
-from nacl.exceptions import BadSignatureError
-from nacl.signing import VerifyKey
 
 MAX_INPUT_BYTES = 1_048_576
 MAX_ARCHIVE_MEMBERS = 256
@@ -23,6 +21,57 @@ MAX_JSON_NODES = 10_000
 MAX_STRING_BYTES = 256 * 1024
 
 HEXDIGEST = set("0123456789abcdef")
+
+
+class _SignatureVerifier(Protocol):
+    """Minimal verifier protocol used to avoid importing PyNaCl at module load."""
+
+    def verify(self, message: bytes, signature: bytes | None = None) -> bytes:
+        """Verify a detached signature and return the verified message bytes."""
+        ...
+
+
+class _VerifyKeyFactory(Protocol):
+    """Callable factory for signature verifier instances."""
+
+    def __call__(self, key: bytes) -> _SignatureVerifier:
+        """Create a verifier for the supplied public key bytes."""
+        ...
+
+
+class _NaclSignatureVerifier:
+    """Typed adapter around a lazily-created PyNaCl VerifyKey instance."""
+
+    def __init__(self, verifier: object) -> None:
+        self._verifier = verifier
+
+    def verify(self, message: bytes, signature: bytes | None = None) -> bytes:
+        """Verify a signature and normalize the PyNaCl return value to bytes."""
+        verify_method = getattr(self._verifier, "verify", None)
+        if not callable(verify_method):
+            raise TypeError("PyNaCl verifier does not expose a callable verify method")
+        result = verify_method(message, signature)
+        if not isinstance(result, bytes):
+            raise TypeError("PyNaCl verifier returned a non-bytes result")
+        return result
+
+
+def _load_nacl_verifier() -> tuple[type[Exception], _VerifyKeyFactory]:
+    """Load PyNaCl verification primitives only when signature checks are needed."""
+    try:
+        from nacl.exceptions import (
+            BadSignatureError as bad_signature_error,  # noqa: N813
+        )
+        from nacl.signing import VerifyKey as verify_key_type  # noqa: N813
+    except ModuleNotFoundError as exc:  # pragma: no cover - environment dependent
+        raise RuntimeError(
+            "PyNaCl is required for portable proof signature verification"
+        ) from exc
+
+    def make_verify_key(key: bytes) -> _SignatureVerifier:
+        return _NaclSignatureVerifier(verify_key_type(key))
+
+    return cast(type[Exception], bad_signature_error), make_verify_key
 
 
 def canonical(value: object) -> bytes:
@@ -409,6 +458,7 @@ def verify_attestation(
     for field, value in expected.items():
         if context.get(field) != value:
             raise ValueError(f"attestation trust context {field} binding mismatch")
+    bad_signature_error, verify_key = _load_nacl_verifier()
     envelope_bytes = canonical(envelope)
     trust_state_payload = dict(trust_state)
     trust_state_signature = trust_state_payload.pop("signature", None)
@@ -428,11 +478,11 @@ def verify_attestation(
     signed_payload = dict(trust_state)
     signature = signed_payload.pop("signature", "")
     try:
-        VerifyKey(key_text).verify(
+        verify_key(key_text).verify(
             canonical(signed_payload),
             base64.urlsafe_b64decode(str(signature) + "=" * (-len(str(signature)) % 4)),
         )
-    except (BadSignatureError, ValueError) as exc:
+    except (bad_signature_error, ValueError) as exc:
         raise ValueError(
             "attestation trust-state signature verification failed"
         ) from exc
@@ -469,14 +519,14 @@ def verify_attestation(
     if envelope_att.get("digest") != attestation.get("digest"):
         raise ValueError("signed attestation does not match packaged attestation")
     try:
-        VerifyKey(public_key).verify(
+        verify_key(public_key).verify(
             canonical({"attestation": envelope_att, "payload_digest": payload_digest}),
             base64.urlsafe_b64decode(
                 str(envelope.get("signature"))
                 + "=" * (-len(str(envelope.get("signature"))) % 4)
             ),
         )
-    except (BadSignatureError, ValueError) as exc:
+    except (bad_signature_error, ValueError) as exc:
         raise ValueError(
             "signed reliability attestation signature verification failed"
         ) from exc

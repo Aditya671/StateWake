@@ -1,6 +1,6 @@
 # StateWake Limitations
 
-This page is part of the public product experience. It states the boundaries of what the current v0.3.0 baseline establishes and what remains the responsibility of an integrating system.
+This page is part of the public product experience. It states the boundaries of what the current v0.4.0 baseline establishes and what remains the responsibility of an integrating system.
 
 ## Verification does not prove truth
 

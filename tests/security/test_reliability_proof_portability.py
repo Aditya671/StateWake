@@ -93,7 +93,7 @@ class TestReliabilityProofPortability(unittest.TestCase):
     def test_portability_assurance_is_development_only(self) -> None:
         """Verify the Tier 9 artifact cannot silently become a release."""
         pyproject = (PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8")
-        self.assertIn('version = "0.3.0"', pyproject)
+        self.assertIn('version = "0.4.0"', pyproject)
         text = (
             PROJECT_ROOT / "docs/security/evidence_portability_assurance.md"
         ).read_text(encoding="utf-8")

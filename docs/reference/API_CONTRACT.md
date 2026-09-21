@@ -1,6 +1,6 @@
 # StateWake Public API Contract
 
-**Package version:** `v0.3.0`  
+**Package version:** `v0.4.0`  
 **Public API contract version:** `1`
 
 This document is the authoritative contract for the symbols exported by the
@@ -95,7 +95,7 @@ stable. The top-level import path is the stable path.
 | `create_trust_checkpoint` | function | Public | Construct a signed trust checkpoint. |
 | `compare_local_tip` | function | Public | Compare a checkpoint with local history tip/count. |
 | `ensure_checkpoint_sequence` | function | Public | Validate checkpoint continuity. |
-| `__version__` | constant | Compatibility constant | Current package version; `v0.3.0`. |
+| `__version__` | constant | Compatibility constant | Current package version; `v0.4.0`. |
 | `__public_api_contract_version__` | constant | Compatibility constant | Current public API contract version; `1`. |
 
 ## Error contract

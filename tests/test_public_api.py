@@ -13,7 +13,7 @@ def test_public_version_and_state_api(tmp_path: Path) -> None:
     Verify the `test_public_version_and_state_api` behavior
     and its expected invariants.
     """
-    assert __version__ == "0.3.0"
+    assert __version__ == "0.4.0"
     snapshot = read_reliability_state(
         "subject-1", history_path=tmp_path / "state.jsonl"
     )

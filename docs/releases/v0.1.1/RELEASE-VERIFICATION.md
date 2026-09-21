@@ -22,7 +22,7 @@ This artifact promotes the verified StateWake `v0.1.0` public package baseline t
 
 ## Environment-limited gates
 
-The sandbox cannot complete the dependency-backed Ruff, Pyright, and full pytest gates because the isolated environment does not contain the project's pinned development/runtime dependencies and outbound package-index DNS/network access is unavailable. An attempted `uv run` synchronization failed while resolving `iniconfig==2.3.0` from `files.pythonhosted.org`.
+The sandbox cannot complete the dependency-backed Ruff, mypy, and full pytest gates because the isolated environment does not contain the project's pinned development/runtime dependencies and outbound package-index DNS/network access is unavailable. An attempted `uv run` synchronization failed while resolving `iniconfig==2.3.0` from `files.pythonhosted.org`.
 
 A clean wheel installation was also performed with `--no-deps`; wheel installation itself succeeded, but importing `statewake` in that dependency-free environment failed at the expected missing runtime dependency boundary (`filelock`). This is an environment limitation, not evidence of a package metadata defect.
 
@@ -33,7 +33,7 @@ Therefore this artifact is a **verified release candidate**, not a claim that ev
 ## Required final gates before manual publication
 
 1. Run the repository's pinned Ruff format/check gates.
-2. Run pinned Pyright strict analysis.
+2. Run pinned mypy strict analysis.
 3. Run the complete pytest suite.
 4. Run the GitHub Actions release-verification workflow against the exact pushed tree.
 5. Confirm the GitHub release/tag is `v0.1.1` and that the production PyPI workflow is triggered by a published GitHub Release.

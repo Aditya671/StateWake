@@ -1,6 +1,65 @@
 # Changelog
 
-## [v0.3.0] — Persistence & Dataset Architecture completion
+## [v0.4.0] — AI Systems Seven-Phase Roadmap completion
+
+### Phase 7 - Comparative Validation Study
+
+- Added `statewake.validation_study` with deterministic fixture-backed comparative validation for final-output-only, conventional-log, structured-trace, and StateWake-full baselines.
+- Added five representative workloads: RAG answer, tool action, incident recovery, release verification, and human approval workflow.
+- Added a deterministic fault catalog covering omitted evidence, malformed/stale evidence, changed identity, missing authorization, modified tool output, broken provenance, invalid state, partial workspace write, erased recovery history, and unsigned release evidence.
+- Added aggregate metrics for verification coverage, fault detection rate, false-positive rate, and checkable property counts.
+- Added JSON and Markdown study report rendering with explicit limitations; live AI calls, statistical superiority claims, human reconstruction timing, runtime overhead, and storage overhead remain outside this fixture harness.
+- Added benchmark directory scaffolding, research documentation, unit tests, and workspace persistence tests for generated study reports.
+
+### Phase 6 - Supply-Chain and Release Trust Evidence
+
+- Added `statewake.release_trust` with digest-bound release-trust bundle models for artifacts, source identity, build provenance, tests, SBOMs, vulnerability scans, signatures, external provenance, limitations, and human release decisions.
+- Added deterministic JSON persistence and tamper detection for release-trust bundles.
+- Added a bridge from release-trust bundles into the existing `release_evidence_complete.v1` claim profile without replacing `release_proof_service`.
+- Preserved the separation between verified release evidence and human publication approval; unsigned development releases must record an explicit limitation rather than a pass.
+- Added regression tests for artifact digests, dependency-lock digests, SBOM tamper detection, false signature claims, human approval basis, profile consumption, and JSON round trips.
+- Documented the Phase 6 release-trust evidence boundary in `docs/release/release-trust-evidence.md`.
+
+### Phase 5 - First-Class Integrations
+
+- Added `statewake.integrations` with thin producer adapters for OpenTelemetry GenAI, OpenAI Agents-style traces, LangChain-style callbacks, LlamaIndex-style retrieval/evaluator events, LangGraph-style runtime events, CI/CD evidence, and generic evaluator results.
+- Added `ContractCaptureResult` and workspace persistence support for integration-emitted Phase 1 AI contracts.
+- Added integration regression tests proving lightweight imports, event-to-contract mapping, profile evaluation compatibility, and explicit workspace persistence.
+- Documented the Phase 5 dependency policy: no new hard framework dependency and no guessed optional SDK versions without compatibility testing.
+
+
+### Phase 4 - Workspace Backup, Restore, and Migration Guarantees
+
+- Added Phase 4 workspace backup and restore helpers that preserve the SQLite operational index, manifest, receipts, artifacts, and exports together.
+- Added content-addressed payload integrity sweeps to detect modified or invalid artifact files.
+- Added explicit workspace migration marker modules for the initial schema, AI-contract compatibility, and claim-profile-result compatibility without duplicating existing evidence tables.
+- Updated the default workspace root to durable `data/statewake/` while preserving explicit test workspaces.
+- Added regression coverage for default workspace durability, schema identity, backup/restore round trips, tampered backups, modified payloads, and Phase 2/3 evidence preservation.
+- Documented backup, restore, and migration behavior in `docs/operations/workspace-backup-restore.md`.
+
+### Phase 3 - Human Verification Reports
+
+- Extended the existing reliability verification report contract instead of adding a duplicate report authority.
+- Added reusable Markdown and JSON renderers under `statewake.reports`.
+- Added explicit candidate identity, candidate digest, missing evidence, `UNRUN-ENV`, `UNKNOWN`, residual-risk, and human-decision sections.
+- Added report redaction helpers that preserve payload digests while hiding sensitive fields.
+- Added unit and workspace tests covering Phase 1 contracts, Phase 2 profile evaluation, and Phase 3 report rendering together.
+- Documented verification reports in `docs/user-guide/verification-reports.md`.
+
+### Phase 2 - Claim Profiles
+
+- Added the Phase 2 built-in AI reliability claim-profile catalog with eight versioned profiles.
+- Extended profile evaluation with Phase 2 decisions, missing-evidence reporting, caveats, and deterministic serialization.
+- Added public profile listing through Python and the CLI, plus workspace persistence coverage for profile evaluation results.
+- Documented the profile catalog in `docs/reference/claim-profiles.md`.
+
+### Phase 1 - AI Evidence Contracts
+
+- Added `statewake.ai_contracts` with deterministic, digest-bound contracts for prompts, model invocations, tool calls, retrieval, policies, evaluators, human approvals, and runtime traces.
+- Added contract-to-`EvidenceItem` binding and explicit workspace persistence tests for serialized AI contract payloads.
+- Documented the AI evidence contract boundary in `docs/architecture/ai-evidence-contracts.md`.
+
+## Historical baseline — Persistence & Dataset Architecture completion
 
 ### Enhanced dependency and verification baseline
 
@@ -10,7 +69,7 @@
 - Extended release verification to exercise the optional workspace dependency surface when those dependencies are available.
 - Revalidated Tier 8 supply-chain provenance after the dependency declaration/lock update; the dependency-lock digest and candidate fingerprint are regenerated for the enhanced artifact.
 
-StateWake v0.3.0 completes the Persistence & Dataset Architecture through Tier 15. This is a backward-compatible minor capability release built on the v0.2.0 cybersecurity baseline.
+The earlier persistence/dataset baseline completed the Persistence & Dataset Architecture through Tier 15. This is a backward-compatible minor capability release built on the v0.2.0 cybersecurity baseline.
 
 ### Included
 
@@ -73,7 +132,7 @@ All notable StateWake changes are recorded here. Historical implementation recor
 
 ### Static typing and code quality
 
-- Replaced generic dataclass metadata factories with explicitly typed string-to-string factories to prevent unknown-type propagation under strict Pylance/Pyright.
+- Replaced generic dataclass metadata factories with explicitly typed string-to-string factories to prevent unknown-type propagation under strict mypy.
 - Made file-ingestion keyword forwarding explicit so strict type analysis can prove the `ExternalEvidenceReceipt` return type.
 - Generalized behavioral LCS matching to preserve the actual key element type and added explicit optional-index narrowing before sequence access.
 - Added explicit `strict=` semantics to every `zip()` call.
@@ -101,7 +160,7 @@ All notable StateWake changes are recorded here. Historical implementation recor
 ### Verification
 
 - Revalidated public documentation, executable examples, package identity, package boundaries, compatibility fixtures, script portability, property/state-machine validation, real-world scenarios, chaos validation, extreme validation, deep chaos, failure laboratory, and external integration fixtures.
-- Native Ruff, Pyright/Pylance, and PyNaCl remain environment-dependent verification gates when unavailable in an isolated sandbox.
+- Native Ruff, mypy, and PyNaCl remain environment-dependent verification gates when unavailable in an isolated sandbox.
 
 ## [v0.1.0] — Packaging and documentation correction
 

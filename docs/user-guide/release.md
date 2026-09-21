@@ -2,7 +2,7 @@
 
 ## Current package baseline
 
-**StateWake v0.3.0 — current release candidate/source baseline**
+**StateWake v0.4.0 — current release candidate/source baseline**
 
 Distribution: `statewake-ai`
 
@@ -14,11 +14,11 @@ The public release sequence represented by this repository is:
 
 - **v0.1.1** — Production/Stable packaging promotion of the v0.1.0 public package baseline. The supplied released source candidate is retained under `docs/releases/v0.1.1/`.
 - **v0.2.0** — cybersecurity capability completion through V3 Tier 15.
-- **v0.3.0** — Persistence & Dataset Architecture completion through Tier 15.
+- **v0.4.0** — Persistence & Dataset Architecture completion through Tier 15.
 
 ## Current scope
 
-The v0.3.0 baseline combines the completed reliability lifecycle, cybersecurity architecture, and Persistence & Dataset Architecture. The workspace provides durable operational indexing, historical query/projection, tabular and portable exports, lifecycle/retention orchestration, integrity verification, analytical access, backend abstraction, and production workspace operations.
+The v0.4.0 baseline combines the completed reliability lifecycle, cybersecurity architecture, and Persistence & Dataset Architecture. The workspace provides durable operational indexing, historical query/projection, tabular and portable exports, lifecycle/retention orchestration, integrity verification, analytical access, backend abstraction, and production workspace operations.
 
 ## Release boundary
 

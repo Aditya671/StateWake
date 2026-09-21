@@ -10,7 +10,7 @@ from config.project_paths import SRC_PATH
 
 def test_public_package_version() -> None:
     """Verify the public package imports and exposes its current version."""
-    assert statewake.__version__ == "0.3.0"
+    assert statewake.__version__ == "0.4.0"
 
 
 def test_cli_version_from_source_tree() -> None:

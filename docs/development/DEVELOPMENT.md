@@ -6,7 +6,7 @@
 - uv
 - Git
 
-The project uses a `src/` package layout and a dependency-light runtime core. uv manages the project and lockfile. OpenTelemetry API support is a declared adapter-layer dependency; the domain core remains framework-neutral. The v0.3.0 workspace adapters are exposed through the optional `workspace` extra and cover PyArrow/Parquet, DuckDB analytical access, openpyxl/XLSX export, and SQLAlchemy-backed repository access.
+The project uses a `src/` package layout and a dependency-light runtime core. uv manages the project and lockfile. OpenTelemetry API support is a declared adapter-layer dependency; the domain core remains framework-neutral. The v0.4.0 workspace adapters are exposed through the optional `workspace` extra and cover PyArrow/Parquet, DuckDB analytical access, openpyxl/XLSX export, and SQLAlchemy-backed repository access.
 
 ## Setup
 

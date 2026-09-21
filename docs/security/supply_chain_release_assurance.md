@@ -111,7 +111,7 @@ This prevents a green result from one source/dependency state from being silentl
 
 ## Development-only boundary
 
-This tier is intentionally usable for development baselines without authorizing publication. The current package identity is `v0.3.0`. The workspace extra is the explicit dependency surface for the v0.3.0 dataset/export/analytical adapters. A provenance record must explicitly carry `release_status = development-only` and `publication_authorized = false` for this workflow.
+This tier is intentionally usable for development baselines without authorizing publication. The current package identity is `v0.4.0`. The workspace extra is the explicit dependency surface for the v0.4.0 dataset/export/analytical adapters. A provenance record must explicitly carry `release_status = development-only` and `publication_authorized = false` for this workflow.
 
 A successful Tier 8 verification therefore means **the described development artifact is internally attributable and integrity-bound**. It does not mean that a public release is approved or that external CI/repository controls have been independently audited.
 

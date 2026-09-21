@@ -19,7 +19,7 @@ production distribution.
 
 The production archive contains only:
 
-- `statewake_ai-0.3.0-py3-none-any.whl`;
+- `statewake_ai-0.4.0-py3-none-any.whl`;
 - `README.md`;
 - `LICENSE`;
 - `SECURITY.md`;

@@ -20,5 +20,5 @@ def test_security_assurance_is_not_a_release() -> None:
         PROJECT_ROOT / "docs" / "security" / "security_assurance_boundary.md"
     ).read_text(encoding="utf-8")
 
-    assert 'version = "0.3.0"' in version_source
+    assert 'version = "0.4.0"' in version_source
     assert "not a release approval" in assurance

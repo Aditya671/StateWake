@@ -119,4 +119,4 @@ Independent verification in this project means execution from a fresh clean copy
 
 ## Development-only boundary
 
-The current package identity is `v0.3.0`. This tier is a promoted development assurance baseline only. No release tag, publication, or release artifact is authorized by this document.
+The current package identity is `v0.4.0`. This tier is a promoted development assurance baseline only. No release tag, publication, or release artifact is authorized by this document.

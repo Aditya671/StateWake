@@ -1,6 +1,6 @@
 [project]
 name = "statewake-ai"
-version = "0.3.0"
+version = "0.4.0"
 description = "Evidence-backed reliability infrastructure for AI systems."
 keywords = ["ai", "reliability", "agents", "evidence", "provenance", "verification"]
 classifiers = [
@@ -31,6 +31,12 @@ workspace = [
     "openpyxl==3.1.5",
     "pyarrow==25.0.1",
     "sqlalchemy==2.0.54",
+]
+integrations-opentelemetry = [
+    "opentelemetry-api==1.44.0",
+]
+integrations = [
+    "opentelemetry-api==1.44.0",
 ]
 
 [project.urls]

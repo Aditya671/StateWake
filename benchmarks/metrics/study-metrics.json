@@ -1,0 +1,54 @@
+[
+  {
+    "baseline": "conventional_logs",
+    "case_count": 10,
+    "checkable_property_count": 2,
+    "detected_fault_count": 0,
+    "false_positive_count": 0,
+    "false_positive_rate": 0.0,
+    "fault_detection_rate": 0.0,
+    "injected_fault_count": 7,
+    "target_property_count": 58,
+    "valid_case_count": 5,
+    "verification_coverage": 0.034482758620689655
+  },
+  {
+    "baseline": "final_output_only",
+    "case_count": 10,
+    "checkable_property_count": 2,
+    "detected_fault_count": 0,
+    "false_positive_count": 0,
+    "false_positive_rate": 0.0,
+    "fault_detection_rate": 0.0,
+    "injected_fault_count": 7,
+    "target_property_count": 58,
+    "valid_case_count": 5,
+    "verification_coverage": 0.034482758620689655
+  },
+  {
+    "baseline": "statewake_full",
+    "case_count": 10,
+    "checkable_property_count": 58,
+    "detected_fault_count": 7,
+    "false_positive_count": 0,
+    "false_positive_rate": 0.0,
+    "fault_detection_rate": 1.0,
+    "injected_fault_count": 7,
+    "target_property_count": 58,
+    "valid_case_count": 5,
+    "verification_coverage": 1.0
+  },
+  {
+    "baseline": "structured_traces",
+    "case_count": 10,
+    "checkable_property_count": 4,
+    "detected_fault_count": 0,
+    "false_positive_count": 0,
+    "false_positive_rate": 0.0,
+    "fault_detection_rate": 0.0,
+    "injected_fault_count": 7,
+    "target_property_count": 58,
+    "valid_case_count": 5,
+    "verification_coverage": 0.06896551724137931
+  }
+]

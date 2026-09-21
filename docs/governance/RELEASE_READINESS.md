@@ -1,6 +1,6 @@
 # Release Readiness Decision
 
-**Current package baseline:** `v0.3.0`
+**Current package baseline:** `v0.4.0`
 
 This document records the current release boundary. Publication to an external package index or repository remains a separate human authorization and platform gate.
 

@@ -1,6 +1,6 @@
 """Public package API for StateWake's stabilized reliability lifecycle."""
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 __public_api_contract_version__ = "1"
 
 from .adapters.first_party_evidence import (
@@ -98,6 +98,7 @@ from .services.reliability_claim_profile_service import (
     ClaimProfileEvaluation,
     evaluate_claim_profile,
     get_builtin_claim_profile,
+    list_builtin_claim_profiles,
     load_claim_profile,
     write_claim_profile,
 )
@@ -165,6 +166,7 @@ __all__ = [
     "build_reliability_decision_basis",
     "evaluate_claim_profile",
     "get_builtin_claim_profile",
+    "list_builtin_claim_profiles",
     "load_claim_profile",
     "load_evidence_chain",
     "load_outcome_attestation",

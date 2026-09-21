@@ -102,5 +102,5 @@ def test_trust_domain_assurance_is_not_a_release() -> None:
     document = (ROOT / "docs/security/trust_domain_anchor_assurance.md").read_text(
         encoding="utf-8"
     )
-    assert 'version = "0.3.0"' in pyproject
+    assert 'version = "0.4.0"' in pyproject
     assert "not a release approval" in document.lower()

@@ -1,6 +1,6 @@
 # Workspace dependency model
 
-StateWake keeps its reference persistence path dependency-light while making the richer v0.3.0 dataset/export adapters explicit and reproducible.
+StateWake keeps its reference persistence path dependency-light while making the richer v0.4.0 dataset/export adapters explicit and reproducible.
 
 ## Core runtime
 
@@ -42,4 +42,4 @@ These packages remain optional rather than becoming mandatory core dependencies:
 - XLSX requires openpyxl only when XLSX operations are invoked.
 - SQLAlchemy is loaded lazily only when the alternative repository backend is constructed.
 
-This preserves the lightweight core while making the implemented v0.3.0 workspace capabilities discoverable and installable as one coherent optional surface.
+This preserves the lightweight core while making the implemented v0.4.0 workspace capabilities discoverable and installable as one coherent optional surface.

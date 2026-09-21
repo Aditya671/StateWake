@@ -2,16 +2,16 @@
 
 ## Current position
 
-**v0.3.0 — completed public release sequence through the Persistence & Dataset Architecture**
+**v0.4.0 — completed public release sequence through the Persistence & Dataset Architecture**
 
-The release sequence records three deliberate boundaries: packaging stabilization at v0.1.1, cybersecurity completion at v0.2.0, and Persistence & Dataset completion at v0.3.0.
+The release sequence records three deliberate boundaries: packaging stabilization at v0.1.1, cybersecurity completion at v0.2.0, and Persistence & Dataset completion at v0.4.0.
 
 ## Completed product progression
 
 ```text
 v0.1.1  →  Production/Stable packaging promotion
 v0.2.0  →  Cybersecurity progression through V3 Tier 15
-v0.3.0  →  Persistence & Dataset Architecture through Tier 15
+v0.4.0  →  Persistence & Dataset Architecture through Tier 15
 ```
 
 The underlying reliability lifecycle remains:

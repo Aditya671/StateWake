@@ -51,8 +51,6 @@ EXCLUDED_TREE_PARTS = {
 EXCLUDED_TREE_FILES = {
     "candidate-fingerprint.txt",
     "verification_manifest.txt",
-    "test_results.txt",
-    "pytest_fresh.txt",
 }
 
 

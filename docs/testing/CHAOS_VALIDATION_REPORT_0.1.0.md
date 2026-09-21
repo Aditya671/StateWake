@@ -81,4 +81,4 @@ python scripts/testing/run_deep_chaos_validation.py
 pytest -q
 ```
 
-The current sandbox cannot execute the PyNaCl-dependent tests or the Ruff/Pyright CLI because those dependencies are unavailable locally.
+The current sandbox cannot execute the PyNaCl-dependent tests or the Ruff/mypy CLI because those dependencies are unavailable locally.

@@ -68,7 +68,7 @@ def test_supply_chain_contract_matches_existing_release_plumbing() -> None:
     """Verify the Tier 8 contract reuses the existing release verification workflow."""
     metadata = project_metadata(ROOT)
     assert metadata["distribution"] == "statewake-ai"
-    assert metadata["version"] == "0.3.0"
+    assert metadata["version"] == "0.4.0"
     assert metadata["lock_packages"] >= 1
     assert "workspace" in metadata["optional_dependencies"]
     assert any(

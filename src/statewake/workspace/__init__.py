@@ -5,6 +5,7 @@ from .analytical import (
     AnalyticalQueryResult,
     DuckDBAnalyticalAdapter,
 )
+from .backup import WorkspaceBackupError, WorkspaceBackupResult, create_workspace_backup
 from .configuration import WorkspaceConfiguration
 from .csv_export import CsvExportError, CsvExportResult
 from .errors import (
@@ -13,6 +14,11 @@ from .errors import (
     WorkspaceRepositoryError,
 )
 from .integration import WorkspaceIngestionAdapter
+from .integrity_sweep import (
+    WorkspaceIntegritySweepError,
+    WorkspaceIntegritySweepResult,
+    sweep_workspace_payload_integrity,
+)
 from .json_export import JSON_FORMAT, JsonExportError, JsonExportResult
 from .lifecycle import WorkspaceLifecycle, WorkspaceLifecycleResult
 from .models import (
@@ -46,6 +52,11 @@ from .projections import (
     RunProjection,
     StateTransitionProjection,
 )
+from .restore import (
+    WorkspaceRestoreError,
+    WorkspaceRestoreResult,
+    restore_workspace_backup,
+)
 from .sqlalchemy_repository import SqlAlchemyWorkspaceRepository
 from .sqlite_repository import SqliteWorkspaceRepository
 from .verification import (
@@ -67,6 +78,9 @@ __all__ = [
     "AnalyticalAccessError",
     "AnalyticalQueryResult",
     "DuckDBAnalyticalAdapter",
+    "WorkspaceBackupError",
+    "WorkspaceBackupResult",
+    "create_workspace_backup",
     "WorkspaceConfiguration",
     "WorkspaceError",
     "CsvExportError",
@@ -76,6 +90,9 @@ __all__ = [
     "WorkspaceRecord",
     "WorkspaceRecordIndexEntry",
     "WorkspaceRecordQuery",
+    "WorkspaceIntegritySweepError",
+    "WorkspaceIntegritySweepResult",
+    "sweep_workspace_payload_integrity",
     "WorkspaceIngestionAdapter",
     "WorkspaceRepositoryError",
     "UnsupportedWorkspaceSchemaError",
@@ -102,6 +119,9 @@ __all__ = [
     "BUNDLE_FORMAT",
     "PortableBundleError",
     "PortableBundleResult",
+    "WorkspaceRestoreError",
+    "WorkspaceRestoreResult",
+    "restore_workspace_backup",
     "WorkspaceDiagnostics",
     "WorkspaceDiagnosticsCollector",
     "WorkspaceOperationLock",

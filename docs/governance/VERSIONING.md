@@ -2,13 +2,13 @@
 
 ## Current package version
 
-**StateWake: `v0.3.0`**
+**StateWake: `v0.4.0`**
 
 The public release sequence is:
 
 - `v0.1.1` — Production/Stable packaging promotion of the v0.1.0 public package baseline.
 - `v0.2.0` — cybersecurity capability release completing the V1/V2/V3 security progression through V3 Tier 15.
-- `v0.3.0` — Persistence & Dataset Architecture release completing workspace Tiers 1–15.
+- `v0.4.0` — AI Systems Seven-Phase Roadmap release completing AI evidence contracts, claim profiles, reports, workspace guarantees, integrations, release trust, and comparative validation.
 
 Historical implementation identifiers remain provenance and do not override these public package versions.
 
@@ -31,7 +31,7 @@ The public API contract version remains `1` across this release sequence because
 
 `v0.2.0` is a minor release because it introduces the completed cybersecurity capability set and additional security-facing public surfaces without changing the public contract version.
 
-`v0.3.0` is a minor release because it introduces the completed workspace, dataset, export, analytical-access, backend-abstraction, and production-workspace operational capabilities while preserving existing public contracts.
+`v0.4.0` is a minor release because it introduces the completed StateWake AI Systems Seven-Phase Roadmap while preserving existing public contracts.
 
 ## Release discipline
 

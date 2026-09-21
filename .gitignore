@@ -16,5 +16,3 @@ build/
 .env.*
 test_results*.txt
 
-candidate-fingerprint.txt
-verification_manifest.txt

@@ -486,7 +486,7 @@ wheels = [
 
 [[package]]
 name = "statewake-ai"
-version = "0.3.0"
+version = "0.4.0"
 source = { editable = "." }
 dependencies = [
     { name = "filelock" },
@@ -495,6 +495,12 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+integrations = [
+    { name = "opentelemetry-api" },
+]
+integrations-opentelemetry = [
+    { name = "opentelemetry-api" },
+]
 workspace = [
     { name = "duckdb" },
     { name = "openpyxl" },
@@ -515,11 +521,13 @@ requires-dist = [
     { name = "filelock", specifier = "==3.32.4" },
     { name = "openpyxl", marker = "extra == 'workspace'", specifier = "==3.1.5" },
     { name = "opentelemetry-api", specifier = "==1.44.0" },
+    { name = "opentelemetry-api", marker = "extra == 'integrations'", specifier = "==1.44.0" },
+    { name = "opentelemetry-api", marker = "extra == 'integrations-opentelemetry'", specifier = "==1.44.0" },
     { name = "pyarrow", marker = "extra == 'workspace'", specifier = "==25.0.1" },
     { name = "pynacl", specifier = "==1.6.2" },
     { name = "sqlalchemy", marker = "extra == 'workspace'", specifier = "==2.0.54" },
 ]
-provides-extras = ["workspace"]
+provides-extras = ["workspace", "integrations-opentelemetry", "integrations"]
 
 [package.metadata.requires-dev]
 dev = [
