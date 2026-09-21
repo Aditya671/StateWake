@@ -7,7 +7,7 @@ StateWake helps AI systems establish a verifiable record of what happened, what 
 It is designed to integrate with existing AI runtimes, evaluation systems, telemetry, CI/CD, storage, and operational tooling. It does not replace them.
 
 **Project:** [GitHub repository](https://github.com/Aditya671/StateWake)  
-**Version:** `v0.1.1`  
+**Version:** `v0.3.0`  
 **License:** Apache-2.0
 
 ## Why StateWake
@@ -62,15 +62,24 @@ The package published to PyPI/TestPyPI is `statewake-ai`; the Python import pack
 
 ```bash
 python -m pip install statewake-ai
-```
 
-For the current TestPyPI release, use:
+To enable the v0.3.0 workspace dataset/export and analytical adapters (Parquet/PyArrow, DuckDB, XLSX/openpyxl, and the SQLAlchemy repository backend), install the optional workspace extra:
 
 ```bash
-python -m pip install --index-url https://test.pypi.org/simple/ --no-deps statewake-ai==v0.1.1
+python -m pip install "statewake-ai[workspace]"
 ```
 
-See the repository for the dependency and development setup used by the project.
+CSV, JSON, portable-bundle, and SQLite reference persistence use Python/SQLite standard-library capabilities and do not require additional packages.
+
+For the previously published v0.1.1 package, use:
+
+```bash
+python -m pip install statewake-ai==0.1.1
+```
+
+The v0.2.0 and v0.3.0 source baselines in this repository are release candidates/source baselines until their external publication gates are completed.
+
+See `pyproject.toml` for the authoritative dependency declarations and `uv.lock` for the exact locked dependency state.
 
 ## Python integration
 
@@ -159,7 +168,7 @@ Project-level documents:
 
 ## Versioning
 
-The current public package baseline is **v0.1.1**. Historical implementation identifiers are retained only as development provenance.
+The current public package baseline is **v0.3.0**. Historical implementation identifiers are retained only as development provenance.
 
 See the project's versioning policy in the repository documentation:
 

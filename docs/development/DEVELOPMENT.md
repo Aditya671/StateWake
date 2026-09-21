@@ -6,7 +6,7 @@
 - uv
 - Git
 
-The project uses a `src/` package layout and a standard-library runtime core. uv manages the project and lockfile. OpenTelemetry API support is a declared adapter-layer dependency; the domain core remains framework-neutral.
+The project uses a `src/` package layout and a dependency-light runtime core. uv manages the project and lockfile. OpenTelemetry API support is a declared adapter-layer dependency; the domain core remains framework-neutral. The v0.3.0 workspace adapters are exposed through the optional `workspace` extra and cover PyArrow/Parquet, DuckDB analytical access, openpyxl/XLSX export, and SQLAlchemy-backed repository access.
 
 ## Setup
 
@@ -24,7 +24,7 @@ uv run statewake --help
 
 ## Tests
 
-The normal project environment installs the declared runtime dependencies, including the OpenTelemetry API and cryptographic verification support.
+The normal project environment installs the declared runtime dependencies, including the OpenTelemetry API and cryptographic verification support. To exercise every implemented workspace adapter locally, install the `workspace` extra as well.
 
 ```bash
 uv run python -m unittest discover -s tests -p 'test_*.py'
@@ -42,7 +42,9 @@ uv build
 
 ## Quality tooling
 
-Ruff and Pyright are repository quality gates. Ruff configuration is stored in pyproject.toml and Pyright/Pylance strict mode is configured for the active src/ tree.
+Ruff and mypy are repository quality gates. Their configuration is stored in
+`pyproject.toml`; mypy checks active Python code under `src/`, `tests/`, and
+`scripts/`, with fixture-friendly overrides for tests.
 
 ## Guiding rule
 

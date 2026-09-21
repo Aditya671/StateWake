@@ -1,0 +1,64 @@
+{
+  "approval": "human-release-approval-required",
+  "candidate_sha256": "574accf05275738e5264f7ab95a582510d21334d8a957c533d826efcff48e929",
+  "generated_at": "2026-09-20T13:04:03.487743+00:00",
+  "gates": [
+    {
+      "command": "python -m compileall -q src tests scripts",
+      "name": "source-compilation",
+      "state": "PASS"
+    },
+    {
+      "command": "python scripts/release/verify_versioning.py",
+      "name": "version-identity",
+      "state": "PASS"
+    },
+    {
+      "command": "python scripts/development/verify_source_quality.py",
+      "name": "source-quality-ast",
+      "state": "PASS"
+    },
+    {
+      "command": "python scripts/release/verify_repository_structure.py",
+      "name": "repository-structure",
+      "state": "PASS"
+    },
+    {
+      "command": "UV_PYTHON=python3.12 uv build --offline --wheel",
+      "name": "wheel-build",
+      "state": "PASS"
+    },
+    {
+      "command": "python scripts/release/verify_package_boundary.py dist",
+      "name": "package-boundary",
+      "state": "PASS"
+    },
+    {
+      "command": "python -m pytest",
+      "name": "pytest",
+      "reason": "pytest is not installed in the execution environment",
+      "state": "UNRUN-ENV"
+    },
+    {
+      "command": "python -m ruff check src tests scripts",
+      "name": "ruff",
+      "reason": "ruff is not installed in the execution environment",
+      "state": "UNRUN-ENV"
+    },
+    {
+      "command": "python -m mypy src",
+      "name": "mypy",
+      "reason": "mypy is not installed in the execution environment",
+      "state": "UNRUN-ENV"
+    },
+    {
+      "command": "python scripts/release/verify_product_experience.py",
+      "name": "product-experience",
+      "reason": "runtime dependency filelock is not installed in the execution environment",
+      "state": "UNRUN-ENV"
+    }
+  ],
+  "publication_authorized": false,
+  "status": "provisional",
+  "version": "0.3.0"
+}

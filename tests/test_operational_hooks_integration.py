@@ -5,11 +5,6 @@ from statewake.domain.operational_hooks import ReliabilityFailureEvent
 from statewake.services.reliability_state_service import transition_reliability_state
 
 
-# pyright: reportUnknownMemberType=false
-# pyright: reportUnknownVariableType=false
-# pyright: reportUnknownArgumentType=false
-# pyright: reportUnknownParameterType=false
-# pyright: reportMissingParameterType=false
 @dataclass
 class _Hook:
     events: list  # type: ignore

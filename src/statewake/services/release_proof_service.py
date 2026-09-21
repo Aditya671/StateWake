@@ -2,22 +2,17 @@
 
 from __future__ import annotations
 
-# pyright: reportUnknownMemberType=false
-# pyright: reportUnknownVariableType=false
-# pyright: reportUnknownArgumentType=false
-# pyright: reportUnknownParameterType=false
-# pyright: reportMissingParameterType=false
 import json
 from datetime import UTC, datetime
 from pathlib import Path
 
 from ..domain.operations import OperationalBundle
+from ..domain.reliability_claim_profile import ReliabilityClaimProfile
 from ..domain.reliability_evidence import ReliabilityEvidenceChain
 from ..domain.reliability_verification_report import ReliabilityVerificationReport
 from ..services.persistence import atomic_write_text
 from ..services.reliability_claim_profile_service import (
     ClaimProfileEvaluation,
-    ReliabilityClaimProfile,
     evaluate_claim_profile,
     get_builtin_claim_profile,
     load_claim_profile,

@@ -13,6 +13,7 @@ from contextlib import closing
 from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Any, cast
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from statewake.domain.reliability_attestation import (
@@ -153,14 +154,14 @@ def _probe_state_crash_retry() -> None:
             return real_write(fd, data)
 
         original = os.write
-        os.write = interrupted
+        os.write = cast(Any, interrupted)
         try:
             try:
                 store.append(item)
             except OSError:
                 pass
         finally:
-            os.write = original
+            os.write = cast(Any, original)
         assert store.read() == []
         assert store.append(item) == item
         assert store.read() == [item]

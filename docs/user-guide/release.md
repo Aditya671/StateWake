@@ -1,8 +1,8 @@
 # Release Information
 
-## Current development baseline
+## Current package baseline
 
-**StateWake v0.1.1 — Production/Stable baseline**
+**StateWake v0.3.0 — current release candidate/source baseline**
 
 Distribution: `statewake-ai`
 
@@ -10,46 +10,48 @@ Import package: `statewake`
 
 CLI: `statewake`
 
-This artifact is a pre-1.0 development baseline. It is not, by itself, an approval to publish a new package release.
+The public release sequence represented by this repository is:
+
+- **v0.1.1** — Production/Stable packaging promotion of the v0.1.0 public package baseline. The supplied released source candidate is retained under `docs/releases/v0.1.1/`.
+- **v0.2.0** — cybersecurity capability completion through V3 Tier 15.
+- **v0.3.0** — Persistence & Dataset Architecture completion through Tier 15.
 
 ## Current scope
 
-The canonical baseline contains the verified StateWake reliability-evidence lifecycle through the external-integration validation boundary, including the integration SDK, synthetic golden applications, failure laboratory, property/state-machine verification, persistent trust anchors, public API contract, and external evidence capture.
+The v0.3.0 baseline combines the completed reliability lifecycle, cybersecurity architecture, and Persistence & Dataset Architecture. The workspace provides durable operational indexing, historical query/projection, tabular and portable exports, lifecycle/retention orchestration, integrity verification, analytical access, backend abstraction, and production workspace operations.
 
 ## Release boundary
 
-Before publication, verify:
+Before external publication, verify:
 
 1. package and import versions agree;
 2. changelog and active documentation agree;
 3. source and compilation checks pass;
-4. all active tests pass;
+4. all dependency-backed active tests pass;
 5. wheel and source distributions build;
-6. a fresh environment can install and import the wheel;
+6. a fresh environment installs and imports the exact candidate;
 7. the public Python integration is exercised independently;
 8. HTTP integration is exercised when included in the release claim;
-9. active code has no dependency on the historical archive;
+9. active code has no dependency on historical engineering archives;
 10. repository-level and platform-specific release gates are externally verified;
-11. the final artifact is checksum locked.
+11. the exact source/distribution artifacts are checksum locked.
 
-The current isolated sandbox cannot assert GitHub server-side governance or native availability of every optional development tool. Those remain explicit external gates rather than hidden assumptions.
+The current sandbox intentionally did not install missing dependencies, so those dependency-backed gates remain explicit external work.
 
-See [Limitations](limitations.md) and the [Release Evidence Index](release-evidence-index.md) for the supported product claims and their evidence boundaries.
-
-## Reliability evidence to proof flow
+## Evidence flow
 
 ```text
 producer artifact
   → first-party adapter / external receipt
   → canonical admission
   → evidence chain
-  → claim-profile evaluation
-  → decision-basis preparation and chain binding
-  → reliability-state transition
-  → outcome attestation
-  → release-proof verification and portable proof bundle
+  → verification / reliability state
+  → reconciliation / recovery
+  → attestation / decision
+  → durable workspace
+  → query / projection / export / analysis
 ```
 
-## release-candidate process
+## Release evidence
 
-The repository now includes an executable local release-candidate coordinator: `python scripts/release/verify_release_candidate.py`. It records release identity, compatibility, product-experience, compilation, build, package-boundary, and deterministic provenance evidence. It intentionally does not authorize publication. See [`../governance/RELEASE_CANDIDATE_PROTOCOL.md`](../governance/RELEASE_CANDIDATE_PROTOCOL.md).
+Release-specific records are organized under [`docs/releases/`](../releases/README.md). The executable local release-candidate coordinator remains `python scripts/release/verify_release_candidate.py` and does not authorize publication.

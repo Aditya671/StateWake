@@ -278,7 +278,7 @@ def _http_mutation() -> None:
             "wsgi.url_scheme": "https",
         }
         body = b"".join(application(environ, start_response))  # type: ignore
-        assert captured["status"] == "413 Request Entity Too Large"
+        assert str(captured["status"]) == "413 Request Entity Too Large"
         assert json.loads(body)["error"]["code"] == "REQUEST_TOO_LARGE"
 
         captured.clear()
@@ -286,7 +286,7 @@ def _http_mutation() -> None:
         environ["CONTENT_LENGTH"] = str(len(malformed))
         environ["wsgi.input"] = io.BytesIO(malformed)
         body = b"".join(application(environ, start_response))  # type: ignore
-        assert captured["status"] == "400 Bad Request"
+        assert str(captured["status"]) == "400 Bad Request"
         assert json.loads(body)["error"]["code"] == "INVALID_JSON"
 
 

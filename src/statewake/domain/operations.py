@@ -6,8 +6,11 @@ import json
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
+from pathlib import Path
 from typing import Any
+from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
+from .data_lifecycle import inherit_sensitivity
 from .governance import SENSITIVITIES, SENSITIVITY_ORDER
 
 
@@ -16,6 +19,18 @@ def _canonical_json(payload: dict[str, Any]) -> bytes:
     return json.dumps(
         payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False
     ).encode("utf-8")
+
+
+def write_deterministic_zip(files: dict[str, bytes], output: Path) -> None:
+    """Write sorted, timestamp-stable ZIP members for portable artifacts."""
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with ZipFile(output, "w", compression=ZIP_DEFLATED, compresslevel=9) as archive:
+        for name in sorted(files):
+            info = ZipInfo(name)
+            info.date_time = (1980, 1, 1, 0, 0, 0)
+            info.compress_type = ZIP_DEFLATED
+            info.external_attr = 0o100644 << 16
+            archive.writestr(info, files[name])
 
 
 @dataclass(frozen=True, slots=True)
@@ -122,12 +137,22 @@ class OperationalBundle:
         if len(ids) != len(set(ids)):
             raise ValueError("artifact IDs must be unique.")
         known = set(ids)
+        by_id = {item.artifact_id: item for item in self.artifacts}
         for item in self.artifacts:
             unknown = [source for source in item.derived_from if source not in known]
             if unknown:
                 raise ValueError(
                     f"artifact {item.artifact_id} references unknown provenance: {', '.join(unknown)}"
                 )
+            if item.derived_from:
+                inherited = inherit_sensitivity(
+                    tuple(by_id[source].sensitivity for source in item.derived_from)
+                )
+                if SENSITIVITY_ORDER[item.sensitivity] < SENSITIVITY_ORDER[inherited]:
+                    raise ValueError(
+                        f"artifact {item.artifact_id} sensitivity {item.sensitivity} "
+                        f"is lower than inherited source sensitivity {inherited}."
+                    )
 
     def manifest_payload(self) -> dict[str, Any]:
         """Return the canonical manifest payload for this proof bundle."""

@@ -2,42 +2,37 @@
 
 ## Current package version
 
-**StateWake: `v0.1.1`**
+**StateWake: `v0.3.0`**
 
-`v0.1.1` is the current canonical production/stable package baseline. `v0.1.0` remains the preceding public package baseline and is not modified. Historical `0.0.x`–`0.6.x` identifiers are implementation provenance and do not define the current public version.
+The public release sequence is:
+
+- `v0.1.1` — Production/Stable packaging promotion of the v0.1.0 public package baseline.
+- `v0.2.0` — cybersecurity capability release completing the V1/V2/V3 security progression through V3 Tier 15.
+- `v0.3.0` — Persistence & Dataset Architecture release completing workspace Tiers 1–15.
+
+Historical implementation identifiers remain provenance and do not override these public package versions.
 
 ## Version sources of truth
 
-The package version is defined in `pyproject.toml` and exposed as `statewake.__version__`. Release automation and tests must verify these values agree with each other.
+The package version is defined in `pyproject.toml` and exposed as `statewake.__version__`. `uv.lock` must resolve the same project version. Active release documentation must identify the same current version.
 
-`uv.lock` must resolve the same project version. Documentation must refer to the current version as `v0.1.1` unless explicitly describing historical implementation evidence.
+The public API contract version remains `1` across this release sequence because the requested releases are treated as backward-compatible additions/promotions rather than incompatible contract changes.
 
 ## Semantic versioning policy
 
 - **MAJOR**: incompatible public Python API, data-contract, or HTTP API changes.
 - **MINOR**: backward-compatible public capabilities or new integration surfaces.
 - **PATCH**: backward-compatible fixes, verification hardening, documentation corrections, and packaging fixes.
-- Historical phase numbers are not versioning authority.
+- Historical phase numbers are implementation provenance, not versioning authority.
 
-## Historical numbers
+## Release sequence rationale
 
-The repository accumulated a long implementation sequence from `0.0.0` through `0.5.58`. Those numbers remain in historical documentation where they explain how an implementation was produced, but they are not independent public compatibility guarantees.
+`v0.1.1` is a patch because the supplied release candidate documents a packaging/governance promotion without an intentional public API or data-contract break.
 
-The current StateWake product line remains compatible with the `v0.1.0` public baseline; `v0.1.1` promotes that baseline to Production/Stable through a backward-compatible packaging/governance patch.
+`v0.2.0` is a minor release because it introduces the completed cybersecurity capability set and additional security-facing public surfaces without changing the public contract version.
 
-## Release gates
+`v0.3.0` is a minor release because it introduces the completed workspace, dataset, export, analytical-access, backend-abstraction, and production-workspace operational capabilities while preserving existing public contracts.
 
-A public release requires all of the following:
+## Release discipline
 
-1. package metadata and `__version__` agree;
-2. changelog and active documentation agree;
-3. source and tests are AST-clean and compile cleanly;
-4. full active test suite passes;
-5. wheel/sdist build succeeds and a fresh installation imports successfully;
-6. public Python API is independently exercised from a clean consumer project;
-7. optional HTTP API is independently exercised when claimed as a release surface;
-8. no active import depends on the repository history archive;
-9. architecture decision explicitly confirms the release boundary against `StateWake-ai.pdf`;
-10. release artifact is checksum-locked.
-
-A public developer release may use the standard-library WSGI adapter as a local/internal edge; an internet-facing hosted service requires separate security architecture and is not implied by package release.
+Each release must be assessed against the exact candidate identity, synchronized version sources, compatibility evidence, security evidence, package boundary, documentation, and external publication gates. Version changes do not authorize publication by themselves.

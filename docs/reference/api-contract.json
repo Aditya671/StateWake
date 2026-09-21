@@ -1,6 +1,6 @@
 {
   "contract_version": "1",
-  "package_version": "0.1.1",
+  "package_version": "0.3.0",
   "import_path": "statewake",
   "symbols": [
     {
@@ -428,6 +428,54 @@
       "kind": "function",
       "module": "statewake.services.release_proof_service",
       "signature": "(report: 'ReliabilityVerificationReport', path: 'Path') -> 'None'"
+    },
+    {
+      "name": "AffectedTrustState",
+      "kind": "type",
+      "module": "statewake.domain.security_incident",
+      "signature": "(state_id: 'str', state_digest: 'str', trust_context: 'str', affected_window_start: 'datetime | None' = None, affected_window_end: 'datetime | None' = None) -> None"
+    },
+    {
+      "name": "IncidentEvidenceReference",
+      "kind": "type",
+      "module": "statewake.domain.security_incident",
+      "signature": "(kind: 'str', identity: 'str', digest: 'str', source: 'str | None' = None) -> None"
+    },
+    {
+      "name": "KeyCompromiseImpact",
+      "kind": "type",
+      "module": "statewake.domain.security_incident",
+      "signature": "(key_identity: 'str', affected_key_version: 'str', affected_attestation_ids: 'tuple[str, ...]', affected_evidence: 'tuple[IncidentEvidenceReference, ...]', exposure_start: 'datetime', exposure_end: 'datetime | None' = None) -> None"
+    },
+    {
+      "name": "PostRecoveryVerification",
+      "kind": "type",
+      "module": "statewake.domain.security_incident",
+      "signature": "(verification_id: 'str', evidence_refs: 'tuple[IncidentEvidenceReference, ...]', actor: str, status: \"Literal['verified', 'failed', 'unknown']\", performed_at: 'datetime') -> None"
+    },
+    {
+      "name": "RecoveryEvidence",
+      "kind": "type",
+      "module": "statewake.domain.security_incident",
+      "signature": "(recovery_id: 'str', evidence_ref: 'IncidentEvidenceReference', actor: 'str', source_incident_id: 'str', status: \"Literal['planned', 'applied', 'failed']\") -> None"
+    },
+    {
+      "name": "SecurityIncidentEvidence",
+      "kind": "type",
+      "module": "statewake.domain.security_incident",
+      "signature": "(incident_id: 'str', event_id: 'str', detected_at: 'datetime', actor: 'str', category: 'str', status: 'IncidentStatus', evidence_refs: 'tuple[IncidentEvidenceReference, ...]', affected_states: 'tuple[AffectedTrustState, ...]', security_event_digests: 'tuple[str, ...]', uncertainty: 'tuple[str, ...]' = (), key_compromise: 'KeyCompromiseImpact | None' = None, recovery: 'RecoveryEvidence | None' = None, post_recovery: 'PostRecoveryVerification | None' = None, incident_digest: 'str' = '') -> None"
+    },
+    {
+      "name": "derive_security_incident_id",
+      "kind": "function",
+      "module": "statewake",
+      "signature": "(*, event_id: 'str', detected_at: 'datetime', actor: 'str', category: 'str') -> 'str'"
+    },
+    {
+      "name": "verify_security_incident",
+      "kind": "function",
+      "module": "statewake",
+      "signature": "(incident: 'SecurityIncidentEvidence') -> 'None'"
     },
     {
       "name": "__version__",

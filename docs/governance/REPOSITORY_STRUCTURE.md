@@ -8,6 +8,7 @@ StateWake/
 ├── config/                  # canonical repository path configuration
 ├── docs/
 │   ├── user-guide/          # public product documentation
+│   ├── releases/            # source-controlled public release history and evidence boundaries
 │   ├── reference/           # API/SDK contracts
 │   ├── architecture/       # active system architecture and boundaries
 │   ├── specifications/     # versioned domain specifications

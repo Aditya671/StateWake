@@ -3,11 +3,6 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-# pyright: reportUnknownMemberType=false
-# pyright: reportUnknownVariableType=false
-# pyright: reportUnknownArgumentType=false
-# pyright: reportUnknownParameterType=false
-# pyright: reportMissingParameterType=false
 from statewake.domain.reliability_evidence import (
     EvidenceReference,
     ReliabilityEvidenceChain,

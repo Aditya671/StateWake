@@ -1,6 +1,6 @@
 [project]
 name = "statewake-ai"
-version = "0.1.1"
+version = "0.3.0"
 description = "Evidence-backed reliability infrastructure for AI systems."
 keywords = ["ai", "reliability", "agents", "evidence", "provenance", "verification"]
 classifiers = [
@@ -25,6 +25,14 @@ dependencies = [
     "filelock==3.32.4",
 ]
 
+[project.optional-dependencies]
+workspace = [
+    "duckdb==1.5.5",
+    "openpyxl==3.1.5",
+    "pyarrow==25.0.1",
+    "sqlalchemy==2.0.54",
+]
+
 [project.urls]
 Homepage = "https://github.com/Aditya671/StateWake"
 Repository = "https://github.com/Aditya671/StateWake"
@@ -38,7 +46,7 @@ Security = "https://github.com/Aditya671/StateWake/blob/main/SECURITY.md"
 dev = [
     "ruff==0.16.5",
     "pytest==9.1.1",
-    "pyright==1.1.414",
+    "mypy==2.3.1",
 ]
 
 [project.scripts]
@@ -82,16 +90,19 @@ quote-style = "double"
 indent-style = "space"
 line-ending = "auto"
 
-[tool.pyright]
-include = ["src"]
-exclude = ["**/node_modules", "**/.*", ".venv","**/__pycache__", "dist", "repository history", "tests"]
-pythonVersion = "3.11"
-typeCheckingMode = "strict"
-reportMissingImports = true
-reportMissingTypeStubs = false
-reportUnknownMemberType = true
-reportUnknownVariableType = true
-reportUnknownArgumentType = true
-reportUntypedFunctionDecorator = true
-reportUntypedBaseClass = true
-reportPrivateUsage = true
+[tool.mypy]
+python_version = "3.11"
+files = ["src", "tests", "scripts", "docs"]
+strict = true
+exclude = ["\\.venv", "repository history", "dist", "build"]
+warn_unused_ignores = false
+disable_error_code = ["import-untyped"]
+follow_imports = "silent"
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
+warn_return_any = false
+disable_error_code = ["type-arg"]

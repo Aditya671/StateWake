@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | Repository hygiene | no generated/transient artifacts in the release tree | repository verification |
 | Formatting/lint | Ruff check and format check pass | CI logs |
-| Typing | Pyright strict pass | CI logs |
+| Typing | mypy strict pass | CI logs |
 | Compilation | all active Python source compiles | compileall |
 | Unit/contract | complete applicable pytest/unittest suites pass | test report |
 | Public surface | imports, CLI, HTTP contracts remain valid | contract tests |

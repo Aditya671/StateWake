@@ -76,15 +76,15 @@ def main() -> int:
     for directory in EXPECTED_DIRECTORIES:
         if not (ROOT / directory).is_dir():
             failures.append(f"missing expected directory: {directory}")
-    for path in FORBIDDEN_PATHS:
-        if (ROOT / path).exists():
-            failures.append(f"obsolete repository path exists: {path}")
+    for forbidden_path in FORBIDDEN_PATHS:
+        if (ROOT / forbidden_path).exists():
+            failures.append(f"obsolete repository path exists: {forbidden_path}")
 
     scan_roots = (ROOT / "docs", ROOT / "scripts", ROOT / "tests", ROOT / "README.md")
     for scan_root in scan_roots:
-        paths = [scan_root] if scan_root.is_file() else scan_root.rglob("*")
-        for path in paths:
-            if not path.is_file() or path.suffix.lower() not in {
+        candidate_paths = [scan_root] if scan_root.is_file() else scan_root.rglob("*")
+        for candidate in candidate_paths:
+            if not candidate.is_file() or candidate.suffix.lower() not in {
                 ".md",
                 ".py",
                 ".txt",
@@ -92,11 +92,11 @@ def main() -> int:
                 ".yaml",
             }:
                 continue
-            text = path.read_text(encoding="utf-8")
+            text = candidate.read_text(encoding="utf-8")
             for identifier in FORBIDDEN_IDENTIFIERS:
                 if identifier in text:
                     failures.append(
-                        f"obsolete project identity {identifier!r}: {path.relative_to(ROOT)}"
+                        f"obsolete project identity {identifier!r}: {candidate.relative_to(ROOT)}"
                     )
     if failures:
         print("REPOSITORY STRUCTURE: FAIL")

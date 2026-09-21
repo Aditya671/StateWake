@@ -3,11 +3,6 @@
 The active test suite protects the public package behavior and integration boundaries.
 """
 
-# pyright: reportUnknownMemberType=false
-# pyright: reportUnknownVariableType=false
-# pyright: reportUnknownArgumentType=false
-# pyright: reportUnknownParameterType=false
-# pyright: reportMissingParameterType=false
 import json
 import sys
 import tempfile
@@ -70,7 +65,7 @@ def _refresh_lineage_graph(
     for role, ref in refs:
         node_id = role.replace(":", "-")
         role_node[role] = node_id
-        parents = () if role == "run" else ("run",)
+        parents: tuple[str, ...] = () if role == "run" else ("run",)
         nodes.append(
             ProvenanceNode(
                 node_id=node_id,

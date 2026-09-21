@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 import scripts.release.verify_release_candidate as verifier
@@ -36,3 +38,18 @@ def test_failed_gate_is_not_recorded_as_passed() -> None:
             assert payload["returncode"] == 7
         else:
             raise AssertionError("failed release gate was accepted")
+
+
+def test_tree_digest_excludes_generated_verification_evidence() -> None:
+    """Generated verification evidence must not change the source identity digest."""
+    with TemporaryDirectory() as directory:
+        root = Path(directory)
+        (root / "src").mkdir()
+        (root / "src" / "module.py").write_text("value = 1\n", encoding="utf-8")
+        with patch.object(verifier, "ROOT", root):
+            before = verifier.tree_digest()
+            (root / "verification").mkdir()
+            (root / "verification" / "release-candidate-evidence.json").write_text(
+                "{}\n", encoding="utf-8"
+            )
+            assert verifier.tree_digest() == before

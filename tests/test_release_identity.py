@@ -11,7 +11,7 @@ def test_public_identity_is_statewake() -> None:
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     assert 'name = "statewake-ai"' in pyproject
     assert 'statewake = "statewake.cli.main:main"' in pyproject
-    assert statewake.__version__ == "0.1.1"
+    assert statewake.__version__ == "0.3.0"
 
 
 def test_release_docs_exist() -> None:

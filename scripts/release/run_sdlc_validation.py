@@ -38,7 +38,7 @@ def command_plan(profile: str) -> list[tuple[str, list[str]]]:
             "ruff-format",
             [python, "-m", "ruff", "format", "--check", "src", "tests", "scripts"],
         ),
-        ("strict-typecheck", ["uv", "run", "pyright"]),
+        ("strict-typecheck", ["uv", "run", "mypy"]),
         (
             "source-compilation",
             [python, "-m", "compileall", "-q", "src", "tests", "scripts"],

@@ -82,7 +82,7 @@ class Scenario:
     profile_id: str
 
 
-SCENARIOS: Final = (
+SCENARIOS: tuple[Scenario, ...] = (
     Scenario(
         "payment-gateway",
         "Payment gateway authorization",

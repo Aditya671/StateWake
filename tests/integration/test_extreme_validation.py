@@ -9,4 +9,4 @@ def test_extreme_validation_matrix_passes() -> None:
     """Require every extreme validation probe to pass."""
     report = run()
     assert report["passed"] is True
-    assert report["probe_count"] == 8  # pyright: ignore[reportTypedDictNotRequiredAccess]
+    assert report.get("probe_count") == 8

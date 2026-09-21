@@ -95,7 +95,7 @@ jobs:
         run: uv run ruff check src tests scripts
 
       - name: Run strict type checks
-        run: uv run pyright
+        run: uv run mypy
 
       - name: Run test suite
         run: uv run pytest

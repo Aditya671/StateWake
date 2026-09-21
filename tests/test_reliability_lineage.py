@@ -3,11 +3,6 @@
 The active test suite protects the public package behavior and integration boundaries.
 """
 
-# pyright: reportUnknownMemberType=false
-# pyright: reportUnknownVariableType=false
-# pyright: reportUnknownArgumentType=false
-# pyright: reportUnknownParameterType=false
-# pyright: reportMissingParameterType=false
 from __future__ import annotations
 
 import json
@@ -63,7 +58,7 @@ def _graph(
     )
     if edges is None:
         edges = tuple((role.replace(":", "-"), "run") for role in refs if role != "run")
-    parents = {role: [] for role in refs}
+    parents: dict[str, list[str]] = {role: [] for role in refs}
     for child, parent in edges:
         parents[child].append(parent.replace(":", "-"))
     nodes = tuple(

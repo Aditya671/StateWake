@@ -2,11 +2,19 @@
 
 ## Current position
 
-**v0.1.1 — canonical Production/Stable baseline**
+**v0.3.0 — completed public release sequence through the Persistence & Dataset Architecture**
 
-The historical phase sequence is implementation evidence, not a roadmap authority. The current product is governed by the V1 architecture in `docs/architecture/ARCHITECTURE.md` and the source architecture in `docs/architecture/ARCHITECTURE.md` and ADR 0003.
+The release sequence records three deliberate boundaries: packaging stabilization at v0.1.1, cybersecurity completion at v0.2.0, and Persistence & Dataset completion at v0.3.0.
 
-## V1 lifecycle
+## Completed product progression
+
+```text
+v0.1.1  →  Production/Stable packaging promotion
+v0.2.0  →  Cybersecurity progression through V3 Tier 15
+v0.3.0  →  Persistence & Dataset Architecture through Tier 15
+```
+
+The underlying reliability lifecycle remains:
 
 ```text
 execution
@@ -20,21 +28,10 @@ execution
   → attestation / explainable decision
 ```
 
-## Completed V1 consolidation
+## Development boundary
 
-The verified `0.5.44`–`0.5.58` stream established the canonical evidence chain, external evidence receipt/admission, evidence-backed reliability state, outcome attestation and verification, portable proof, provenance/lineage closure, decision-basis binding, recovery binding, behavioral comparison, and discrepancy-to-reconciliation binding.
+The cybersecurity and persistence/dataset architecture roadmaps represented by the supplied design sources are complete at their respective Tier 15 boundaries. Future work should therefore be derived from an explicit architecture gap or adopter requirement rather than automatically inventing another tier sequence.
 
-## Current release gate
+## Release gate
 
-Before declaring a public production release, the repository must pass the integration gate defined in `docs/governance/VERSIONING.md` and `docs/governance/RELEASE_READINESS.md`.
-
-The package must work in two forms:
-
-1. **Library integration** — a clean external Python project can import the stable public API and consume the reliability lifecycle without importing internal modules.
-2. **Optional HTTP integration** — the WSGI adapter can expose verification capabilities without changing the framework-neutral core.
-
-No new feature phase is automatically authorized by this release gate. If the gate fails because of a genuine V1 architecture gap, that gap becomes the sole basis for the next development phase.
-
-## Historical implementation
-
-Detailed historical phase records are retained in the `repository history` historical archive for reference. They are not active development instructions.
+Before publication of the current candidate, run the repository release gates and external platform checks defined in `docs/governance/RELEASE_GOVERNANCE.md` and `docs/governance/RELEASE_CANDIDATE_PROTOCOL.md`.

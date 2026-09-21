@@ -17,9 +17,9 @@ They are intentionally credential-free and do not represent real payment, enterp
 From the repository root:
 
 ```bash
-PYTHONPATH=src:docs/examples/golden python docs/examples/golden/payment_reliability.py
-PYTHONPATH=src:docs/examples/golden python docs/examples/golden/enterprise_ai_reliability.py
-PYTHONPATH=src:docs/examples/golden python docs/examples/golden/municipal_decision_reliability.py
+PYTHONPATH=src:. python docs/examples/golden/payment_reliability.py
+PYTHONPATH=src:. python docs/examples/golden/enterprise_ai_reliability.py
+PYTHONPATH=src:. python docs/examples/golden/municipal_decision_reliability.py
 ```
 
 Each command prints JSON showing evidence receipt identity, chain verification, outcome verification, proof-bundle verification, tamper rejection, and the deliberate failure demonstrated by the application.

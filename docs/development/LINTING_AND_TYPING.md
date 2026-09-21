@@ -2,7 +2,7 @@
 
 The stabilized `src/` tree is the only runtime source tree. StateWake uses
 Ruff for formatting, import organization, linting, and PEP 257 docstring
-enforcement, with Pyright/Pylance in strict type-checking mode.
+enforcement, with mypy in strict type-checking mode.
 
 ## Ruff language server
 
@@ -23,11 +23,15 @@ import organization, and diagnostics on the native server path.
 ```bash
 uvx ruff check src tests scripts
 uvx ruff format --check src tests scripts
-uvx pyright
+uv run mypy
 ```
 
-Ruff is configured from `pyproject.toml`; Pyright uses the `[tool.pyright]`
-configuration and the VS Code Pylance workspace settings.
+Ruff and mypy are configured in `pyproject.toml`. Mypy checks all active Python
+code under `src/`, `tests/`, and `scripts/`. It applies strict rules to source
+and scripts, with fixture-friendly overrides for `tests/` so dynamic test
+doubles do not require exhaustive annotations. Imports from third-party
+packages without type information are excluded from mypy diagnostics;
+StateWake code remains checked.
 
 ## Documentation requirement
 

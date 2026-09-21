@@ -1,0 +1,289 @@
+0.1.1
+usage: statewake version [-h]
+
+options:
+  -h, --help  show this help message and exit
+usage: statewake evidence-ingest [-h] --artifact-store ARTIFACT_STORE
+                                 --receipt-store RECEIPT_STORE
+                                 --producer-type PRODUCER_TYPE
+                                 --producer-id PRODUCER_ID
+                                 [--producer-version PRODUCER_VERSION]
+                                 [--source-ref SOURCE_REF]
+                                 [--source-event-id SOURCE_EVENT_ID]
+                                 [--run-id RUN_ID] --captured-at CAPTURED_AT
+                                 [--metadata METADATA]
+                                 artifact
+
+positional arguments:
+  artifact
+
+options:
+  -h, --help            show this help message and exit
+  --artifact-store ARTIFACT_STORE
+  --receipt-store RECEIPT_STORE
+  --producer-type PRODUCER_TYPE
+  --producer-id PRODUCER_ID
+  --producer-version PRODUCER_VERSION
+  --source-ref SOURCE_REF
+  --source-event-id SOURCE_EVENT_ID
+  --run-id RUN_ID
+  --captured-at CAPTURED_AT
+  --metadata METADATA
+usage: statewake evidence-verify [-h] --artifact-store ARTIFACT_STORE
+                                 --receipt-store RECEIPT_STORE
+                                 path
+
+positional arguments:
+  path
+
+options:
+  -h, --help            show this help message and exit
+  --artifact-store ARTIFACT_STORE
+  --receipt-store RECEIPT_STORE
+usage: statewake evidence-admission-verify [-h] --receipt RECEIPT
+                                           --artifact ARTIFACT
+                                           [--receipt-file RECEIPT_FILE]
+                                           [--run-id RUN_ID]
+                                           [--producer-type PRODUCER_TYPE]
+                                           [--producer-id PRODUCER_ID]
+
+options:
+  -h, --help            show this help message and exit
+  --receipt RECEIPT
+  --artifact ARTIFACT
+  --receipt-file RECEIPT_FILE
+  --run-id RUN_ID
+  --producer-type PRODUCER_TYPE
+  --producer-id PRODUCER_ID
+usage: statewake reliability-comparison [-h] --output OUTPUT
+                                        [--before-evidence BEFORE_EVIDENCE]
+                                        [--after-evidence AFTER_EVIDENCE]
+                                        [--before-events BEFORE_EVENTS]
+                                        [--before-run-id BEFORE_RUN_ID]
+                                        [--after-events AFTER_EVENTS]
+                                        [--after-run-id AFTER_RUN_ID]
+                                        before_state after_state
+
+positional arguments:
+  before_state
+  after_state
+
+options:
+  -h, --help            show this help message and exit
+  --output OUTPUT
+  --before-evidence BEFORE_EVIDENCE
+  --after-evidence AFTER_EVIDENCE
+  --before-events BEFORE_EVENTS
+  --before-run-id BEFORE_RUN_ID
+  --after-events AFTER_EVENTS
+  --after-run-id AFTER_RUN_ID
+usage: statewake reliability-comparison-verify [-h] [--root ROOT] comparison
+
+positional arguments:
+  comparison
+
+options:
+  -h, --help   show this help message and exit
+  --root ROOT
+usage: statewake evidence-chain [-h] --run-id RUN_ID --run RUN
+                                --state-id STATE_ID --state STATE
+                                --evidence EVIDENCE
+                                [--evidence-receipt EVIDENCE_RECEIPT]
+                                --provenance PROVENANCE --integrity INTEGRITY
+                                [--verification-status {unverified,verified,failed}]
+                                [--reliability-state {unknown,reliable,degraded,unreliable,recovered}]
+                                [--reconciliation-state {pending,verified,stale,missing,invalid,recovered}]
+                                [--reconciliation RECONCILIATION]
+                                [--recovery RECOVERY]
+                                [--attestation ATTESTATION]
+                                [--decision-basis DECISION_BASIS]
+                                [--decision-basis-kind {decision-basis,policy}]
+                                [--comparison COMPARISON]
+                                [--reconciliation-binding RECONCILIATION_BINDING]
+                                [--decision {undecided,accept,review,reject}]
+                                [--rationale RATIONALE] --output OUTPUT
+
+options:
+  -h, --help            show this help message and exit
+  --run-id RUN_ID
+  --run RUN
+  --state-id STATE_ID
+  --state STATE
+  --evidence EVIDENCE
+  --evidence-receipt EVIDENCE_RECEIPT
+  --provenance PROVENANCE
+  --integrity INTEGRITY
+  --verification-status {unverified,verified,failed}
+  --reliability-state {unknown,reliable,degraded,unreliable,recovered}
+  --reconciliation-state {pending,verified,stale,missing,invalid,recovered}
+  --reconciliation RECONCILIATION
+  --recovery RECOVERY
+  --attestation ATTESTATION
+  --decision-basis DECISION_BASIS
+  --decision-basis-kind {decision-basis,policy}
+  --comparison COMPARISON
+  --reconciliation-binding RECONCILIATION_BINDING
+  --decision {undecided,accept,review,reject}
+  --rationale RATIONALE
+  --output OUTPUT
+usage: statewake reliability-state-transition [-h] --chain CHAIN
+                                              --history HISTORY --actor ACTOR
+                                              [--evidence-root EVIDENCE_ROOT]
+                                              [--occurred-at OCCURRED_AT]
+                                              [--rationale RATIONALE]
+                                              subject_id
+
+positional arguments:
+  subject_id
+
+options:
+  -h, --help            show this help message and exit
+  --chain CHAIN
+  --history HISTORY
+  --actor ACTOR
+  --evidence-root EVIDENCE_ROOT
+  --occurred-at OCCURRED_AT
+  --rationale RATIONALE
+usage: statewake reliability-state [-h] --history HISTORY subject_id
+
+positional arguments:
+  subject_id
+
+options:
+  -h, --help         show this help message and exit
+  --history HISTORY
+usage: statewake reliability-attest [-h] --chain CHAIN --history HISTORY
+                                    --attestation-store ATTESTATION_STORE
+                                    --actor ACTOR [--occurred-at OCCURRED_AT]
+                                    [--output OUTPUT]
+                                    subject_id
+
+positional arguments:
+  subject_id
+
+options:
+  -h, --help            show this help message and exit
+  --chain CHAIN
+  --history HISTORY
+  --attestation-store ATTESTATION_STORE
+  --actor ACTOR
+  --occurred-at OCCURRED_AT
+  --output OUTPUT
+usage: statewake reliability-attest-verify [-h] --attestation ATTESTATION
+                                           --chain CHAIN --history HISTORY
+                                           --subject-id SUBJECT_ID
+
+options:
+  -h, --help            show this help message and exit
+  --attestation ATTESTATION
+  --chain CHAIN
+  --history HISTORY
+  --subject-id SUBJECT_ID
+usage: statewake reliability-outcome-verify [-h] --attestation ATTESTATION
+                                            --chain CHAIN --history HISTORY
+                                            --subject-id SUBJECT_ID
+                                            --evidence-root EVIDENCE_ROOT
+
+options:
+  -h, --help            show this help message and exit
+  --attestation ATTESTATION
+  --chain CHAIN
+  --history HISTORY
+  --subject-id SUBJECT_ID
+  --evidence-root EVIDENCE_ROOT
+usage: statewake reliability-recovery-verify [-h] --chain CHAIN
+                                             --evidence-root EVIDENCE_ROOT
+
+options:
+  -h, --help            show this help message and exit
+  --chain CHAIN
+  --evidence-root EVIDENCE_ROOT
+usage: statewake reliability-lineage-verify [-h] --chain CHAIN
+                                            --evidence-root EVIDENCE_ROOT
+
+options:
+  -h, --help            show this help message and exit
+  --chain CHAIN
+  --evidence-root EVIDENCE_ROOT
+usage: statewake reliability-reconciliation-bind [-h] --output OUTPUT
+                                                 comparison reconciliation
+
+positional arguments:
+  comparison
+  reconciliation
+
+options:
+  -h, --help       show this help message and exit
+  --output OUTPUT
+usage: statewake reliability-reconciliation-verify [-h] [--root ROOT]
+                                                   binding comparison
+                                                   reconciliation
+
+positional arguments:
+  binding
+  comparison
+  reconciliation
+
+options:
+  -h, --help      show this help message and exit
+  --root ROOT
+usage: statewake reliability-proof-bundle [-h] --attestation ATTESTATION
+                                          --chain CHAIN --history HISTORY
+                                          --evidence-root EVIDENCE_ROOT
+                                          --output OUTPUT
+                                          [--signed-attestation SIGNED_ATTESTATION]
+                                          [--attestation-trust-state ATTESTATION_TRUST_STATE]
+                                          [--attestation-authority-store ATTESTATION_AUTHORITY_STORE]
+
+options:
+  -h, --help            show this help message and exit
+  --attestation ATTESTATION
+  --chain CHAIN
+  --history HISTORY
+  --evidence-root EVIDENCE_ROOT
+  --output OUTPUT
+  --signed-attestation SIGNED_ATTESTATION
+  --attestation-trust-state ATTESTATION_TRUST_STATE
+  --attestation-authority-store ATTESTATION_AUTHORITY_STORE
+usage: statewake reliability-proof-verify [-h] bundle
+
+positional arguments:
+  bundle
+
+options:
+  -h, --help  show this help message and exit
+usage: statewake reliability-proof-completeness-verify [-h] bundle
+
+positional arguments:
+  bundle
+
+options:
+  -h, --help  show this help message and exit
+usage: statewake reliability-decision-basis-build [-h] --chain CHAIN
+                                                  --evidence-root EVIDENCE_ROOT
+                                                  --output-basis OUTPUT_BASIS
+                                                  --output-chain OUTPUT_CHAIN
+                                                  [--profile PROFILE]
+
+options:
+  -h, --help            show this help message and exit
+  --chain CHAIN
+  --evidence-root EVIDENCE_ROOT
+  --output-basis OUTPUT_BASIS
+  --output-chain OUTPUT_CHAIN
+  --profile PROFILE
+usage: statewake release-proof [-h] --attestation ATTESTATION --chain CHAIN
+                               --history HISTORY --evidence-root EVIDENCE_ROOT
+                               --output OUTPUT [--profile PROFILE]
+                               [--report REPORT]
+
+options:
+  -h, --help            show this help message and exit
+  --attestation ATTESTATION
+  --chain CHAIN
+  --history HISTORY
+  --evidence-root EVIDENCE_ROOT
+  --output OUTPUT
+  --profile PROFILE
+  --report REPORT
+CLI surface: verified 21 supported commands

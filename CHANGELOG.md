@@ -1,5 +1,49 @@
 # Changelog
 
+## [v0.3.0] — Persistence & Dataset Architecture completion
+
+### Enhanced dependency and verification baseline
+
+- Declared the implemented optional workspace adapters in `pyproject.toml` through the `workspace` extra: DuckDB, PyArrow, openpyxl, and SQLAlchemy.
+- Synchronized `uv.lock` with the workspace adapter dependency set.
+- Documented the workspace installation path and clarified which persistence/export capabilities remain standard-library based.
+- Extended release verification to exercise the optional workspace dependency surface when those dependencies are available.
+- Revalidated Tier 8 supply-chain provenance after the dependency declaration/lock update; the dependency-lock digest and candidate fingerprint are regenerated for the enhanced artifact.
+
+StateWake v0.3.0 completes the Persistence & Dataset Architecture through Tier 15. This is a backward-compatible minor capability release built on the v0.2.0 cybersecurity baseline.
+
+### Included
+
+- Workspace foundation, durable operational index, ingestion binding, and restart/recovery guarantees.
+- Typed historical query surface and stable dataset projections.
+- Parquet, CSV, XLSX, JSON, and portable bundle exports.
+- Lifecycle, retention, integrity, and workspace verification.
+- Analytical access over Parquet through the optional DuckDB adapter.
+- Repository/backend abstraction.
+- Production workspace operations, locking, diagnostics, storage reporting, and operational guidance.
+
+The public API contract version remains `1`.
+
+## [v0.2.0] — Cybersecurity capability completion
+
+StateWake v0.2.0 completes the cybersecurity architecture through V3 Tier 15. This is a backward-compatible minor capability release.
+
+### Included
+
+- Security Assurance and Continuous Security Assurance.
+- Recovery and Resilience Assurance.
+- Trust-Domain and Anchor Assurance.
+- Supply-Chain and Release Assurance.
+- Evidence-Portability and Independent Verification Assurance.
+- Assurance Operations and security decision automation.
+- Identity-bound access and least privilege.
+- Runtime and hostile-input containment.
+- Data lifecycle and confidentiality protection.
+- Security incident evidence and forensic continuity.
+- Cryptographic longevity and trust migration.
+
+The public API contract version remains `1`.
+
 ## [v0.1.1] — Production/Stable packaging promotion
 
 StateWake v0.1.1 promotes the verified v0.1.0 public package baseline to the `Development Status :: 5 - Production/Stable` classifier. This is a backward-compatible packaging and release-governance patch; no intentional public API or data-contract break is introduced.

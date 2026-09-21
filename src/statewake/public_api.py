@@ -6,6 +6,7 @@ The functions in this module are the primary Python consumer contract.
 from __future__ import annotations
 
 from collections.abc import Mapping
+from datetime import datetime
 from pathlib import Path
 
 from .adapters.reliability_state import JsonlReliabilityStateStore
@@ -17,6 +18,7 @@ from .domain.reliability_outcome_verification import (
     ReliabilityOutcomeVerificationReport,
 )
 from .domain.reliability_state import ReliabilityStateSnapshot
+from .domain.security_incident import SecurityIncidentEvidence, derive_incident_id
 from .services.evidence_admission_service import admit_external_evidence
 from .services.reliability_evidence_service import (
     build_reliability_evidence_chain,
@@ -158,4 +160,18 @@ def read_reliability_state(
     """Read the authoritative current reliability state for a subject."""
     return current_reliability_state(
         subject_id, store=JsonlReliabilityStateStore(history_path)
+    )
+
+
+def verify_security_incident(incident: SecurityIncidentEvidence) -> None:
+    """Verify the forensic-continuity requirements of one security incident."""
+    incident.verify_forensic_continuity()
+
+
+def derive_security_incident_id(
+    *, event_id: str, detected_at: datetime, actor: str, category: str
+) -> str:
+    """Derive the deterministic identity used by a security-incident record."""
+    return derive_incident_id(
+        event_id=event_id, detected_at=detected_at, actor=actor, category=category
     )

@@ -1,6 +1,6 @@
 """Public package API for StateWake's stabilized reliability lifecycle."""
 
-__version__ = "0.1.1"
+__version__ = "0.3.0"
 __public_api_contract_version__ = "1"
 
 from .adapters.first_party_evidence import (
@@ -40,6 +40,14 @@ from .domain.reliability_state import (
 )
 from .domain.reliability_verification_report import ReliabilityVerificationReport
 from .domain.retention import EvidenceRetentionAdapter, EvidenceRetentionRequirement
+from .domain.security_incident import (
+    AffectedTrustState,
+    IncidentEvidenceReference,
+    KeyCompromiseImpact,
+    PostRecoveryVerification,
+    RecoveryEvidence,
+    SecurityIncidentEvidence,
+)
 from .domain.trust_anchor import (
     AnchorDiscrepancyError,
     Ed25519TrustCheckpointVerifier,
@@ -53,11 +61,13 @@ from .domain.trust_anchor import (
 from .public_api import (
     admit_evidence,
     build_evidence_chain,
+    derive_security_incident_id,
     load_evidence_chain,
     load_outcome_attestation,
     read_reliability_state,
     verify_evidence_chain,
     verify_outcome,
+    verify_security_incident,
     write_evidence_chain,
     write_outcome_attestation,
 )
@@ -168,6 +178,14 @@ __all__ = [
     "write_evidence_chain",
     "write_outcome_attestation",
     "write_verification_report",
+    "AffectedTrustState",
+    "IncidentEvidenceReference",
+    "KeyCompromiseImpact",
+    "PostRecoveryVerification",
+    "RecoveryEvidence",
+    "SecurityIncidentEvidence",
+    "derive_security_incident_id",
+    "verify_security_incident",
     "__version__",
     "__public_api_contract_version__",
 ]

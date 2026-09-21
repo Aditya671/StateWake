@@ -10,6 +10,7 @@ import sys
 from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 PROJECT_CONFIG_BOOTSTRAP = Path(__file__).resolve().parents[2]
 if str(PROJECT_CONFIG_BOOTSTRAP) not in sys.path:
@@ -18,7 +19,17 @@ if str(PROJECT_CONFIG_BOOTSTRAP) not in sys.path:
 from config.project_paths import PROJECT_ROOT, VERIFICATION_PATH  # noqa: E402
 
 ROOT = PROJECT_ROOT
-EXPECTED_VERSION = "0.1.1"
+
+
+def _project_version() -> str:
+    """Read the authoritative package version from pyproject.toml."""
+    import tomllib
+
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    return str(project["project"]["version"])
+
+
+EXPECTED_VERSION = _project_version()
 REQUIRED_DOCS = (
     "docs/user-guide/index.md",
     "docs/user-guide/release.md",
@@ -63,7 +74,16 @@ def run_gate(name: str, command: Sequence[str], *, timeout: int) -> dict[str, ob
 def tree_digest() -> str:
     """Return a deterministic digest of tracked release-source bytes."""
     digest = hashlib.sha256()
-    excluded = {".git", ".pytest_cache", "__pycache__", "dist", "build"}
+    excluded = {
+        ".git",
+        ".pytest_cache",
+        "__pycache__",
+        "dist",
+        "build",
+        "verification",
+        "candidate-fingerprint.txt",
+        "verification_manifest.txt",
+    }
     paths = sorted(
         path
         for path in ROOT.rglob("*")
@@ -84,10 +104,10 @@ def static_contract() -> dict[str, object]:
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     package = (ROOT / "src/statewake/__init__.py").read_text(encoding="utf-8")
     missing = [path for path in REQUIRED_DOCS if not (ROOT / path).is_file()]
-    if 'version = "0.1.1"' not in pyproject:
-        raise GateFailureError("release candidate version is not v0.1.1")
-    if '__version__ = "0.1.1"' not in package:
-        raise GateFailureError("package version is not 0.1.1")
+    if f'version = "{EXPECTED_VERSION}"' not in pyproject:
+        raise GateFailureError(f"release candidate version is not v{EXPECTED_VERSION}")
+    if f'__version__ = "{EXPECTED_VERSION}"' not in package:
+        raise GateFailureError(f"package version is not {EXPECTED_VERSION}")
     if missing:
         raise GateFailureError("missing release documents: " + ", ".join(missing))
     return {"name": "release-contract", "status": "passed", "missing": []}
@@ -137,7 +157,7 @@ def main() -> int:
         for name, command in commands:
             gates.append(run_gate(name, command, timeout=args.timeout))
     except (GateFailureError, subprocess.TimeoutExpired) as exc:
-        record = {
+        record: dict[str, Any] = {
             "status": "failed",
             "version": EXPECTED_VERSION,
             "generated_at": datetime.now(UTC).isoformat(),
