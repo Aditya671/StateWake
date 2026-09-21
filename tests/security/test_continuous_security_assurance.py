@@ -10,7 +10,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import ModuleType
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 MODULE_PATH = ROOT / "scripts/security/verify_continuous_security_assurance.py"
 
 
@@ -37,7 +37,20 @@ class ContinuousSecurityAssuranceTests(unittest.TestCase):
         """Prepare a temporary copy and a promoted baseline snapshot."""
         self.temp_dir = TemporaryDirectory()
         self.root = Path(self.temp_dir.name) / "project"
-        shutil.copytree(ROOT, self.root)
+        shutil.copytree(
+            ROOT,
+            self.root,
+            ignore=shutil.ignore_patterns(
+                ".git",
+                ".mypy_cache",
+                ".pytest_cache",
+                ".ruff_cache",
+                ".venv",
+                "__pycache__",
+                "build",
+                "dist",
+            ),
+        )
         self.baseline_path = (
             self.root / "docs/security/security_assurance_baseline_manifest.txt"
         )

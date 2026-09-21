@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum
 
@@ -37,7 +37,7 @@ class Principal:
 
     principal_id: str
     roles: tuple[str, ...] = ()
-    resource_scopes: Mapping[str, tuple[str, ...]] = {}
+    resource_scopes: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
     status: PrincipalStatus = PrincipalStatus.ACTIVE
     expires_at: datetime | None = None
 
