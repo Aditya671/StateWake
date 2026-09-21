@@ -77,7 +77,6 @@ def source_tree_digest(root: Path = ROOT) -> str:
         if path.is_file()
         and not any(part in EXCLUDED_TREE_PARTS for part in path.parts)
         and path.name not in EXCLUDED_TREE_FILES
-        and path.name not in EXCLUDED_TREE_FILES
     )
     for path in paths:
         relative = path.relative_to(root).as_posix().encode("utf-8")

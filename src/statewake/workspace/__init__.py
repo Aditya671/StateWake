@@ -1,27 +1,35 @@
 """Public workspace foundation for durable StateWake state."""
 
-from .analytical import (
+from statewake.workspace.analytical import (
     AnalyticalAccessError,
     AnalyticalQueryResult,
     DuckDBAnalyticalAdapter,
 )
-from .backup import WorkspaceBackupError, WorkspaceBackupResult, create_workspace_backup
-from .configuration import WorkspaceConfiguration
-from .csv_export import CsvExportError, CsvExportResult
-from .errors import (
+from statewake.workspace.backup import (
+    WorkspaceBackupError,
+    WorkspaceBackupResult,
+    create_workspace_backup,
+)
+from statewake.workspace.configuration import WorkspaceConfiguration
+from statewake.workspace.csv_export import CsvExportError, CsvExportResult
+from statewake.workspace.errors import (
     CorruptWorkspaceDatabaseError,
     UnsupportedWorkspaceSchemaError,
     WorkspaceRepositoryError,
 )
-from .integration import WorkspaceIngestionAdapter
-from .integrity_sweep import (
+from statewake.workspace.integration import WorkspaceIngestionAdapter
+from statewake.workspace.integrity_sweep import (
     WorkspaceIntegritySweepError,
     WorkspaceIntegritySweepResult,
     sweep_workspace_payload_integrity,
 )
-from .json_export import JSON_FORMAT, JsonExportError, JsonExportResult
-from .lifecycle import WorkspaceLifecycle, WorkspaceLifecycleResult
-from .models import (
+from statewake.workspace.json_export import (
+    JSON_FORMAT,
+    JsonExportError,
+    JsonExportResult,
+)
+from statewake.workspace.lifecycle import WorkspaceLifecycle, WorkspaceLifecycleResult
+from statewake.workspace.models import (
     WorkspaceExport,
     WorkspaceIdentity,
     WorkspaceQueryPage,
@@ -30,19 +38,19 @@ from .models import (
     WorkspaceRecordQuery,
     WorkspaceRetention,
 )
-from .operations import (
+from statewake.workspace.operations import (
     WorkspaceDiagnostics,
     WorkspaceDiagnosticsCollector,
     WorkspaceOperationLock,
     WorkspaceStorageReport,
 )
-from .parquet_export import ParquetExportError, ParquetExportResult
-from .portable_bundle import (
+from statewake.workspace.parquet_export import ParquetExportError, ParquetExportResult
+from statewake.workspace.portable_bundle import (
     BUNDLE_FORMAT,
     PortableBundleError,
     PortableBundleResult,
 )
-from .projections import (
+from statewake.workspace.projections import (
     DATASET_PROJECTION_SCHEMA_VERSION,
     DatasetProjection,
     DeletionProjection,
@@ -52,26 +60,26 @@ from .projections import (
     RunProjection,
     StateTransitionProjection,
 )
-from .restore import (
+from statewake.workspace.restore import (
     WorkspaceRestoreError,
     WorkspaceRestoreResult,
     restore_workspace_backup,
 )
-from .sqlalchemy_repository import SqlAlchemyWorkspaceRepository
-from .sqlite_repository import SqliteWorkspaceRepository
-from .verification import (
+from statewake.workspace.sqlalchemy_repository import SqlAlchemyWorkspaceRepository
+from statewake.workspace.sqlite_repository import SqliteWorkspaceRepository
+from statewake.workspace.verification import (
     WorkspaceVerificationIssue,
     WorkspaceVerificationReport,
     WorkspaceVerificationStatus,
     WorkspaceVerifier,
 )
-from .workspace import (
+from statewake.workspace.workspace import (
     StateWakeWorkspace,
     WorkspaceError,
     WorkspaceManifestError,
     WorkspaceSchemaError,
 )
-from .xlsx_export import XlsxExportError, XlsxExportResult
+from statewake.workspace.xlsx_export import XlsxExportError, XlsxExportResult
 
 __all__ = [
     "StateWakeWorkspace",

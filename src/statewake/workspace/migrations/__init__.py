@@ -1,6 +1,6 @@
 """Versioned workspace migration registry."""
 
-from .registry import (
+from statewake.workspace.migrations.registry import (
     MIGRATION_IDS,
     MigrationRecord,
     ensure_migration_ledger,
