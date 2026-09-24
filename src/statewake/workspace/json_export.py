@@ -123,17 +123,6 @@ def verify_json(
         raise JsonExportError("JSON dataset schema version is missing.")
 
 
-def _canonical_json_bytes(payload: dict[str, object]) -> bytes:  # type: ignore
-    """Return the canonical JSON bytes used for deterministic hashing."""
-    return json.dumps(
-        payload,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-        allow_nan=False,
-    ).encode(JSON_ENCODING)
-
-
 __all__ = [
     "JSON_FORMAT",
     "JSON_SCHEMA_VERSION",

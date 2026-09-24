@@ -36,6 +36,38 @@ jobs:
           name: release-dist
           path: dist/
 
+  native-sdk-integrations:
+    # These checks must use installed SDKs: importorskip-only tests cannot
+    # establish compatibility when optional dependencies were not installed.
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12', '3.13']
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - run: uv python install ${{ matrix.python-version }}
+      - run: uv lock --check
+      - run: uv sync --locked --python ${{ matrix.python-version }} --all-extras --group dev
+      - name: Require real native SDKs before compatibility tests
+        run: >-
+          uv run --no-sync python -c
+          "import agents.tracing.processor_interface;
+          import langchain_core.callbacks.base;
+          import langgraph.graph;
+          import llama_index.core.instrumentation.event_handlers;
+          import opentelemetry.sdk.trace"
+      - name: Run native SDK import and capture tests
+        run: >-
+          uv run --no-sync python -m pytest -q
+          tests/unit/integrations/test_native_sdk_import_contracts.py
+          tests/unit/integrations/test_native_sdk_capture.py
+          tests/unit/integrations/test_native_evidence_boundaries.py
+
   clean-consumer:
     needs: build
     strategy:

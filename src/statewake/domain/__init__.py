@@ -70,6 +70,10 @@ from .privacy import (
     Redactor,
     redact_events,
 )
+from .producer_authentication import (
+    AuthenticatedProducerReceipt,
+    authenticate_producer_receipt,
+)
 from .provenance import IntegrityProof, ProvenanceGraph, ProvenanceNode
 from .reliability_attestation import (
     ReliabilityOutcomeAttestation,
@@ -150,6 +154,8 @@ __all__ = [
     "EvidenceRetentionRequirement",
     "ExternalEvidenceAdmission",
     "ExternalEvidenceReceipt",
+    "AuthenticatedProducerReceipt",
+    "authenticate_producer_receipt",
     "FieldChange",
     "EventEnvelope",
     "IntegrityProof",

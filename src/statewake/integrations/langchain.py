@@ -17,6 +17,7 @@ from .base import (
     metadata_without_payload,
     optional_string,
     parse_time,
+    required_observed_mapping,
     required_string,
 )
 
@@ -42,12 +43,8 @@ def capture_langchain_model_event(event: Mapping[str, Any]) -> ContractCaptureRe
         parameters=json_object_from_mapping(
             data.get("parameters", {}), field="parameters"
         ),
-        request_digest=digest_json(
-            json_object_from_mapping(data.get("request", {}), field="request")
-        ),
-        response_digest=digest_json(
-            json_object_from_mapping(data.get("response", {}), field="response")
-        ),
+        request_digest=digest_json(required_observed_mapping(data, field="request")),
+        response_digest=digest_json(required_observed_mapping(data, field="response")),
         finish_reason=optional_string(data.get("finish_reason")),
         captured_at=parse_time(data.get("captured_at")),
         metadata=metadata_without_payload(
@@ -77,12 +74,8 @@ def capture_langchain_tool_event(event: Mapping[str, Any]) -> ContractCaptureRes
         schema_version=required_string(
             data.get("schema_version", "unknown"), field="schema_version"
         ),
-        input_digest=digest_json(
-            json_object_from_mapping(data.get("input", {}), field="input")
-        ),
-        output_digest=digest_json(
-            json_object_from_mapping(data.get("output", {}), field="output")
-        ),
+        input_digest=digest_json(required_observed_mapping(data, field="input")),
+        output_digest=digest_json(required_observed_mapping(data, field="output")),
         execution_status=required_string(
             data.get("execution_status", "unknown"), field="execution_status"
         ),
@@ -112,9 +105,7 @@ def capture_langchain_retriever_event(
         ),
         corpus_digest=optional_string(data.get("corpus_digest")),
         corpus_snapshot_id=optional_string(data.get("corpus_snapshot_id")),
-        query_digest=digest_json(
-            json_object_from_mapping(data.get("query", {}), field="query")
-        ),
+        query_digest=digest_json(required_observed_mapping(data, field="query")),
         retrieved_item_ids=tuple(
             str(item) for item in data.get("retrieved_item_ids", ())
         ),

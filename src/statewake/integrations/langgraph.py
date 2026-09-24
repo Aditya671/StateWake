@@ -13,6 +13,7 @@ from .base import (
     metadata_without_payload,
     optional_string,
     parse_time,
+    required_observed_time,
     required_string,
 )
 
@@ -27,8 +28,8 @@ def capture_langgraph_run_event(event: Mapping[str, Any]) -> ContractCaptureResu
         ),
         run_id=required_string(data.get("run_id"), field="run_id"),
         framework="langgraph",
-        started_at=parse_time(data.get("start_time", data.get("captured_at"))),
-        ended_at=parse_time(data.get("end_time", data.get("captured_at"))),
+        started_at=required_observed_time(data, field="start_time"),
+        ended_at=required_observed_time(data, field="end_time"),
         captured_at=parse_time(data.get("captured_at")),
         trace_id=required_string(
             data.get("trace_id", data.get("run_id")), field="trace_id"

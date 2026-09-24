@@ -1,3 +1,10 @@
+
+> **Native SDK development candidate:** The unpromoted integration changes in this
+> source tree are not covered by the historical v0.2.0/v0.3.0/v0.4.0 release
+> verification records. Until the integration extras are resolved in `uv.lock`
+> and verified against installed SDKs, do not interpret package metadata or
+> historical benchmark reports as native-SDK release qualification.
+
 # StateWake
 
 > **Evidence-backed reliability infrastructure for AI systems.**

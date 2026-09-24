@@ -18,6 +18,8 @@ from .base import (
     metadata_without_payload,
     optional_string,
     parse_time,
+    required_observed_mapping,
+    required_observed_time,
     required_string,
 )
 
@@ -34,8 +36,8 @@ def capture_openai_agent_trace(trace: object) -> ContractCaptureResult:
             data.get("run_id", data.get("trace_id")), field="run_id"
         ),
         framework="openai-agents",
-        started_at=parse_time(data.get("start_time", data.get("captured_at"))),
-        ended_at=parse_time(data.get("end_time", data.get("captured_at"))),
+        started_at=required_observed_time(data, field="start_time"),
+        ended_at=required_observed_time(data, field="end_time"),
         captured_at=parse_time(data.get("captured_at")),
         trace_id=required_string(
             data.get("trace_id", data.get("run_id")), field="trace_id"
@@ -71,12 +73,8 @@ def capture_openai_agent_model_event(event: Mapping[str, Any]) -> ContractCaptur
         parameters=json_object_from_mapping(
             data.get("parameters", {}), field="parameters"
         ),
-        request_digest=digest_json(
-            json_object_from_mapping(data.get("request", {}), field="request")
-        ),
-        response_digest=digest_json(
-            json_object_from_mapping(data.get("response", {}), field="response")
-        ),
+        request_digest=digest_json(required_observed_mapping(data, field="request")),
+        response_digest=digest_json(required_observed_mapping(data, field="response")),
         finish_reason=optional_string(data.get("finish_reason")),
         captured_at=parse_time(data.get("captured_at")),
         metadata=metadata_without_payload(
@@ -107,12 +105,8 @@ def capture_openai_agent_tool_event(event: Mapping[str, Any]) -> ContractCapture
         schema_version=required_string(
             data.get("schema_version", "unknown"), field="schema_version"
         ),
-        input_digest=digest_json(
-            json_object_from_mapping(data.get("input", {}), field="input")
-        ),
-        output_digest=digest_json(
-            json_object_from_mapping(data.get("output", {}), field="output")
-        ),
+        input_digest=digest_json(required_observed_mapping(data, field="input")),
+        output_digest=digest_json(required_observed_mapping(data, field="output")),
         execution_status=required_string(
             data.get("execution_status", "unknown"), field="execution_status"
         ),

@@ -1,7 +1,7 @@
 # StateWake Comparative Validation Study
 
 **Study ID:** `phase7-d0a7f7cb840c`
-**Digest:** `fed06511205b959f9c8cbd595e17319be8c04a9319089a451d04a3187740eea3`
+**Digest:** `24a2101cdcfc2797930220c2383fc51f800db12069d5aacdb83668c1782a4717`
 
 ## Metrics
 
@@ -9,7 +9,7 @@
 |---|---:|---:|---:|---:|
 | conventional_logs | 0.034 | 0.000 | 0.000 | 10 |
 | final_output_only | 0.034 | 0.000 | 0.000 | 10 |
-| statewake_full | 1.000 | 1.000 | 0.000 | 10 |
+| statewake_full | 1.000 | 0.571 | 0.000 | 10 |
 | structured_traces | 0.069 | 0.000 | 0.000 | 10 |
 
 ## Limitations
@@ -72,7 +72,7 @@
 ### rag_answer / statewake_full
 
 - Injected faults: omitted_evidence, stale_corpus
-- Detected faults: omitted_evidence, stale_corpus
+- Detected faults: omitted_evidence
 - Checkable properties: 6 / 6
 - Profile satisfied: False
 
@@ -128,7 +128,7 @@
 ### tool_action / statewake_full
 
 - Injected faults: missing_tool_authorization, modified_tool_output
-- Detected faults: missing_tool_authorization, modified_tool_output
+- Detected faults: modified_tool_output
 - Checkable properties: 6 / 6
 - Profile satisfied: True
 
@@ -240,7 +240,7 @@
 ### release_verification / statewake_full
 
 - Injected faults: unsigned_release_artifact
-- Detected faults: unsigned_release_artifact
+- Detected faults: none
 - Checkable properties: 6 / 6
 - Profile satisfied: True
 

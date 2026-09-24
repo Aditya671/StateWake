@@ -199,3 +199,83 @@ def test_backup_rejects_unverified_workspace(tmp_path: Path) -> None:
 
     with pytest.raises(WorkspaceError):
         workspace.backup(tmp_path / "backup.zip")
+
+
+def test_backup_records_consistent_single_read_bytes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Archive checksum must bind the same bytes actually written into the ZIP."""
+    workspace = StateWakeWorkspace.open(tmp_path / "source")
+    workspace.ingest(
+        b"immutable-artifact",
+        producer_type="test",
+        producer_id="tester",
+        source_ref="one-read",
+        captured_at=datetime(2026, 9, 23, tzinfo=UTC),
+    )
+    original = Path.read_bytes
+    artifact_reads: dict[str, int] = {}
+
+    def counting_read(path: Path) -> bytes:
+        if "artifacts" in path.parts:
+            name = str(path)
+            artifact_reads[name] = artifact_reads.get(name, 0) + 1
+            if artifact_reads[name] > 1:
+                return b"changed-between-checksum-and-archive"
+        return original(path)
+
+    monkeypatch.setattr(Path, "read_bytes", counting_read)
+    from statewake.workspace.backup import create_workspace_backup
+
+    backup = create_workspace_backup(
+        workspace.root,
+        tmp_path / "backup.zip",
+        workspace_id=workspace.identity.workspace_id,
+        schema_version=workspace.identity.schema_version,
+    )
+    # Restrict the instrumented read count to backup creation, not restore.
+    assert max(artifact_reads.values()) == 1
+    monkeypatch.undo()
+    restored = StateWakeWorkspace.restore_backup(
+        backup.output_path, tmp_path / "restored"
+    )
+    assert restored.restored_files == backup.file_count
+
+
+def test_backup_includes_committed_wal_state_without_sidecar(
+    tmp_path: Path,
+) -> None:
+    """SQLite backup API must include committed WAL data in one DB image."""
+    workspace = StateWakeWorkspace.open(tmp_path / "source")
+    record = workspace.ingest(
+        b"wal-payload",
+        producer_type="test",
+        producer_id="tester",
+        source_ref="wal-state",
+        captured_at=datetime(2026, 9, 23, tzinfo=UTC),
+    )
+    with sqlite3.connect(workspace.configuration.database_path) as database:
+        database.execute("PRAGMA wal_autocheckpoint=0")
+        database.execute(
+            "UPDATE records SET verification_status = ? WHERE record_id = ?",
+            ("verified", record.record_id),
+        )
+        database.commit()
+        backup = workspace.backup(tmp_path / "backup.zip")
+        with ZipFile(backup.output_path) as archive:
+            assert "statewake.db" in archive.namelist()
+            assert not any(
+                name.endswith(("-wal", "-shm")) for name in archive.namelist()
+            )
+        restored = StateWakeWorkspace.restore_backup(
+            backup.output_path, tmp_path / "restored"
+        )
+    with sqlite3.connect(restored.workspace_root / "statewake.db") as db:
+        assert (
+            db.execute(
+                "SELECT verification_status FROM records WHERE record_id = ?",
+                (record.record_id,),
+            ).fetchone()[0]
+            == "verified"
+        )
+    assert StateWakeWorkspace.open(restored.workspace_root).get_record(record.record_id)

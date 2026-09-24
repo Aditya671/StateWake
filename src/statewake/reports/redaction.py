@@ -25,9 +25,9 @@ SENSITIVE_KEYS = frozenset(
 def canonical_payload_digest(payload: Mapping[str, Any]) -> str:
     """Return a deterministic digest for a JSON-compatible payload."""
     return sha256(
-        json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str).encode(
-            "utf-8"
-        )
+        json.dumps(
+            payload, sort_keys=True, separators=(",", ":"), allow_nan=False
+        ).encode("utf-8")
     ).hexdigest()
 
 
@@ -36,14 +36,33 @@ def redacted_payload_reference(
 ) -> dict[str, Any]:
     """Return a redacted inspection payload while preserving the original digest."""
     digest = canonical_payload_digest(payload)
-    visible: dict[str, Any] = {}
     redacted_keys: list[str] = []
-    for key, value in sorted(payload.items()):
-        if key in sensitive_keys:
-            visible[key] = "<redacted>"
-            redacted_keys.append(key)
-        else:
-            visible[key] = value
+
+    def redact(value: Any, location: str) -> Any:
+        if isinstance(value, Mapping):
+            visible: dict[str, Any] = {}
+            for key, child in sorted(value.items()):
+                if not isinstance(key, str):
+                    raise ValueError("redaction payload keys must be strings")
+                path = f"{location}.{key}" if location else key
+                normalized = key.lower().replace("-", "_").replace(".", "_")
+                if normalized in sensitive_keys or any(
+                    marker in normalized
+                    for marker in ("api_key", "password", "secret", "token")
+                ):
+                    visible[key] = "<redacted>"
+                    redacted_keys.append(path)
+                else:
+                    visible[key] = redact(child, path)
+            return visible
+        if isinstance(value, (list, tuple)):
+            return [
+                redact(child, f"{location}[{index}]")
+                for index, child in enumerate(value)
+            ]
+        return value
+
+    visible = redact(payload, "")
     return {
         "payload_digest": digest,
         "redacted": bool(redacted_keys),

@@ -1,5 +1,12 @@
 """Release-trust evidence for StateWake package artifacts."""
 
+from .authenticity import (
+    AuthenticatedReleaseAssessment,
+    ReleaseAuthenticityVerification,
+    assess_authenticated_release,
+    release_signature_payload,
+    verify_release_authenticity,
+)
 from .bundle import (
     evaluate_release_trust_bundle,
     load_release_trust_bundle,
@@ -8,6 +15,7 @@ from .bundle import (
     verify_release_trust_bundle,
     write_release_trust_bundle,
 )
+from .content_verification import ReleaseContentVerification, verify_release_trust_files
 from .model import (
     ArtifactDigest,
     BuildProvenance,
@@ -18,6 +26,13 @@ from .model import (
 )
 
 __all__ = [
+    "ReleaseAuthenticityVerification",
+    "AuthenticatedReleaseAssessment",
+    "assess_authenticated_release",
+    "release_signature_payload",
+    "verify_release_authenticity",
+    "ReleaseContentVerification",
+    "verify_release_trust_files",
     "ArtifactDigest",
     "BuildProvenance",
     "ExternalEvidence",

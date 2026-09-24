@@ -158,10 +158,18 @@ class SqliteWorkspaceRepository(StateWakeRepository):
                 values,
             )
             return
-        if tuple(existing) != values[1:5]:
+        # A run can contain many captures at different times. Its identity is
+        # the run ID and producer authority, not its first capture timestamp.
+        # The observed time range remains derived from the actual records.
+        if tuple(existing[:3]) != values[1:4]:
             raise WorkspaceRecordConflictError(
                 f"workspace run identity conflict: {record.run_id}"
             )
+        database.execute(
+            "UPDATE runs SET started_at = MIN(started_at, ?), "
+            "finished_at = MAX(finished_at, ?) WHERE run_id = ?",
+            (values[4], values[4], record.run_id),
+        )
 
     @staticmethod
     def _record_values(record: WorkspaceRecord) -> tuple[object, ...]:

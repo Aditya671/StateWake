@@ -39,7 +39,7 @@ Use the workspace method:
 backup = workspace.backup(Path("backup.zip"))
 ```
 
-A backup is created only after workspace verification succeeds. The backup ZIP includes a backup manifest, checksums, the SQLite index, manifest, receipts, artifacts, exports, and other durable workspace files. Lock files and temporary files are not included.
+A backup is created only after workspace verification succeeds. The backup ZIP includes a backup manifest, checksums, the SQLite index, manifest, receipts, artifacts, exports, and other durable workspace files. Lock files and temporary files are not included. SQLite is captured through the online backup API into a standalone database image containing committed WAL changes; WAL/SHM sidecars are excluded. Checksums are calculated from the exact bytes written to each archive member. A workspace backup assumes all StateWake mutations respect the workspace operation lock; noncooperative external filesystem writers are not covered.
 
 ## Restore
 

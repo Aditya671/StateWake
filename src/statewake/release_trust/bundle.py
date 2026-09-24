@@ -132,14 +132,14 @@ def release_claim_chain_from_bundle(
         reconciliation_state="verified",
         decision="accept" if bundle.human_decision.decision == "approved" else "review",
         decision_rationale=(
-            "Release trust evidence verified; publication authorization remains separate.",
+            "Release-trust references supplied; content and trust must be checked separately.",
             *bundle.limitations,
         ),
     )
 
 
 def evaluate_release_trust_bundle(bundle: ReleaseTrustBundle) -> ClaimProfileEvaluation:
-    """Evaluate the Phase 2 release profile against a Phase 6 trust bundle."""
+    """Evaluate bundle *structure*; this does not verify referenced files or signatures."""
     profile = get_builtin_claim_profile("release_evidence_complete.v1")
     return evaluate_claim_profile(release_claim_chain_from_bundle(bundle), profile)
 

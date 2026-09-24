@@ -5,12 +5,17 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from statewake.utils.json_support import load_object
 
 from ..domain.reliability_claim_profile import ReliabilityClaimProfile
 from ..domain.reliability_evidence import EvidenceReference, ReliabilityEvidenceChain
 from ..services.persistence import atomic_write_text
+
+if TYPE_CHECKING:
+    from statewake.workspace import StateWakeWorkspace
+    from statewake.workspace.models import WorkspaceRecord
 
 _PROFILE_EVALUATION_FORMAT_VERSION = "1"
 _AI_CONTRACT_PREFIX = "ai-contract:"
@@ -109,14 +114,21 @@ def _reference_matches_ai_contract(
     contract_type: str,
 ) -> bool:
     """Return whether one evidence reference points at an AI contract type."""
-    direct_kind = f"ai-contract:{contract_type}"
-    if reference.kind == direct_kind:
-        return True
-    if reference.identity.startswith(f"{_AI_CONTRACT_PREFIX}{contract_type}:"):
-        return True
-    if reference.source and contract_type in reference.source:
-        return True
-    return False
+    # The source field is descriptive and caller controlled, never an authority.
+    # Both a typed reference and the generic evidence reference require a
+    # contract-prefixed identity: the kind alone is also caller controlled.
+    contract_aliases = {
+        "prompt_evidence": "prompt",
+        "retrieval_evidence": "retrieval",
+        "policy_evidence": "policy",
+        "human_approval": "human_approval",
+    }
+    accepted = {contract_type, contract_aliases.get(contract_type, contract_type)}
+    return reference.kind in {"evidence", f"ai-contract:{contract_type}"} and any(
+        reference.identity.startswith(f"{_AI_CONTRACT_PREFIX}{name}:")
+        and len(reference.identity) > len(f"{_AI_CONTRACT_PREFIX}{name}:")
+        for name in accepted
+    )
 
 
 def _has_ai_contract(chain: ReliabilityEvidenceChain, contract_type: str) -> bool:
@@ -459,3 +471,107 @@ def get_builtin_claim_profile(
         return profile
     canonical_profile_id = _LEGACY_PROFILE_ALIASES.get(profile_id, profile_id)
     return _BUILTIN_REGISTRY.get(canonical_profile_id, version)
+
+
+def evaluate_claim_profile_with_workspace(
+    chain: ReliabilityEvidenceChain,
+    profile: ReliabilityClaimProfile,
+    workspace: StateWakeWorkspace,
+) -> ClaimProfileEvaluation:
+    """Check required AI contracts against persisted receipt and payload bytes.
+
+    This supplements, rather than silently changes, the legacy structural API.
+    A valid reference string alone can never satisfy this content-backed path.
+    The verified fact is *the persisted contract content and receipt*, not the
+    truth of an external producer's assertions or a human release approval.
+    """
+    from dataclasses import replace
+    from hashlib import sha256
+
+    from statewake.adapters.content_store import ContentAddressedArtifactStore
+    from statewake.workspace.models import WorkspaceRecordQuery
+
+    structural = evaluate_claim_profile(chain, profile)
+    if not profile.required_ai_contract_types:
+        return structural
+    store = ContentAddressedArtifactStore(workspace.configuration.artifact_root)
+    failures: list[str] = []
+    # The workspace query is paginated; a reference cannot be satisfied just
+    # because its target fell outside the first 1000 records.
+    records: list[WorkspaceRecord] = []
+    offset = 0
+    while True:
+        page = workspace.query(WorkspaceRecordQuery(limit=1000, offset=offset))
+        records.extend(page.records)
+        if not page.has_more:
+            break
+        offset += len(page.records)
+
+    for contract_type in profile.required_ai_contract_types:
+        aliases = {
+            "prompt_evidence": "prompt",
+            "retrieval_evidence": "retrieval",
+            "policy_evidence": "policy",
+            "evaluator_evidence": "evaluator",
+        }
+        accepted = {contract_type, aliases.get(contract_type, contract_type)}
+        resolved = False
+        for ref in _references(chain):
+            if not _reference_matches_ai_contract(ref, contract_type):
+                continue
+            for record in records:
+                if record.producer_type != "statewake-integration":
+                    continue
+                if record.metadata.get("evidence_id") != ref.identity:
+                    continue
+                if record.artifact_digest != ref.digest:
+                    continue
+                if record.metadata.get("evidence_digest") != ref.digest:
+                    continue
+                if record.metadata.get("contract_type") not in accepted:
+                    continue
+                if record.source_ref != (
+                    f"ai-contract:{record.metadata['contract_type']}:{ref.digest}"
+                ):
+                    continue
+                try:
+                    workspace.verify(record)
+                    raw = store.get(record.artifact_digest)
+                    payload = json.loads(raw.decode("utf-8"))
+                except (ValueError, FileNotFoundError, UnicodeError):
+                    continue
+                if not isinstance(payload, dict):
+                    continue
+                if payload.get("contract_type") not in accepted:
+                    continue
+                if payload.get("run_id") != record.run_id:
+                    continue
+                if sha256(raw).hexdigest() != ref.digest:
+                    continue
+                resolved = True
+                break
+            if resolved:
+                break
+        if not resolved:
+            failures.append(f"resolved-ai-contract:{contract_type}")
+    if not failures:
+        return structural
+    failed = (*structural.failed_conditions, *failures)
+    return replace(
+        structural,
+        satisfied=False,
+        passed_conditions=tuple(
+            condition
+            for condition in structural.passed_conditions
+            if not condition.startswith("ai-contract:")
+            or f"resolved-{condition}" not in failures
+        ),
+        failed_conditions=failed,
+        failed_requirements=(*structural.failed_requirements, *failures),
+        missing_evidence=(*structural.missing_evidence, *failures),
+        decision=_decision_for(
+            profile=profile,
+            failed=failed,
+            chain_decision_allowed=chain.decision in profile.allowed_decisions,
+        ),
+    )

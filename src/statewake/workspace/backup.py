@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import json
 import os
+import sqlite3
+import tempfile
+from contextlib import closing
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from hashlib import sha256
@@ -48,27 +51,55 @@ def create_workspace_backup(
     if timestamp.tzinfo is None:
         raise WorkspaceBackupError("created_at must be timezone-aware.")
     files = _collect_workspace_files(workspace_root, output.resolve())
-    checksums = {name: sha256(path.read_bytes()).hexdigest() for name, path in files}
-    manifest = {
-        "format": BACKUP_FORMAT,
-        "schema_version": BACKUP_SCHEMA_VERSION,
-        "workspace_id": workspace_id,
-        "source_schema_version": schema_version,
-        "created_at": timestamp.astimezone(UTC).isoformat(),
-        "file_count": len(files),
-        "checksums_file": _CHECKSUMS,
-        "members": [name for name, _path in files],
-    }
+    database_path = workspace_root / "statewake.db"
+    if not database_path.is_file():
+        raise WorkspaceBackupError("workspace SQLite database is missing.")
+    if any(name == "statewake.db" for name, _ in files) is False:
+        raise WorkspaceBackupError("workspace SQLite database is missing from backup.")
     output.parent.mkdir(parents=True, exist_ok=True)
     temp = output.with_name(f".{output.name}.tmp")
     try:
-        with ZipFile(temp, "w", compression=ZIP_DEFLATED) as archive:
-            _writestr(archive, _BACKUP_MANIFEST, _canonical_json(manifest) + b"\n")
-            _writestr(archive, _CHECKSUMS, _canonical_json(checksums) + b"\n")
-            for name, path in files:
-                _writestr(archive, name, path.read_bytes())
+        # SQLite's online backup incorporates committed WAL frames in one
+        # standalone database. A raw copy of statewake.db may omit those frames.
+        with tempfile.TemporaryDirectory(prefix="statewake-snapshot-") as staging:
+            snapshot = Path(staging) / "statewake.db"
+
+            with closing(sqlite3.connect(database_path)) as source:
+                with closing(sqlite3.connect(snapshot)) as destination:
+                    source.backup(destination)
+
+            checksums: dict[str, str] = {}
+
+            with ZipFile(temp, "w", compression=ZIP_DEFLATED) as archive:
+                for name, path in files:
+                    payload = (
+                        snapshot if name == "statewake.db" else path
+                    ).read_bytes()
+
+                    checksums[name] = sha256(payload).hexdigest()
+                    _writestr(archive, name, payload)
+                manifest = {
+                    "format": BACKUP_FORMAT,
+                    "schema_version": BACKUP_SCHEMA_VERSION,
+                    "workspace_id": workspace_id,
+                    "source_schema_version": schema_version,
+                    "created_at": timestamp.astimezone(UTC).isoformat(),
+                    "file_count": len(files),
+                    "checksums_file": _CHECKSUMS,
+                    "members": [name for name, _path in files],
+                }
+                _writestr(
+                    archive,
+                    _BACKUP_MANIFEST,
+                    _canonical_json(manifest) + b"\n",
+                )
+                _writestr(
+                    archive,
+                    _CHECKSUMS,
+                    _canonical_json(checksums) + b"\n",
+                )
         os.replace(temp, output)
-    except OSError as exc:
+    except (OSError, sqlite3.Error) as exc:
         temp.unlink(missing_ok=True)
         raise WorkspaceBackupError(f"unable to create workspace backup: {exc}") from exc
     return WorkspaceBackupResult(
@@ -89,6 +120,14 @@ def _collect_workspace_files(
         if not path.is_file():
             continue
         if path.resolve() == output_path:
+            continue
+        if path.is_symlink():
+            raise WorkspaceBackupError("workspace backup cannot include symlinks")
+        if path.name in {
+            "statewake.db-wal",
+            "statewake.db-shm",
+            "statewake.db-journal",
+        }:
             continue
         if path.name.startswith(".") and path.suffix == ".tmp":
             continue

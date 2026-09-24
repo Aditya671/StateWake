@@ -40,7 +40,7 @@ The missing capability was the binding record that joins those facts to the **ex
 
 ## Provenance contract
 
-Tier 8 also validates the repository `verification_manifest.txt` against the exact immutable source-tree file set. The manifest excludes only the self-referential candidate identity files (`verification_manifest.txt` and `candidate-fingerprint.txt`), and every remaining path must be present exactly once with its current SHA-256 digest. This prevents release evidence from silently describing an older or partial candidate.
+Tier 8 also validates the repository `verification_manifest.txt` against the explicit current release-input file set declared in `scripts/common/release_scope.py`. Every selected path must be present exactly once with its current SHA-256 digest. Historical reviews, generated reports and scratch material are not release inputs; they cannot change candidate identity. The built wheel is separately verified in full, including all shipped members.
 
 `candidate-fingerprint.txt` records the Tier 8 `source_tree_sha256`. It is intentionally distinct from the Tier 5 assurance snapshot fingerprint; the two identifiers have different canonicalization and evidence semantics and are not interchangeable.
 

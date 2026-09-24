@@ -11,12 +11,12 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
-from config.project_paths import PROJECT_ROOT
-
 PROJECT_CONFIG_BOOTSTRAP = Path(__file__).resolve().parents[2]
 if str(PROJECT_CONFIG_BOOTSTRAP) not in sys.path:
     sys.path.insert(0, str(PROJECT_CONFIG_BOOTSTRAP))
 
+from config.project_paths import PROJECT_ROOT  # noqa: E402
+from scripts.common.release_scope import release_input_files  # noqa: E402
 
 ROOT = PROJECT_ROOT
 
@@ -37,21 +37,6 @@ REQUIRED_WORKFLOW_MARKERS = (
     "cyclonedx",
     "actions/attest-build-provenance",
 )
-EXCLUDED_TREE_PARTS = {
-    ".git",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    ".venv",
-    "__pycache__",
-    "dist",
-    "build",
-    "verification",
-}
-EXCLUDED_TREE_FILES = {
-    "candidate-fingerprint.txt",
-    "verification_manifest.txt",
-}
 
 
 class SupplyChainProvenanceError(ValueError):
@@ -71,13 +56,7 @@ def file_sha256(path: Path) -> str:
 def source_tree_digest(root: Path = ROOT) -> str:
     """Return a deterministic digest over immutable source/build-input files."""
     digest = hashlib.sha256()
-    paths = sorted(
-        path
-        for path in root.rglob("*")
-        if path.is_file()
-        and not any(part in EXCLUDED_TREE_PARTS for part in path.parts)
-        and path.name not in EXCLUDED_TREE_FILES
-    )
+    paths = release_input_files(root)
     for path in paths:
         relative = path.relative_to(root).as_posix().encode("utf-8")
         data = path.read_bytes()
@@ -126,12 +105,7 @@ def validate_verification_manifest(root: Path = ROOT) -> None:
     recorded = verification_manifest(root)
     actual = {
         path.relative_to(root).as_posix(): file_sha256(path)
-        for path in root.rglob("*")
-        if path.is_file()
-        and not any(
-            part in EXCLUDED_TREE_PARTS for part in path.relative_to(root).parts
-        )
-        and path.name not in EXCLUDED_TREE_FILES
+        for path in release_input_files(root)
     }
     if recorded != actual:
         missing = sorted(set(actual) - set(recorded))
@@ -202,14 +176,14 @@ def project_metadata(root: Path = ROOT) -> dict[str, Any]:
         if item.get("version") is not None
     }
     for dependency in dependencies:
-        name = dependency.split("==", 1)[0].split("[", 1)[0]
+        name = re.split(r"[<>=!~;\[ ]", dependency, maxsplit=1)[0]
         if name not in locked_names:
             raise SupplyChainProvenanceError(
                 f"dependency {name!r} is not represented in uv.lock"
             )
     for extra, extra_dependencies in optional_dependencies.items():
         for dependency in extra_dependencies:
-            name = dependency.split("==", 1)[0].split("[", 1)[0]
+            name = re.split(r"[<>=!~;\[ ]", dependency, maxsplit=1)[0]
             if name not in locked_names:
                 raise SupplyChainProvenanceError(
                     f"optional dependency {name!r} for extra {extra!r} is not represented in uv.lock"

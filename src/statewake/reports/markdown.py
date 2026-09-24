@@ -5,7 +5,7 @@ from __future__ import annotations
 from statewake.domain.reliability_verification_report import (
     ReliabilityVerificationReport,
 )
-from statewake.reports.sections import bullet_lines
+from statewake.reports.sections import bullet_lines, safe_report_text
 from statewake.reports.validation import validate_report
 
 
@@ -18,21 +18,21 @@ def render_markdown_report(report: ReliabilityVerificationReport) -> str:
         "",
         "## Candidate identity",
         "",
-        f"- Candidate: `{report.candidate_identity}`",
-        f"- Candidate digest: `{report.candidate_digest}`",
-        f"- Report type: `{report.report_type}`",
+        f"- Candidate: `{safe_report_text(str(report.candidate_identity))}`",
+        f"- Candidate digest: `{safe_report_text(str(report.candidate_digest))}`",
+        f"- Report type: `{safe_report_text(str(report.report_type))}`",
         "",
         "## Intended claim",
         "",
-        f"- Claim: {report.claim}",
-        f"- Profile: `{report.profile_id}@{report.profile_version}`",
+        f"- Claim: {safe_report_text(report.claim)}",
+        f"- Profile: `{safe_report_text(str(report.profile_id))}@{safe_report_text(str(report.profile_version))}`",
         f"- Profile evaluation digest: `{report.profile_evaluation_digest or 'not-recorded'}`",
         "",
         "## Decision",
         "",
         f"- Verification status: **{status}**",
-        f"- StateWake decision: `{report.decision}`",
-        f"- Approval status: `{report.approval_status}`",
+        f"- StateWake decision: `{safe_report_text(str(report.decision))}`",
+        f"- Approval status: `{safe_report_text(str(report.approval_status))}`",
         "",
         "## Evidence included",
         "",
@@ -51,7 +51,7 @@ def render_markdown_report(report: ReliabilityVerificationReport) -> str:
         "",
         "## State transitions",
         "",
-        f"- Recovery status: `{report.recovery_status}`",
+        f"- Recovery status: `{safe_report_text(str(report.recovery_status))}`",
     ]
     lines += ["", "## Recovery and reconciliation", ""]
     if report.recovery_status in {"verified", "recovered"}:
@@ -61,22 +61,26 @@ def render_markdown_report(report: ReliabilityVerificationReport) -> str:
     else:
         lines.append("- Recovery is not verified in this report.")
     lines += ["", "## Caveats", ""]
-    lines += [f"- {item}" for item in report.caveats] or ["- none"]
+    lines += [f"- {safe_report_text(item)}" for item in report.caveats] or ["- none"]
     lines += ["", "## Residual risk", ""]
-    lines += [f"- {item}" for item in report.residual_risks] or ["- none"]
+    lines += [f"- {safe_report_text(item)}" for item in report.residual_risks] or [
+        "- none"
+    ]
     lines += ["", "## Human decisions required", ""]
-    lines += [f"- {item}" for item in report.human_decisions_required] or ["- none"]
+    lines += [
+        f"- {safe_report_text(item)}" for item in report.human_decisions_required
+    ] or ["- none"]
     lines += ["", "## Machine-readable appendix", ""]
     lines += bullet_lines("Source identity", report.source_identities)
     lines += bullet_lines("Artifact digest", report.artifact_digests)
     lines += bullet_lines("Appendix", report.machine_readable_appendix)
     lines += ["", "## Decision rationale", ""]
-    lines += [f"- {item}" for item in report.rationale] or ["- none"]
+    lines += [f"- {safe_report_text(item)}" for item in report.rationale] or ["- none"]
     lines += [
         "",
-        f"Verifier: `{report.verifier_version}`  ",
-        f"Generated: `{report.generated_at}`  ",
-        f"Report digest: `{report.digest}`",
+        f"Verifier: `{safe_report_text(str(report.verifier_version))}`  ",
+        f"Generated: `{safe_report_text(str(report.generated_at))}`  ",
+        f"Report digest: `{safe_report_text(str(report.digest))}`",
         "",
     ]
     return "\n".join(lines)

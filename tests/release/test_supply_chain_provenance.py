@@ -70,23 +70,24 @@ def test_supply_chain_contract_matches_existing_release_plumbing() -> None:
     assert metadata["distribution"] == "statewake-ai"
     assert metadata["version"] == "0.4.0"
     assert metadata["lock_packages"] >= 1
-    assert "workspace" in metadata["optional_dependencies"]
-    assert any(
-        "duckdb==1.5.5" in item
-        for item in metadata["optional_dependencies"]["workspace"]
-    )
-    assert any(
-        "pyarrow==25.0.1" in item
-        for item in metadata["optional_dependencies"]["workspace"]
-    )
-    assert any(
-        "openpyxl==3.1.5" in item
-        for item in metadata["optional_dependencies"]["workspace"]
-    )
-    assert any(
-        "sqlalchemy==2.0.54" in item
-        for item in metadata["optional_dependencies"]["workspace"]
-    )
+    assert metadata["optional_dependencies"] == {}
+
+    dependencies = set(metadata["dependencies"])
+    expected_runtime_dependencies = {
+        "pynacl==1.6.2",
+        "opentelemetry-api==1.44.0",
+        "filelock==3.32.4",
+        "duckdb==1.5.5",
+        "openpyxl==3.1.5",
+        "pyarrow==25.0.1",
+        "sqlalchemy==2.0.54",
+        "opentelemetry-sdk>=1.44,<2",
+        "openai-agents>=0.3,<1",
+        "langchain-core>=0.3,<2",
+        "langgraph>=0.3,<2",
+        "llama-index-core>=0.12,<1",
+    }
+    assert expected_runtime_dependencies <= dependencies
 
 
 def test_valid_provenance_binds_source_dependencies_and_artifact(
@@ -173,3 +174,35 @@ def test_verification_manifest_detects_source_hash_drift(tmp_path: Path) -> None
     target.write_text(target.read_text(encoding="utf-8") + "\n", encoding="utf-8")
     with pytest.raises(SupplyChainProvenanceError, match="verification manifest"):
         validate_verification_manifest(root)
+
+
+def test_release_input_scope_ignores_ancillary_files(tmp_path: Path) -> None:
+    """Historical, scratch and generated files cannot change release identity."""
+    source = tmp_path / "src" / "statewake" / "core.py"
+    source.parent.mkdir(parents=True)
+    source.write_text("value = 1\n", encoding="utf-8")
+    first = source_tree_digest(tmp_path)
+    for relative in (
+        "docs/verification/audit.md",
+        "docs/releases/v0.2.0/history.md",
+        "docs/research/notes.md",
+        "scratch/temporary.py",
+        "verification/generated.json",
+        "benchmarks/reports/output.json",
+    ):
+        target = tmp_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text("unrelated", encoding="utf-8")
+        assert source_tree_digest(tmp_path) == first, relative
+    source.write_text("value = 2\n", encoding="utf-8")
+    assert source_tree_digest(tmp_path) != first
+
+
+def test_current_verification_code_changes_release_identity(tmp_path: Path) -> None:
+    """Maintained release gates are inputs even though they do not ship in the wheel."""
+    gate = tmp_path / "scripts" / "release" / "verify.py"
+    gate.parent.mkdir(parents=True)
+    gate.write_text("before", encoding="utf-8")
+    before = source_tree_digest(tmp_path)
+    gate.write_text("after", encoding="utf-8")
+    assert source_tree_digest(tmp_path) != before

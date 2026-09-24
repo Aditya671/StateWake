@@ -63,13 +63,6 @@ def _safe_source(root: Path, source: str) -> Path:
     return candidate
 
 
-def _write_json(path: Path, payload: object) -> bytes:  # type: ignore
-    """Write a canonical JSON member to the proof bundle."""
-    content = (json.dumps(payload, indent=2, sort_keys=True) + "\n").encode("utf-8")
-    path.write_bytes(content)
-    return content
-
-
 def _reference_items(
     chain: ReliabilityEvidenceChain, *, root: Path | None = None
 ) -> tuple[tuple[str, EvidenceReference], ...]:

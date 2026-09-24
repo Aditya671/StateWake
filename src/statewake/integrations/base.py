@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -48,15 +47,20 @@ class ContractCaptureResult:
         producer_id = str(self.evidence.metadata.get("producer_id", "unknown"))
         run_id = str(self.evidence.metadata.get("run_id", "unknown"))
         contract_type = str(self.evidence.metadata.get("contract_type", "unknown"))
-        captured_at = datetime.now(UTC)
         captured_value = self.payload.get("captured_at")
-        if isinstance(captured_value, str):
-            try:
-                captured_at = datetime.fromisoformat(
-                    captured_value.replace("Z", "+00:00")
-                ).astimezone(UTC)
-            except ValueError:
-                captured_at = datetime.now(UTC)
+        if not isinstance(captured_value, str):
+            raise ValueError("captured_at must be an observed UTC timestamp")
+        try:
+            captured_at = datetime.fromisoformat(captured_value.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise ValueError("captured_at must be a valid UTC timestamp") from exc
+        if captured_at.tzinfo is None or captured_at.utcoffset() is None:
+            raise ValueError("captured_at must be timezone-aware UTC")
+        captured_at = captured_at.astimezone(UTC)
+        # The result exposes a mutable JSON payload for compatibility. Never
+        # persist bytes that no longer match the evidence issued at capture.
+        if sha256_hex(canonical_json_bytes(self.payload)) != self.digest:
+            raise ValueError("captured contract payload digest mismatch")
         return workspace.ingest(
             canonical_json_bytes(self.payload),
             producer_type="statewake-integration",
@@ -174,20 +178,82 @@ def parse_time(value: object | None) -> datetime:
     raise ValueError("producer timestamp must be datetime, ISO-8601 string, or None.")
 
 
+# Explicit admission is intentionally narrower than the list of fields each SDK
+# can emit. Unknown names and nested values are discarded, not stringified.
+_SAFE_METADATA_FIELDS = frozenset(
+    {
+        "run_id",
+        "producer_id",
+        "trace_id",
+        "span_id",
+        "parent_run_id",
+        "parent_span_id",
+        "source_event_id",
+        "model_name",
+        "model_version",
+        "tool_name",
+        "schema_version",
+        "corpus_identity",
+        "corpus_snapshot_id",
+        "execution_status",
+        "side_effect_classification",
+        "policy_id",
+        "policy_version",
+        "decision",
+        "evaluator_id",
+        "evaluator_version",
+        "metric_version",
+        "dataset_identity",
+        "job_name",
+        "artifact_digest",
+        "framework",
+        "provider",
+        "statewake.run_id",
+        "statewake.producer_id",
+        "gen_ai.operation.name",
+        "gen_ai.system",
+        "gen_ai.request.model",
+        "gen_ai.response.model",
+        "retry_of_run_id",
+        "recovery_of_run_id",
+    }
+)
+
+
+def required_observed_mapping(data: Mapping[str, Any], *, field: str) -> JsonObject:
+    """Require a supplied observation; never hash an invented empty payload.
+
+    An explicitly supplied empty object remains valid evidence of emptiness.
+    A missing field is unknown, not the same observation.
+    """
+    if field not in data or data[field] is None:
+        raise ValueError(f"{field} was not observed by producer")
+    return json_object_from_mapping(data[field], field=field)
+
+
+def required_observed_time(data: Mapping[str, Any], *, field: str) -> datetime:
+    """Require producer time for a duration-bearing runtime event."""
+    if field not in data or data[field] is None:
+        raise ValueError(f"{field} is required for completed runtime evidence")
+    return parse_time(data[field])
+
+
 def metadata_without_payload(
     data: Mapping[str, Any], *, exclude: set[str]
 ) -> JsonObject:
-    """Preserve non-sensitive producer metadata while excluding payload-bearing fields."""
-    metadata: dict[str, Any] = {}
+    """Admit only bounded, flat producer identity/status metadata.
+
+    The producer is untrusted: a blacklist of ``input``/``output`` aliases
+    cannot protect future SDK fields, nested secrets, or exception strings.
+    The original event is not mutated; excluded and unrecognized fields are
+    intentionally absent rather than represented as evidence of observation.
+    """
+    metadata: JsonObject = {}
     for key, value in data.items():
-        if key in exclude:
+        if key in exclude or key not in _SAFE_METADATA_FIELDS:
             continue
-        try:
-            metadata[str(key)] = require_value(value, field=str(key))
-        except ValueError:
-            metadata[str(key)] = str(value)
-    return dict(
-        require_object(
-            json.loads(json.dumps(metadata, sort_keys=True)), field="metadata"
-        )
-    )
+        if isinstance(value, bool) or isinstance(value, int):
+            metadata[key] = value
+        elif isinstance(value, str) and 0 < len(value) <= 256:
+            metadata[key] = value
+    return metadata

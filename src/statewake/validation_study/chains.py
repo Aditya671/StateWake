@@ -75,6 +75,9 @@ def chain_for_workload(
         else None,
         attestation_ref=_ref("attestation", f"{workload}:attestation"),
         decision_basis_ref=_ref("decision-basis", f"{workload}:basis"),
-        decision="accept",
+        # Fault injection must create a *valid* rejected/reviewable chain.
+        # An invalid accepted chain raises during construction, before the
+        # verifier has any opportunity to observe the injected fault.
+        decision="accept" if verified else "review",
         decision_rationale=(f"fixture rationale for {workload}",),
     )

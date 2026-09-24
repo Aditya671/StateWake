@@ -4,6 +4,7 @@ from statewake.ai_contracts.base import AI_CONTRACT_SCHEMA_VERSION
 from statewake.ai_contracts.evaluator import EvaluatorEvidenceContract
 from statewake.ai_contracts.human import HumanApprovalContract
 from statewake.ai_contracts.model import ModelInvocationContract
+from statewake.ai_contracts.observation import ObservationContract
 from statewake.ai_contracts.policy import PolicyEvidenceContract
 from statewake.ai_contracts.prompt import PromptEvidenceContract
 from statewake.ai_contracts.retrieval import RetrievalEvidenceContract
@@ -22,6 +23,7 @@ __all__ = [
     "EvaluatorEvidenceContract",
     "HumanApprovalContract",
     "ModelInvocationContract",
+    "ObservationContract",
     "PolicyEvidenceContract",
     "PromptEvidenceContract",
     "RetrievalEvidenceContract",

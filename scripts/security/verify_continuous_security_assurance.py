@@ -13,21 +13,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Final
 
-EXCLUDED_RUNTIME_PATHS: Final[frozenset[str]] = frozenset(
-    {
-        ".git",
-        ".pytest_cache",
-        ".ruff_cache",
-        ".mypy_cache",
-        ".venv",
-        "dist",
-        "build",
-        "__pycache__",
-    }
-)
-ASSURANCE_METADATA_PREFIXES: Final[tuple[str, ...]] = (
-    "docs/security/ASSURANCE_VERIFIER_ASSURANCE_RESULT",
-)
+PROJECT_CONFIG_BOOTSTRAP = Path(__file__).resolve().parents[2]
+if str(PROJECT_CONFIG_BOOTSTRAP) not in sys.path:
+    sys.path.insert(0, str(PROJECT_CONFIG_BOOTSTRAP))
+
+from scripts.common.release_scope import release_input_files  # noqa: E402
 
 INVARIANT_BY_PREFIX: Final[tuple[tuple[str, str], ...]] = (
     ("src/statewake/adapters/key_management.py", "cryptographic-boundary"),
@@ -89,16 +79,7 @@ class AssuranceResult:
 
 def _included_files(root: Path) -> Iterable[Path]:
     """Yield repository files while excluding runtime-generated directories."""
-    for path in sorted(root.rglob("*")):
-        if not path.is_file():
-            continue
-        relative_parts = path.relative_to(root).parts
-        if any(part in EXCLUDED_RUNTIME_PATHS for part in relative_parts):
-            continue
-        relative = path.relative_to(root).as_posix()
-        if any(relative.startswith(prefix) for prefix in ASSURANCE_METADATA_PREFIXES):
-            continue
-        yield path
+    yield from release_input_files(root)
 
 
 def _digest_file(path: Path) -> str:

@@ -19,14 +19,6 @@ def _file_digest(path: Path) -> str:
     return sha256(path.read_bytes()).hexdigest()
 
 
-def _safe(root: Path, source: str) -> Path:  # type: ignore
-    """Return a sanitized value suitable for reconciliation diagnostics."""
-    candidate = (root.resolve() / source.replace("\\", "/")).resolve()
-    if candidate != root.resolve() and root.resolve() not in candidate.parents:
-        raise ValueError(f"reconciliation source escapes root: {source}")
-    return candidate
-
-
 def _reconciliation_semantics(path: Path) -> tuple[str, str]:
     """Return the canonical reconciliation semantics bound to this artifact."""
     payload = load_object(path)

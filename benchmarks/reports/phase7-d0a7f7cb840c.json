@@ -273,8 +273,7 @@
         "profile_result"
       ],
       "detected_faults": [
-        "omitted_evidence",
-        "stale_corpus"
+        "omitted_evidence"
       ],
       "false_positive": false,
       "injected_faults": [
@@ -520,7 +519,6 @@
         "profile_result"
       ],
       "detected_faults": [
-        "missing_tool_authorization",
         "modified_tool_output"
       ],
       "false_positive": false,
@@ -989,9 +987,7 @@
         "release_trust",
         "human_release_decision"
       ],
-      "detected_faults": [
-        "unsigned_release_artifact"
-      ],
+      "detected_faults": [],
       "false_positive": false,
       "injected_faults": [
         "unsigned_release_artifact"
@@ -1255,7 +1251,7 @@
       "workload": "human_approval_workflow"
     }
   ],
-  "digest": "fed06511205b959f9c8cbd595e17319be8c04a9319089a451d04a3187740eea3",
+  "digest": "24a2101cdcfc2797930220c2383fc51f800db12069d5aacdb83668c1782a4717",
   "faults": [
     {
       "affected_property": "evidence_contract",
@@ -1354,10 +1350,10 @@
       "baseline": "statewake_full",
       "case_count": 10,
       "checkable_property_count": 58,
-      "detected_fault_count": 7,
+      "detected_fault_count": 4,
       "false_positive_count": 0,
       "false_positive_rate": 0.0,
-      "fault_detection_rate": 1.0,
+      "fault_detection_rate": 0.5714285714285714,
       "injected_fault_count": 7,
       "target_property_count": 58,
       "valid_case_count": 5,

@@ -121,7 +121,7 @@ class StateWakeWorkspace:
         """Restore a verified workspace backup without weakening workspace validation."""
         result = restore_workspace_backup(
             Path(backup_path),
-            Path(root).expanduser().resolve(strict=False),
+            Path(root).expanduser().absolute(),
             overwrite=overwrite,
         )
         workspace = cls.open(result.workspace_root)

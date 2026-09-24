@@ -4,7 +4,7 @@ version = "0.4.0"
 description = "Evidence-backed reliability infrastructure for AI systems."
 keywords = ["ai", "reliability", "agents", "evidence", "provenance", "verification"]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
@@ -23,20 +23,15 @@ dependencies = [
     "pynacl==1.6.2",
     "opentelemetry-api==1.44.0",
     "filelock==3.32.4",
-]
-
-[project.optional-dependencies]
-workspace = [
     "duckdb==1.5.5",
     "openpyxl==3.1.5",
     "pyarrow==25.0.1",
     "sqlalchemy==2.0.54",
-]
-integrations-opentelemetry = [
-    "opentelemetry-api==1.44.0",
-]
-integrations = [
-    "opentelemetry-api==1.44.0",
+    "opentelemetry-sdk>=1.44,<2",
+    "openai-agents>=0.3,<1",
+    "langchain-core>=0.3,<2",
+    "langgraph>=0.3,<2",
+    "llama-index-core>=0.12,<1",
 ]
 
 [project.urls]

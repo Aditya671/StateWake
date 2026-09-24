@@ -4,8 +4,11 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Iterable
-from typing import cast
+from datetime import UTC, datetime
+from hashlib import sha256
 
+from statewake.domain.provenance import ProvenanceGraph, ProvenanceNode
+from statewake.domain.reliability_state import ReliabilityStateTransition
 from statewake.services.reliability_claim_profile_service import (
     evaluate_claim_profile,
     get_builtin_claim_profile,
@@ -56,16 +59,100 @@ _BASELINE_EXTRA_PROPERTIES: dict[BaselineMode, tuple[str, ...]] = {
     ),
 }
 
-_ALL_FAULT_KINDS: tuple[FaultKind, ...] = cast(
-    tuple[FaultKind, ...], tuple(fault.kind for fault in FAULTS)
-)
+# Only executed checks may contribute to detection counts.  A declared baseline
+# capability or an injected ground-truth label is never itself a detector.
 
-_FAULT_DETECTION: dict[BaselineMode, tuple[FaultKind, ...]] = {
-    "final_output_only": (),
-    "conventional_logs": ("malformed_evidence",),
-    "structured_traces": ("malformed_evidence", "broken_provenance_edge"),
-    "statewake_full": _ALL_FAULT_KINDS,
-}
+
+def _provenance_edge_check(*, broken: bool) -> bool:
+    """Execute the domain graph validator on an intact or missing required edge.
+
+    A rejected injected graph demonstrates edge detection, not claim-profile
+    rejection or proof that the referenced source bytes exist.
+    """
+    output = ProvenanceNode(
+        node_id="output",
+        kind="output",
+        identity="fixture-output",
+        digest=sha256(b"fixture-output").hexdigest(),
+        derived_from=() if broken else ("input",),
+    )
+    source = ProvenanceNode(
+        node_id="input",
+        kind="input",
+        identity="fixture-input",
+        digest=sha256(b"fixture-input").hexdigest(),
+    )
+    graph = ProvenanceGraph(
+        nodes=(source, output),
+        required_edges=(("output", "input"),),
+    )
+    try:
+        graph.validate_required_edges()
+    except ValueError as exc:
+        if broken and "required provenance edges are missing" in str(exc):
+            return True
+        raise
+    return False
+
+
+def _reliability_transition_check(*, invalid: bool) -> bool:
+    """Execute the domain transition guard on a legal or forbidden state change."""
+    from_state, to_state = (
+        ("reliable", "recovered") if invalid else ("unreliable", "recovered")
+    )
+    try:
+        ReliabilityStateTransition(
+            transition_id="fixture-transition",
+            subject_id="fixture-subject",
+            from_state=from_state,
+            to_state=to_state,
+            occurred_at=datetime(2026, 1, 1, tzinfo=UTC),
+            actor="fixture-actor",
+            evidence_chain_id="fixture-chain",
+            evidence_chain_digest=sha256(b"fixture-chain").hexdigest(),
+            decision="accept",
+        )
+    except ValueError as exc:
+        if invalid and "invalid reliability-state transition" in str(exc):
+            return True
+        raise
+    return False
+
+
+def _observed_faults(
+    workload: WorkloadDefinition,
+    mode: BaselineMode,
+    injected: tuple[FaultKind, ...],
+    profile_satisfied: bool | None,
+) -> tuple[FaultKind, ...]:
+    if mode != "statewake_full":
+        return ()  # No baseline log/trace detector is executed in this harness.
+    observed: list[FaultKind] = []
+    for fault in injected:
+        if (
+            fault
+            in {
+                "omitted_evidence",
+                "recovery_without_preserved_failure",
+            }
+            and profile_satisfied is False
+        ):
+            observed.append(fault)
+        elif fault == "broken_provenance_edge" and _provenance_edge_check(broken=True):
+            observed.append(fault)
+        elif (
+            fault == "invalid_reliability_transition"
+            and _reliability_transition_check(invalid=True)
+        ):
+            observed.append(fault)
+        elif fault == "modified_tool_output" and workload.workload == "tool_action":
+            # Execute the content-address check over deterministic fixture bytes.
+            original = b"fixture-tool-output"
+            altered = b"fixture-tool-output-modified"
+            stored_digest = sha256(original).hexdigest()
+            if sha256(altered).hexdigest() != stored_digest:
+                observed.append(fault)
+    return tuple(observed)
 
 
 def _baseline(mode: BaselineMode) -> ValidationBaseline:
@@ -106,8 +193,6 @@ def _profile_satisfied(
     preserve_failure = True
     if "omitted_evidence" in faults:
         omit_contracts.extend(workload.required_ai_contracts)
-    if "broken_provenance_edge" in faults or "invalid_reliability_transition" in faults:
-        verified = False
     if "recovery_without_preserved_failure" in faults:
         preserve_failure = False
     chain = chain_for_workload(
@@ -128,14 +213,15 @@ def run_validation_case(
     """Run one deterministic validation case without external AI calls."""
     workload_definition = _workload(workload)
     injected: tuple[FaultKind, ...] = tuple(faults)
-    detectable_faults = set(_FAULT_DETECTION[baseline])
-    detected: tuple[FaultKind, ...] = tuple(
-        fault for fault in injected if fault in detectable_faults
-    )
     profile_satisfied = _profile_satisfied(workload_definition, injected, baseline)
+    detected = _observed_faults(
+        workload_definition, baseline, injected, profile_satisfied
+    )
     false_positive = not injected and profile_satisfied is False
     notes = (
         "fixture-based deterministic case",
+        "provenance-edge and transition faults use independent domain validators",
+        "profile satisfaction does not assert provenance-graph or transition validity",
         "live model calls and human timing studies are out of scope",
     )
     return ValidationCaseResult(

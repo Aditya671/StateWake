@@ -18,6 +18,8 @@ from .base import (
     metadata_without_payload,
     optional_string,
     parse_time,
+    required_observed_mapping,
+    required_observed_time,
     required_string,
 )
 
@@ -44,8 +46,8 @@ def capture_genai_runtime_trace(span: object) -> ContractCaptureResult:
             field="run_id",
         ),
         framework="opentelemetry-genai",
-        started_at=parse_time(attrs.get("start_time", attrs.get("captured_at"))),
-        ended_at=parse_time(attrs.get("end_time", attrs.get("captured_at"))),
+        started_at=required_observed_time(attrs, field="start_time"),
+        ended_at=required_observed_time(attrs, field="end_time"),
         captured_at=parse_time(attrs.get("captured_at")),
         trace_id=required_string(
             attrs.get(
@@ -73,16 +75,8 @@ def capture_genai_runtime_trace(span: object) -> ContractCaptureResult:
 def capture_genai_model_invocation(span: object) -> ContractCaptureResult:
     """Map GenAI model span attributes into a model-invocation contract."""
     attrs = _attributes(span)
-    request = json_object_from_mapping(
-        attrs.get("request", {"span_id": attrs.get("span_id"), "attributes": attrs}),
-        field="request",
-    )
-    response = json_object_from_mapping(
-        attrs.get(
-            "response", {"finish_reason": attrs.get("gen_ai.response.finish_reasons")}
-        ),
-        field="response",
-    )
+    request = required_observed_mapping(attrs, field="request")
+    response = required_observed_mapping(attrs, field="response")
     model_version = optional_string(
         attrs.get("gen_ai.response.model", attrs.get("model_version"))
     )
@@ -143,12 +137,8 @@ def capture_genai_tool_call(event: Mapping[str, Any]) -> ContractCaptureResult:
         schema_version=required_string(
             data.get("schema_version", "unknown"), field="schema_version"
         ),
-        input_digest=digest_json(
-            json_object_from_mapping(data.get("input", {}), field="input")
-        ),
-        output_digest=digest_json(
-            json_object_from_mapping(data.get("output", {}), field="output")
-        ),
+        input_digest=digest_json(required_observed_mapping(data, field="input")),
+        output_digest=digest_json(required_observed_mapping(data, field="output")),
         execution_status=required_string(
             data.get("execution_status", "unknown"), field="execution_status"
         ),

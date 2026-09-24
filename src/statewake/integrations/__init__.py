@@ -50,3 +50,33 @@ __all__ = [
     "capture_genai_runtime_trace",
     "capture_genai_tool_call",
 ]
+
+# Native integrations import their SDKs only when constructed. They remain
+# independently installable while sharing Phase 1 evidence contracts.
+from .native_capture import (
+    NativeCaptureCapacityError,
+    NativeCaptureSink,
+    capture_native_observation,
+    capture_native_runtime,
+)
+from .native_langchain import create_langchain_callback_handler
+from .native_langgraph import capture_langgraph_history
+from .native_llamaindex import (
+    attach_llamaindex_event_handler,
+    create_llamaindex_event_handler,
+)
+from .native_openai_agents import create_agents_trace_processor
+from .native_opentelemetry import create_genai_span_processor
+
+__all__ += [
+    "NativeCaptureSink",
+    "NativeCaptureCapacityError",
+    "capture_native_observation",
+    "capture_native_runtime",
+    "create_agents_trace_processor",
+    "create_langchain_callback_handler",
+    "capture_langgraph_history",
+    "create_llamaindex_event_handler",
+    "attach_llamaindex_event_handler",
+    "create_genai_span_processor",
+]

@@ -201,8 +201,8 @@ class HumanReleaseDecision:
 class ReleaseTrustBundle:
     """Portable StateWake release-trust evidence bundle.
 
-    The bundle verifies release evidence. It does not by itself authorize
-    publishing; that remains a separate human decision.
+    The bundle binds release evidence *claims* structurally. Independent
+    content and signer checks are separate; publication needs human authority.
     """
 
     schema_version: str

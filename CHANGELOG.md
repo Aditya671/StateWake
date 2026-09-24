@@ -1,5 +1,37 @@
 # Changelog
 
+## Unreleased — Native SDK integration development copy
+- Improved Phase 7 negative-trial findings: `broken_provenance_edge` and `invalid_reliability_transition` now exercise their distinct existing domain validators instead of inheriting detection from a generic failed-profile fixture. Preserved structural profile and underlying evidence verification as separate results; added positive/negative control regressions.
+- Corrected prior release-boundary overreach: centralized current-project file selection for provenance, release-candidate fingerprint, Tier 5 security snapshots, and current-identity scans; excluded historical audit copies, prior release notes, generated reports, and scratch files without excluding live source, verification scripts, tests, build inputs, or shipped wheel contents.
+- Removed only the duplicated historical audit report/catalog copies from the clean runnable candidate; earlier release records and active scripts remain intact.
+- Historical: an earlier pass included all `docs/verification/` in the fingerprint; superseded by the current explicit release-input boundary.
+- Improved prior-release design findings through opt-in independently pinned Ed25519 producer-receipt and release-signature verification; kept structural claims, observed content, signer authentication and human publication approval separate.
+- Bounded native failure-journal disk use, rejected symlinked journal paths and malformed records, and restricted native metadata to printable bounded scalars without arbitrary SDK stringification.
+- Restored the missing design-gap implementation record; explicitly documented machine-dependent gates and noncooperative-writer/privacy/producer-honesty limits.
+- Improved prior-release design gaps D11/D12/D14/D16: fail-closed missing mapping observations, bounded native capture with optional durable failures and workspace persistence, distinct point-in-time checkpoint/event contracts, and candidate-only maturity labeling. D07 and external trust boundaries remain open.
+
+
+- Improved prior-release design-gap findings D11, D13 and D15: fail-closed persisted capture timestamps and payload digest binding, GenAI-only native span admission, and Markdown-safe human-report field rendering; added reproducible negative tests and recorded remaining audit findings in `docs/verification/design-audit-pending-defects-followup.md`.
+
+- Improved prior-release trust boundaries: restricted integration metadata to explicit flat identity/status fields; unknown payload aliases and nested secrets no longer pass into evidence metadata.
+- Improved workspace backups using SQLite online snapshots for committed WAL changes, single-read member digest binding and exclusion of transient database sidecars.
+- Added opt-in workspace-backed AI-contract profile evaluation, preserving the original structural profile API while requiring persisted receipt/payload verification for content-backed claims.
+- Added release-trust local file verification for artifact/SBOM/scan/test/provenance digests, distinctly limited from cryptographic signature and producer trust verification.
+- Recorded the remaining SDK, lockfile and external-writer boundaries in `docs/verification/trust-boundary-followup.md`.
+
+- Improved prior-release trust boundaries: rejected source-text AI-contract spoofing, made benchmark detection evidence-based rather than table-declared, redacted nested report fields, and made backup restoration staged and exact rather than an overlay.
+- Added negative regressions and regenerated Phase 7 reports/metrics; documented unresolved content resolution, privacy, WAL snapshot, release-trust and dependency-lock gates in `docs/verification/whole-artifact-trust-boundary-remediation.md`.
+
+- Improved prior-release architecture in the current code: removed five verified-unused private helpers from provenance, JSON export, reconciliation binding, lineage, and proof-bundle services without changing their public interfaces or historical release records.
+- Preserved actively used private helpers and white-box tests; documented the focused audit, regression results, and outstanding SDK/lockfile gates in `docs/verification/native-integration-release-and-private-boundary-audit.md`.
+- Added native OpenAI Agents, LangChain, LangGraph, LlamaIndex and OpenTelemetry observation hooks without replacing the existing Phase 5 adapters.
+- Added framework-specific optional dependencies and an all-framework integrations extra; lockfile refresh requires online resolution and full SDK compatibility validation.
+- Added native callback/checkpoint tests, visible capture failures, and safe metadata selection.
+- Documented limitations and install procedures in `docs/integrations/native-framework-capabilities.md`.
+- Tightened native capture to reject missing completion timestamps and hash observed structured SDK content canonically rather than via Python object representations.
+- Added explicit regression tests for timestamp completeness, deterministic structured digests, and absence of raw observed content from model evidence.
+- Corrected LangChain native message, model-response and tool-output digest construction to use observed JSON/SDK model serialization instead of Python object string representations; added focused tests.
+
 ## [v0.4.0] — AI Systems Seven-Phase Roadmap completion
 
 ### Phase 7 - Comparative Validation Study
@@ -195,3 +227,22 @@ StateWake v0.1.0 is the current package baseline. The release candidate process 
 ### Historical provenance
 
 Earlier implementation records are preserved under `repository historyhistorical-evaluations/` for engineering archaeology only. They do not define the current StateWake architecture, API, roadmap, or release identity.
+## Native integration SDK import compatibility audit — 2026-09-23
+
+- Updated OpenAI Agents and LangChain callback imports to the officially documented defining modules rather than assuming top-level re-exports.
+- Added the LlamaIndex event-handler class identity required by the SDK, and stopped inventing missing LlamaIndex event timestamps.
+- Preserved native LangGraph history and OpenTelemetry SDK imports where they match published APIs.
+- Added real SDK import/instantiation smoke tests, corrected fake-module test fixtures, and stopped masking transitive import failures as missing SDK extras.
+- Recorded unresolved optional-dependency lock and absent real SDK gates; candidate remains unpromoted.
+## Native integration release and private-boundary review
+
+- Added current-release native SDK compatibility jobs to release verification and publication; publication now depends on real SDK imports and native integration tests. Historical v0.2.0/v0.3.0 release records are not rewritten.
+- Audited underscore-prefixed declarations across production source, scripts, tests, and config, documenting test-only private imports and unproven dead-code candidates.
+- Recorded the review in `docs/verification/native-integration-release-and-private-boundary-audit.md`; this remains a development candidate until the integration dependency lock and live SDK gates pass.
+
+
+### Follow-up: frozen end-to-end negative-trial corrections (development candidate)
+
+- Permit separate captures within one run to have different observed times while preserving producer authority and record-identity checks.
+- Route invalid-evidence Phase 7 fixtures to review/profile evaluation instead of aborting during construction; preserve the rejection of invalid accept decisions.
+- Add out-of-order, producer-conflict, and benchmark-fixture regression tests; synthetic trial outputs remain separate from release identity.

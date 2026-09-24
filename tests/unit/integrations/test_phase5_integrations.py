@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import subprocess
 import sys
 from datetime import UTC, datetime
+from textwrap import dedent
 
 from statewake.domain.reliability_evidence import (
     EvidenceReference,
@@ -61,9 +63,37 @@ def _chain(
 
 
 def test_core_import_does_not_import_optional_frameworks() -> None:
-    __import__("statewake.integrations")
-    for module_name in ("langchain", "llama_index", "langgraph", "openai_agents"):
-        assert module_name not in sys.modules
+    """Importing StateWake integrations must not eagerly load optional frameworks."""
+
+    code = dedent("""
+    import sys
+
+    import statewake.integrations
+
+    optional_frameworks = (
+        "langchain",
+        "llama_index",
+        "langgraph",
+        "openai_agents",
+    )
+
+    violations = [
+        module_name
+        for module_name in optional_frameworks
+        if module_name in sys.modules
+    ]
+
+    if violations:
+        raise SystemExit(
+            "Optional frameworks imported eagerly: "
+            + ", ".join(violations)
+        )
+    """)
+
+    subprocess.run(
+        [sys.executable, "-c", code],
+        check=True,
+    )
 
 
 def test_opentelemetry_span_maps_to_runtime_trace_contract() -> None:
@@ -74,6 +104,8 @@ def test_opentelemetry_span_maps_to_runtime_trace_contract() -> None:
                 "trace_id": "trace-1",
                 "span_id": "span-1",
                 "gen_ai.operation.name": "chat",
+                "start_time": _NOW,
+                "end_time": _NOW,
                 "captured_at": _NOW,
             }
         }
@@ -140,6 +172,8 @@ def test_openai_agents_trace_maps_model_and_tool_events() -> None:
             "run_id": "run-agent",
             "trace_id": "trace-agent",
             "span_id": "span-agent",
+            "start_time": _NOW,
+            "end_time": _NOW,
             "captured_at": _NOW,
         }
     )

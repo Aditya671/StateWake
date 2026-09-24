@@ -16,6 +16,7 @@ from .base import (
     metadata_without_payload,
     optional_string,
     parse_time,
+    required_observed_mapping,
     required_string,
 )
 
@@ -36,9 +37,7 @@ def capture_llamaindex_retrieval_event(
         ),
         corpus_digest=optional_string(data.get("corpus_digest")),
         corpus_snapshot_id=optional_string(data.get("corpus_snapshot_id")),
-        query_digest=digest_json(
-            json_object_from_mapping(data.get("query", {}), field="query")
-        ),
+        query_digest=digest_json(required_observed_mapping(data, field="query")),
         retrieved_item_ids=tuple(
             str(item) for item in data.get("retrieved_item_ids", ())
         ),

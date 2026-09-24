@@ -19,21 +19,6 @@ from ..domain.reliability_lineage import (
 from .provenance_service import load_provenance_graph, verify_artifact_digests
 
 
-def _source_digest(root: Path, reference: EvidenceReference) -> str:  # type: ignore
-    """Return the digest of a referenced reliability source artifact."""
-    if reference.source is None:
-        raise ValueError(
-            f"lineage reference must retain a local source: {reference.identity}"
-        )
-    candidate = (root / reference.source.replace("\\", "/")).resolve()
-    resolved = root.resolve()
-    if candidate != resolved and resolved not in candidate.parents:
-        raise ValueError(f"lineage source escapes evidence root: {reference.source}")
-    if not candidate.is_file():
-        raise FileNotFoundError(f"lineage source not found: {candidate}")
-    return sha256(candidate.read_bytes()).hexdigest()
-
-
 def _material_references(
     chain: ReliabilityEvidenceChain, *, root: Path | None = None
 ) -> tuple[tuple[str, EvidenceReference], ...]:

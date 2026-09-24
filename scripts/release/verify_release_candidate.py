@@ -17,6 +17,7 @@ if str(PROJECT_CONFIG_BOOTSTRAP) not in sys.path:
     sys.path.insert(0, str(PROJECT_CONFIG_BOOTSTRAP))
 
 from config.project_paths import PROJECT_ROOT, VERIFICATION_PATH  # noqa: E402
+from scripts.common.release_scope import release_input_files  # noqa: E402
 
 ROOT = PROJECT_ROOT
 
@@ -74,24 +75,7 @@ def run_gate(name: str, command: Sequence[str], *, timeout: int) -> dict[str, ob
 def tree_digest() -> str:
     """Return a deterministic digest of tracked release-source bytes."""
     digest = hashlib.sha256()
-    excluded = {
-        ".git",
-        ".mypy_cache",
-        ".pytest_cache",
-        ".ruff_cache",
-        ".venv",
-        "__pycache__",
-        "dist",
-        "build",
-        "verification",
-        "candidate-fingerprint.txt",
-        "verification_manifest.txt",
-    }
-    paths = sorted(
-        path
-        for path in ROOT.rglob("*")
-        if path.is_file() and not any(part in excluded for part in path.parts)
-    )
+    paths = release_input_files(ROOT)
     for path in paths:
         relative = path.relative_to(ROOT).as_posix().encode("utf-8")
         digest.update(len(relative).to_bytes(8, "big"))
