@@ -52,7 +52,7 @@ jobs:
           enable-cache: true
       - run: uv python install ${{ matrix.python-version }}
       - run: uv lock --check
-      - run: uv sync --locked --python ${{ matrix.python-version }} --all-extras --group dev
+      - run: uv sync --locked --python ${{ matrix.python-version }} --group dev
       - name: Require real native SDKs before compatibility tests
         run: >-
           uv run --no-sync python -c

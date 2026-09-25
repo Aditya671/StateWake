@@ -47,6 +47,7 @@ def verify_release_trust_files(
     def check(
         name: str, relative: str | None, digest: str, size: int | None = None
     ) -> None:
+        """Classify a referenced evidence file against the trusted root."""
         if not relative:
             missing.append(name)
             return

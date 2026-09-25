@@ -69,12 +69,9 @@ The package published to PyPI/TestPyPI is `statewake-ai`; the Python import pack
 
 ```bash
 python -m pip install statewake-ai
-
-To enable the v0.4.0 workspace dataset/export and analytical adapters (Parquet/PyArrow, DuckDB, XLSX/openpyxl, and the SQLAlchemy repository backend), install the optional workspace extra:
-
-```bash
-python -m pip install "statewake-ai[workspace]"
 ```
+
+The workspace dataset/export adapters and native framework integrations are included in the package's required runtime dependencies; no workspace extra is needed.
 
 CSV, JSON, portable-bundle, and SQLite reference persistence use Python/SQLite standard-library capabilities and do not require additional packages.
 

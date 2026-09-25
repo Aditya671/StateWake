@@ -1,26 +1,16 @@
 # Workspace dependency model
 
-StateWake keeps its reference persistence path dependency-light while making the richer v0.4.0 dataset/export adapters explicit and reproducible.
+StateWake installs its workspace adapters and native framework integrations as standard runtime dependencies, pinned or bounded by `pyproject.toml` and resolved by `uv.lock`.
 
-## Core runtime
+## Installation
 
-The core package declares:
-
-- PyNaCl for cryptographic signing/trust operations;
-- OpenTelemetry API for the telemetry adapter boundary;
-- filelock for filesystem coordination.
-
-SQLite, CSV, JSON, and portable ZIP bundle operations use Python standard-library capabilities.
-
-## Optional workspace extra
-
-Install the complete workspace adapter surface with:
+Install the package to use the complete workspace adapter surface:
 
 ```bash
-python -m pip install "statewake-ai[workspace]"
+python -m pip install statewake-ai
 ```
 
-The extra declares these pinned packages:
+The required runtime dependencies include:
 
 | Capability | Package | Version |
 |---|---|---:|
@@ -29,7 +19,7 @@ The extra declares these pinned packages:
 | XLSX export/verification | `openpyxl` | `3.1.5` |
 | Alternative SQL repository backend | `sqlalchemy` | `2.0.54` |
 
-The versions are part of the repository's locked dependency state in `uv.lock` and are therefore included in Tier 8 dependency provenance.
+The complete dependency set and supported version bounds are declared in `pyproject.toml`. The resolved versions are recorded in `uv.lock` and included in Tier 8 dependency provenance. SQLite, CSV, JSON, and portable ZIP bundle operations use Python standard-library capabilities.
 
 ## Adapter boundaries
 

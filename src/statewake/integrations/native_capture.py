@@ -76,6 +76,7 @@ def digest_sdk_observed(value: object) -> str:
     """
 
     def to_json(value: object) -> object:
+        """Convert supported SDK values to JSON-compatible data."""
         if isinstance(value, (str, int, float, bool, type(None))):
             return value
         if isinstance(value, (bytes, bytearray)):

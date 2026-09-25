@@ -39,6 +39,7 @@ def redacted_payload_reference(
     redacted_keys: list[str] = []
 
     def redact(value: Any, location: str) -> Any:
+        """Recursively redact sensitive values while retaining field paths."""
         if isinstance(value, Mapping):
             visible: dict[str, Any] = {}
             for key, child in sorted(value.items()):

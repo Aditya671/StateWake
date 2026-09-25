@@ -29,7 +29,7 @@ REQUIRED_DOC_PHRASES = (
 )
 
 REQUIRED_SYMBOLS = (
-    "ContainmentViolation",
+    "ContainmentViolationError",
     "RuntimeContainmentLimits",
     "VerificationDeadline",
     "load_bounded_json",
