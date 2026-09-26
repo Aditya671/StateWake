@@ -91,10 +91,13 @@ def release_input_files(root: Path) -> tuple[Path, ...]:
     """Enumerate release inputs without following symlinked files or directories."""
     return tuple(
         sorted(
-            path
-            for path in root.rglob("*")
-            if path.is_file()
-            and not path.is_symlink()
-            and is_release_input(path.relative_to(root))
+            (
+                path
+                for path in root.rglob("*")
+                if path.is_file()
+                and not path.is_symlink()
+                and is_release_input(path.relative_to(root))
+            ),
+            key=lambda path: path.relative_to(root).as_posix(),
         )
     )

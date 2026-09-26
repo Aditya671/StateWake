@@ -45,6 +45,18 @@ def test_git_text_checkout_policy_is_line_ending_stable() -> None:
     assert "* text=auto eol=lf" in attributes.read_text(encoding="utf-8")
 
 
+def test_release_input_order_is_platform_independent(tmp_path: Path) -> None:
+    """Use POSIX path ordering rather than OS-specific Path comparisons."""
+    package = tmp_path / "src/statewake"
+    package.mkdir(parents=True)
+    uppercase = package / "Z.py"
+    lowercase = package / "a.py"
+    uppercase.write_text("upper", encoding="utf-8")
+    lowercase.write_text("lower", encoding="utf-8")
+
+    assert release_input_files(tmp_path) == (uppercase, lowercase)
+
+
 def test_all_release_digest_consumers_share_one_scope(tmp_path: Path) -> None:
     """One selector drives provenance, release candidate and security snapshots."""
     file = tmp_path / "src/statewake/example.py"
