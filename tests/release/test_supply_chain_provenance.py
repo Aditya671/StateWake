@@ -70,7 +70,6 @@ def test_supply_chain_contract_matches_existing_release_plumbing() -> None:
     assert metadata["distribution"] == "statewake-ai"
     assert metadata["version"] == "0.4.0"
     assert metadata["lock_packages"] >= 1
-    assert metadata["optional_dependencies"] == {}
 
     dependencies = set(metadata["dependencies"])
     expected_runtime_dependencies = {
@@ -81,6 +80,8 @@ def test_supply_chain_contract_matches_existing_release_plumbing() -> None:
         "openpyxl==3.1.5",
         "pyarrow==25.0.1",
         "sqlalchemy==2.0.54",
+    }
+    native_framework_dependencies = {
         "opentelemetry-sdk>=1.44,<2",
         "openai-agents>=0.3,<1",
         "langchain-core>=0.3,<2",
@@ -88,6 +89,20 @@ def test_supply_chain_contract_matches_existing_release_plumbing() -> None:
         "llama-index-core>=0.12,<1",
     }
     assert expected_runtime_dependencies <= dependencies
+    assert native_framework_dependencies.isdisjoint(dependencies)
+
+    extras = metadata["optional_dependencies"]
+    assert isinstance(extras, dict)
+    expected_extras = {
+        "integrations-openai-agents": {"openai-agents>=0.3,<1"},
+        "integrations-langchain": {"langchain-core>=0.3,<2"},
+        "integrations-langgraph": {"langgraph>=0.3,<2"},
+        "integrations-llamaindex": {"llama-index-core>=0.12,<1"},
+        "integrations-opentelemetry": {"opentelemetry-sdk>=1.44,<2"},
+    }
+    for extra, expected in expected_extras.items():
+        assert set(extras[extra]) == expected
+    assert set(extras["integrations"]) == native_framework_dependencies
 
 
 def test_valid_provenance_binds_source_dependencies_and_artifact(

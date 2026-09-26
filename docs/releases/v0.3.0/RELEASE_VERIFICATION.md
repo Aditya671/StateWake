@@ -11,11 +11,11 @@ The v0.3.0 implementation contains optional workspace adapters for:
 
 These are now declared in `pyproject.toml` under the `workspace` optional extra, documented in the user/development guides, and exercised by a dedicated CI workspace-consumer job. Tier 8 verification was also strengthened to require every optional-extra dependency to be represented in `uv.lock`, not only core runtime dependencies.
 
-### Current sandbox gate
+### Historical sandbox gate (v0.3.0 verification snapshot)
 
-The source and documentation changes are complete, but this isolated environment cannot regenerate `uv.lock`: outbound PyPI/DNS access is unavailable and the newly required workspace packages are not present in the local uv cache. Therefore the dependency-lock update is intentionally **not claimed as verified in this sandbox**. The previous `uv.lock` remains unchanged rather than being hand-edited or weakened with unverifiable package artifact metadata.
+At the time of this isolated v0.3.0 verification, the environment could not regenerate `uv.lock`: outbound PyPI/DNS access was unavailable and the newly required workspace packages were not present in the local uv cache. The dependency-lock update was therefore **not claimed as verified in that snapshot**. The previous `uv.lock` was left unchanged rather than being hand-edited or weakened with unverifiable package artifact metadata.
 
-The enhanced candidate must not be treated as release-ready until `uv lock` is regenerated in a network-enabled dependency-complete environment, followed by `uv lock --check`, the workspace dependency matrix, full regression, and a new Tier 8 provenance record/fingerprint.
+That v0.3.0 snapshot required a refreshed lock, `uv lock --check`, the workspace dependency matrix, full regression, and a new Tier 8 provenance record/fingerprint before its promotion gates could be considered complete.
 
 ## Candidate identity
 
@@ -37,7 +37,7 @@ The enhanced candidate must not be treated as release-ready until `uv lock` is r
 
 ## Environment limitation
 
-This sandbox was explicitly not allowed to install missing project dependencies. The full dependency-backed release gate therefore remains an external/local gate. In particular, the available environment does not contain the project's pinned PyNaCl runtime dependency, so tests requiring signed-key operations cannot be executed here. This is recorded as an environment limitation rather than converted into a pass claim.
+The v0.3.0 verification environment did not install missing project dependencies. In particular, it lacked the pinned PyNaCl runtime dependency, so tests requiring signed-key operations could not be executed in that snapshot. This is recorded as an environment limitation rather than converted into a pass claim.
 
 Wheel/sdist creation and clean consumer installation are also left to the user's dependency-complete local environment.
 

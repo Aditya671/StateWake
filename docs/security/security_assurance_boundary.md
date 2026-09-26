@@ -1,11 +1,11 @@
 # StateWake Tier 4 — Security Assurance Evidence
 
-**Status:** development assurance artifact; not a release approval.
+**Scope:** Tier 4 assurance controls and evidence traceability.
 
 ## Scope
 
-This artifact records the Tier 4 assurance boundary for the current StateWake
-candidate. It verifies that the canonical security model, executable control
+This document records the Tier 4 assurance boundary for StateWake. It verifies
+that the canonical security model, executable control
 matrix, recovery guidance, security architecture decision, and security-sensitive
 regression tests remain mutually traceable.
 
@@ -53,8 +53,6 @@ Tier 4 does not turn these residual risks into passes. Unknown, unverified, or
 deployment-dependent properties remain explicitly outside the StateWake core
 claim.
 
-## Development status
+## Evidence role
 
-This artifact supports the Tier 4 development assurance gate only. It does not
-change the package version, create a release, publish an artifact, or authorize
-production deployment.
+This document defines Tier 4 security assurance evidence and traceability, not a release approval or independent certification. The package maturity classifier is maintained independently in `pyproject.toml`; deployment-specific security controls remain the responsibility of the deploying organization.

@@ -31,4 +31,8 @@ def test_release_profile_extends_check_with_hardening_and_release_gates() -> Non
     release = [name for name, _ in sdlc.command_plan("release")]
     assert release[: len(check)] == check
     assert "failure-lab" in release
+    assert "public-trial-regressions" in release
+    assert release.index("public-trial-regressions") < release.index(
+        "release-candidate"
+    )
     assert "release-candidate" in release

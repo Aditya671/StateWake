@@ -58,23 +58,23 @@ def test_release_content_verifier_checks_every_local_file_without_claiming_signa
     tmp_path: Path,
 ) -> None:
     source = bundle()
-    names = (
-        source.artifacts[0].name,
-        *(
-            item.reference
-            for item in (
-                *source.tests,
-                source.sbom,
-                source.vulnerability_scan,
-                source.provenance,
-            )
-            if item is not None
-        ),
-    )
-    assert all(name is not None for name in names)
+    assert source.sbom is not None
+    assert source.vulnerability_scan is not None
+    assert source.provenance is not None
+    references: list[str] = []
+    for item in (
+        *source.tests,
+        source.sbom,
+        source.vulnerability_scan,
+        source.provenance,
+    ):
+        if item.reference is None:
+            raise AssertionError("fixture evidence requires a local reference")
+        references.append(item.reference)
+    names = (source.artifacts[0].name, *references)
+    test_references = references[: len(source.tests)]
     files = {}
     for name in names:
-        assert name is not None
         target = tmp_path / name
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(f"content:{name}".encode())
@@ -89,14 +89,16 @@ def test_release_content_verifier_checks_every_local_file_without_claiming_signa
             ),
         ),
         tests=tuple(
-            replace(item, digest=files[item.reference]) for item in source.tests
+            replace(item, digest=files[reference])
+            for item, reference in zip(source.tests, test_references, strict=True)
         ),
-        sbom=replace(source.sbom, digest=files[source.sbom.reference]),
+        sbom=replace(source.sbom, digest=files[references[len(source.tests)]]),
         vulnerability_scan=replace(
-            source.vulnerability_scan, digest=files[source.vulnerability_scan.reference]
+            source.vulnerability_scan,
+            digest=files[references[len(source.tests) + 1]],
         ),
         provenance=replace(
-            source.provenance, digest=files[source.provenance.reference]
+            source.provenance, digest=files[references[len(source.tests) + 2]]
         ),
     )
     result = verify_release_trust_files(updated, tmp_path)

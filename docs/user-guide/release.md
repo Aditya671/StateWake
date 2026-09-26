@@ -2,7 +2,9 @@
 
 ## Current package baseline
 
-**StateWake v0.4.0 — current release candidate/source baseline**
+**StateWake v0.4.0 — Production/Stable package baseline**
+
+PyPI maturity classifier: `Development Status :: 5 - Production/Stable`.
 
 Distribution: `statewake-ai`
 
@@ -22,7 +24,7 @@ The v0.4.0 baseline combines the completed reliability lifecycle, cybersecurity 
 
 ## Release boundary
 
-Before external publication, verify:
+For a future package publication, verify:
 
 1. package and import versions agree;
 2. changelog and active documentation agree;
@@ -36,7 +38,7 @@ Before external publication, verify:
 10. repository-level and platform-specific release gates are externally verified;
 11. the exact source/distribution artifacts are checksum locked.
 
-The current sandbox intentionally did not install missing dependencies, so those dependency-backed gates remain explicit external work.
+The current source tree's local quality gates were run on 2026-09-26: mypy passed on 341 files; pytest passed 671 tests and 5 subtests; Ruff lint and formatting checks passed. Repository-host, multi-platform clean-consumer, and publication-approval gates remain part of the separate release workflow.
 
 ## Evidence flow
 

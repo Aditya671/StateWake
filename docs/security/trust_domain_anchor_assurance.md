@@ -2,7 +2,7 @@
 
 ## Status
 
-This document defines the StateWake Tier 7 **development assurance** mechanism. It is not a release approval, certification, production-readiness approval, or a claim that a local checkpoint is independently trustworthy merely because it is signed.
+This document defines the StateWake Tier 7 trust-domain anchoring mechanism. A local checkpoint is not independently trustworthy merely because it is signed; verification requires an applicable external trust context.
 
 ## Objective
 
@@ -97,7 +97,7 @@ StateWake provides deterministic discrepancy detection; organizational authority
 
 ## Exit condition
 
-Tier 7 is complete for this development baseline when executable evidence demonstrates:
+Tier 7 is complete when executable evidence demonstrates:
 
 - meaningful trust-domain separation requirements are explicit;
 - key purposes are explicitly separated;
@@ -110,6 +110,6 @@ Tier 7 is complete for this development baseline when executable evidence demons
 
 This tier does not create separate hosts, external registries, KMS/HSM systems, administrative organizations, immutable cloud storage, or independent security operations. Those are deployment controls. The repository can verify protocol contracts and reference adapter behavior, but cannot prove real-world administrative independence without deployment evidence.
 
-## Development-only boundary
+## Relationship to package release
 
-The current package identity is `v0.4.0`. This is a promoted development assurance baseline only. No release tag, publication, package upload, or release artifact is authorized by this document.
+Tier 7 describes trust-domain and anchor controls in the v0.4.0 package. It does not itself perform release tagging, package upload, or publication.

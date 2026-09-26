@@ -1,9 +1,5 @@
 
-> **Native SDK development candidate:** The unpromoted integration changes in this
-> source tree are not covered by the historical v0.2.0/v0.3.0/v0.4.0 release
-> verification records. Until the integration extras are resolved in `uv.lock`
-> and verified against installed SDKs, do not interpret package metadata or
-> historical benchmark reports as native-SDK release qualification.
+> **Package status:** StateWake is classified as `Development Status :: 5 - Production/Stable`.
 
 # StateWake
 
@@ -16,6 +12,8 @@ It is designed to integrate with existing AI runtimes, evaluation systems, telem
 **Project:** [GitHub repository](https://github.com/Aditya671/StateWake)  
 **Version:** `v0.4.0`  
 **License:** Apache-2.0
+
+StateWake v0.4.0 supports Python `>=3.11,<3.14`. Python 3.14 is intentionally outside the supported release compatibility matrix; use a supported interpreter and avoid forced wheel installation on Python 3.14.
 
 ## Why StateWake
 
@@ -81,7 +79,7 @@ For the previously published v0.1.1 package, use:
 python -m pip install statewake-ai==0.1.1
 ```
 
-The v0.2.0 and v0.4.0 source baselines in this repository are release candidates/source baselines until their external publication gates are completed.
+Release history and version-specific verification records are maintained under `docs/releases/`; see those records for historical gate outcomes.
 
 See `pyproject.toml` for the authoritative dependency declarations and `uv.lock` for the exact locked dependency state.
 

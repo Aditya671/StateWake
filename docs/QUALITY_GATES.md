@@ -45,3 +45,12 @@ Run the full contract, compatibility, clean-consumer, and release-candidate gate
 
 ### Release candidate
 Run the complete release workflow and require human approval before publication.
+
+
+## Public-trial regression gate
+
+Run `python scripts/testing/run_public_trial_regressions.py --mode source` on every release candidate. This validates the source regressions derived from the frozen 2026-09-25 public-repository trial. A source-mode PASS does not qualify real SDKs or public hosts; inspect each case's `qualification_status`. Before resuming large-host trials, run the same command with `--mode qualification` in an environment containing the advertised native integration extras. Qualification mode treats required SDK skips as `BLOCKED_ENV`, never as a pass.
+
+### License metadata / PEP 639
+
+Release packaging must retain `project.license = "Apache-2.0"` and `project.license-files = ["LICENSE"]`. Deprecated `License :: ...` Trove classifiers are not part of the StateWake v0.4.0 package metadata. `tests/release/test_license_metadata_policy.py` protects this boundary, and release builds should inspect wheel metadata and build output for license-metadata deprecation warnings.

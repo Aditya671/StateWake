@@ -1,5 +1,7 @@
 # StateWake v0.4.0
 
+This release record describes the original v0.4.0 promotion snapshot. The current package maturity is `Development Status :: 5 - Production/Stable`; historical gate results below apply to that snapshot.
+
 ## Release boundary
 
 v0.4.0 is the completed StateWake AI Systems Seven-Phase Roadmap release.
@@ -26,4 +28,4 @@ This release promotes StateWake into a broader reliability-evidence infrastructu
 
 ## Verification summary
 
-The promoted candidate is verified through the runnable sandbox gates: compilation, module import walk, unit/workspace/benchmark/release/security subsets, package build, package boundary verification, manifest regeneration, and cache-free packaging. Ruff, mypy, full PyNaCl-backed cryptographic tests, and any network-dependent dependency sync remain local/CI release-environment gates when unavailable in the sandbox.
+The original promotion snapshot recorded compilation, module import walk, selected unit/workspace/benchmark/release/security tests, package build, package-boundary verification, manifest regeneration, and cache-free packaging. Ruff, mypy, the full PyNaCl-backed cryptographic suite, and dependency synchronization were not recorded as completed in that snapshot.

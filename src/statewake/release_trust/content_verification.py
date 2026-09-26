@@ -77,19 +77,35 @@ def verify_release_trust_files(
 
     for item in bundle.artifacts:
         check(f"artifact:{item.name}", item.name, item.sha256, item.size_bytes)
-    for item in (
-        *bundle.tests,
+    for evidence_item in bundle.tests:
+        if evidence_item.status == "limitation":
+            limitations.append(
+                f"{evidence_item.evidence_type}: {evidence_item.limitation}"
+            )
+        else:
+            check(
+                f"{evidence_item.evidence_type}:{evidence_item.name}",
+                evidence_item.reference,
+                evidence_item.digest,
+            )
+    for external_item in (
         bundle.sbom,
         bundle.vulnerability_scan,
         bundle.provenance,
         bundle.signature,
     ):
-        if item is None:
+        if external_item is None:
             continue
-        if item.status == "limitation":
-            limitations.append(f"{item.evidence_type}: {item.limitation}")
+        if external_item.status == "limitation":
+            limitations.append(
+                f"{external_item.evidence_type}: {external_item.limitation}"
+            )
         else:
-            check(f"{item.evidence_type}:{item.name}", item.reference, item.digest)
+            check(
+                f"{external_item.evidence_type}:{external_item.name}",
+                external_item.reference,
+                external_item.digest,
+            )
     limitations.extend(
         (
             "External evidence status was asserted by its producer, not independently replayed.",

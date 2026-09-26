@@ -34,4 +34,4 @@ The cybersecurity and persistence/dataset architecture roadmaps represented by t
 
 ## Release gate
 
-Before publication of the current candidate, run the repository release gates and external platform checks defined in `docs/governance/RELEASE_GOVERNANCE.md` and `docs/governance/RELEASE_CANDIDATE_PROTOCOL.md`.
+Before any future publication, run the repository release gates and external platform checks defined in `docs/governance/RELEASE_GOVERNANCE.md` and `docs/governance/RELEASE_CANDIDATE_PROTOCOL.md`.

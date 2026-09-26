@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import json
 from datetime import UTC, datetime
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
+from statewake.integrations.base import ContractCaptureResult
 from statewake.integrations.native_capture import (
     NativeCaptureCapacityError,
     NativeCaptureSink,
@@ -17,7 +19,7 @@ from statewake.integrations.native_langgraph import capture_langgraph_history
 from statewake.workspace import StateWakeWorkspace
 
 
-def observe(sink: NativeCaptureSink, suffix: str) -> object:
+def observe(sink: NativeCaptureSink, suffix: str) -> ContractCaptureResult:
     return capture_native_observation(
         sink,
         framework="langgraph",
@@ -64,10 +66,8 @@ def test_failure_journal_replay_is_bounded_and_redacted(tmp_path: object) -> Non
     assert "private-token" not in path.read_text()
 
 
-def test_workspace_sink_persists_before_ack(tmp_path: object) -> None:
-    from pathlib import Path
-
-    root = Path(str(tmp_path))
+def test_workspace_sink_persists_before_ack(tmp_path: Path) -> None:
+    root = tmp_path
     with pytest.raises(ValueError, match="failure journal"):
         NativeCaptureSink(workspace=StateWakeWorkspace.open(root / "invalid"))
     workspace = StateWakeWorkspace.open(root / "workspace")

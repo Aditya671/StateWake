@@ -2,11 +2,11 @@
 
 ## Prerequisites
 
-- Python 3.11–3.13
+- Python 3.11–3.13 (`>=3.11,<3.14`); Python 3.14 is not a v0.4.0 supported runtime
 - uv
 - Git
 
-The project uses a `src/` package layout and a dependency-light runtime core. uv manages the project and lockfile. OpenTelemetry API support is a declared adapter-layer dependency; the domain core remains framework-neutral. The v0.4.0 workspace adapters are exposed through the optional `workspace` extra and cover PyArrow/Parquet, DuckDB analytical access, openpyxl/XLSX export, and SQLAlchemy-backed repository access.
+The project uses a `src/` package layout and a dependency-light runtime core. Interpreter support follows `docs/user-guide/python-support.md`; do not widen `requires-python` from an import-only smoke test. uv manages the project and lockfile. OpenTelemetry API support is a declared adapter-layer dependency; the domain core remains framework-neutral. The v0.4.0 workspace adapters are exposed through the optional `workspace` extra and cover PyArrow/Parquet, DuckDB analytical access, openpyxl/XLSX export, and SQLAlchemy-backed repository access.
 
 ## Setup
 

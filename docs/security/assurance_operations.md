@@ -2,7 +2,7 @@
 
 ## Status
 
-This is a **development assurance** artifact. It is not a release approval, certification, production-readiness approval, or publication authorization.
+This document specifies Tier 10 assurance controls, evidence requirements, and validation criteria. It is not a substitute for independent certification or an explicit publication decision.
 
 ## Objective
 
@@ -47,4 +47,4 @@ The policy is intentionally deterministic:
 
 ## Exit condition
 
-Tier 10 is satisfied for the development candidate when StateWake can maintain bounded, evidence-backed assurance decisions deterministically, preserve explanation and residual risk, represent operating exceptions without mutating system truth, and remain outside the scope of a generic enterprise security-operations platform.
+Tier 10 satisfaction requires StateWake to maintain bounded, evidence-backed assurance decisions deterministically, preserve explanation and residual risk, represent operating exceptions without mutating system truth, and remain outside the scope of a generic enterprise security-operations platform.

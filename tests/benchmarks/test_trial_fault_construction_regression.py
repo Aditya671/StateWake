@@ -9,12 +9,13 @@ from statewake.validation_study.metrics import (
     _reliability_transition_check,
     run_validation_case,
 )
+from statewake.validation_study.model import FaultKind
 
 
 @pytest.mark.parametrize(
     "fault", ("broken_provenance_edge", "invalid_reliability_transition")
 )
-def test_fault_is_detected_by_its_own_validator(fault: str) -> None:
+def test_fault_is_detected_by_its_own_validator(fault: FaultKind) -> None:
     observed = run_validation_case("tool_action", "statewake_full", (fault,))
     assert observed.injected_faults == (fault,)
     assert observed.detected_faults == (fault,)

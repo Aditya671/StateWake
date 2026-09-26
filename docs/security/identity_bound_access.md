@@ -1,8 +1,8 @@
 # Tier 11 — Identity-Bound Access & Least Privilege
 
-## Status
+## Scope
 
-This is a **development assurance** artifact. It is not release approval, certification, production approval, or publication authorization.
+This document specifies Tier 11 authorization controls, evidence requirements, and verification criteria. Independent certification and publication decisions remain separate governance activities.
 
 ## Objective
 
@@ -84,4 +84,4 @@ Authorization is a boundary decision. It does not mutate reliability state, evid
 
 ## Exit evidence
 
-Tier 11 is considered satisfied for the development candidate when tests demonstrate authenticated-but-unauthorized access, operation separation, resource and cross-domain scoping, recovery/attestation denial, invalid-state denial, role confusion rejection, revocation, expiry, and allow-on-all-required-conditions behavior.
+Tier 11 is considered satisfied when tests demonstrate authenticated-but-unauthorized access, operation separation, resource and cross-domain scoping, recovery/attestation denial, invalid-state denial, role confusion rejection, revocation, expiry, and allow-on-all-required-conditions behavior.

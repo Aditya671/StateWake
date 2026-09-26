@@ -208,7 +208,7 @@ StateWake v0.1.0 is a backward-compatible patch release following the initial Te
 
 ## [v0.1.0] — StateWake initial public package baseline
 
-StateWake v0.1.0 is the current package baseline. The release candidate process requires deterministic automated verification followed by explicit human release approval.
+At the time of the v0.1.0 entry, it was the package baseline. Its release process required deterministic automated verification followed by explicit human release approval.
 
 ### Product
 
@@ -233,15 +233,15 @@ Earlier implementation records are preserved under `repository historyhistorical
 - Added the LlamaIndex event-handler class identity required by the SDK, and stopped inventing missing LlamaIndex event timestamps.
 - Preserved native LangGraph history and OpenTelemetry SDK imports where they match published APIs.
 - Added real SDK import/instantiation smoke tests, corrected fake-module test fixtures, and stopped masking transitive import failures as missing SDK extras.
-- Recorded unresolved optional-dependency lock and absent real SDK gates; candidate remains unpromoted.
+- Historical v0.2.0 integration review recorded unresolved optional-dependency lock and absent real SDK gates; that snapshot was not promoted.
 ## Native integration release and private-boundary review
 
 - Added current-release native SDK compatibility jobs to release verification and publication; publication now depends on real SDK imports and native integration tests. Historical v0.2.0/v0.3.0 release records are not rewritten.
 - Audited underscore-prefixed declarations across production source, scripts, tests, and config, documenting test-only private imports and unproven dead-code candidates.
-- Recorded the review in `docs/verification/native-integration-release-and-private-boundary-audit.md`; this remains a development candidate until the integration dependency lock and live SDK gates pass.
+- Recorded the review in `docs/verification/native-integration-release-and-private-boundary-audit.md`; at that review snapshot, the integration dependency lock and live SDK gates remained outstanding.
 
 
-### Follow-up: frozen end-to-end negative-trial corrections (development candidate)
+### Historical follow-up: frozen end-to-end negative-trial corrections
 
 - Permit separate captures within one run to have different observed times while preserving producer authority and record-identity checks.
 - Route invalid-evidence Phase 7 fixtures to review/profile evaluation instead of aborting during construction; preserve the rejection of invalid accept decisions.

@@ -2,7 +2,7 @@
 
 ## Status
 
-This document defines the StateWake Tier 5 **development assurance** mechanism. It is not a release approval, certification, vulnerability-scanning program, or deployment-security substitute.
+This document defines the StateWake Tier 5 change-aware assurance mechanism. It complements, but does not replace, vulnerability scanning or deployment-security controls.
 
 ## Purpose
 
@@ -49,7 +49,7 @@ The model is deliberately conservative where the existing architecture does not 
 - final assurance state;
 - residual-risk and limitation context.
 
-A successful result can then be promoted by replacing the Tier 5 baseline snapshot with the verified candidate snapshot. Promotion is a development-baseline operation and does not change the package version or publish a release.
+A successful result can then be promoted by replacing the Tier 5 baseline snapshot with the verified candidate snapshot. This changes the assurance baseline only; it does not change the package version or publish a release.
 
 ## Stale-result handling
 
@@ -63,6 +63,6 @@ Tier 5 does not establish host-OS security, runtime hardening, TLS termination, 
 
 Tier 5 evidence is sufficient when StateWake can determine, from executable evidence, whether an assurance result is current, what changed since the promoted baseline, which invariants require re-verification, whether re-verification passed or failed, which assurance state applies, and which residual risks remain.
 
-## Development-only boundary
+## Relationship to package release
 
-The current package identity is `v0.4.0`. This tier is a promoted development assurance baseline only. No release tag, publication, or release artifact is authorized by this document.
+Tier 5 describes change-aware assurance controls in the v0.4.0 package. It does not itself perform release tagging or publication.

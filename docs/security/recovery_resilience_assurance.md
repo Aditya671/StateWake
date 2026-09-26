@@ -2,7 +2,7 @@
 
 ## Status
 
-This document defines the StateWake Tier 6 **development assurance** mechanism. It is not a release approval, certification, high-availability guarantee, or deployment recovery service.
+This document defines the StateWake Tier 6 recovery and resilience assurance mechanism. It does not itself provide a high-availability guarantee or deployment recovery service.
 
 ## Purpose
 
@@ -102,7 +102,7 @@ The executable suite then failure-injects the existing recovery primitives for c
 
 ## Exit condition
 
-Tier 6 is complete for this development baseline when executable evidence demonstrates that:
+Tier 6 is complete when executable evidence demonstrates that:
 
 - security failures are detected;
 - affected state is contained rather than silently accepted;
@@ -117,6 +117,6 @@ Tier 6 does not establish host-OS recovery, storage-provider disaster recovery, 
 
 Independent verification in this project means execution from a fresh clean copy by a separate verification run of the candidate. It is not an external human security audit or penetration test.
 
-## Development-only boundary
+## Relationship to package release
 
-The current package identity is `v0.4.0`. This tier is a promoted development assurance baseline only. No release tag, publication, or release artifact is authorized by this document.
+Tier 6 describes recovery and resilience controls in the v0.4.0 package. It does not itself perform release tagging or publication, and it does not replace deployment-specific recovery services.

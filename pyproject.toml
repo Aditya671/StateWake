@@ -2,11 +2,17 @@
 name = "statewake-ai"
 version = "0.4.0"
 description = "Evidence-backed reliability infrastructure for AI systems."
-keywords = ["ai", "reliability", "agents", "evidence", "provenance", "verification"]
+keywords = [
+    "ai",
+    "reliability",
+    "agents",
+    "evidence",
+    "provenance",
+    "verification",
+]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -17,7 +23,9 @@ classifiers = [
 license-files = ["LICENSE"]
 readme = "README.md"
 license = "Apache-2.0"
-authors = [{ name = "Aditya Gupta" }]
+authors = [
+    { name = "Aditya Gupta" },
+]
 requires-python = ">=3.11,<3.14"
 dependencies = [
     "pynacl==1.6.2",
@@ -27,11 +35,30 @@ dependencies = [
     "openpyxl==3.1.5",
     "pyarrow==25.0.1",
     "sqlalchemy==2.0.54",
+]
+
+[project.optional-dependencies]
+integrations-openai-agents = [
+    "openai-agents>=0.3,<1",
+]
+integrations-langchain = [
+    "langchain-core>=0.3,<2",
+]
+integrations-langgraph = [
+    "langgraph>=0.3,<2",
+]
+integrations-llamaindex = [
+    "llama-index-core>=0.12,<1",
+]
+integrations-opentelemetry = [
     "opentelemetry-sdk>=1.44,<2",
+]
+integrations = [
     "openai-agents>=0.3,<1",
     "langchain-core>=0.3,<2",
     "langgraph>=0.3,<2",
     "llama-index-core>=0.12,<1",
+    "opentelemetry-sdk>=1.44,<2",
 ]
 
 [project.urls]
@@ -58,12 +85,19 @@ requires = ["uv_build>=0.9.0,<1.0"]
 build-backend = "uv_build"
 
 [tool.pytest.ini_options]
-pythonpath = ["src", "."]
+pythonpath = [
+    "src",
+    ".",
+]
 
 [tool.uv.build-backend]
 module-name = "statewake"
 module-root = "src"
-source-exclude = ["**/__pycache__/**", "*.pyc", "*.pyo"]
+source-exclude = [
+    "**/__pycache__/**",
+    "*.pyc",
+    "*.pyo",
+]
 
 [[tool.uv.index]]
 name = "testpypi"
@@ -75,17 +109,40 @@ explicit = true
 [tool.ruff]
 line-length = 88
 target-version = "py311"
-exclude = ["repository history", "dist", ".venv", ".pytest_cache"]
+exclude = [
+    "repository history",
+    "dist",
+    ".venv",
+    ".pytest_cache",
+]
 
 [tool.ruff.lint]
 select = [
-    "E", "W", "F", "I", "N", "UP", "B", "A", "C4", "DTZ", "D",
+    "E",
+    "W",
+    "F",
+    "I",
+    "N",
+    "UP",
+    "B",
+    "A",
+    "C4",
+    "DTZ",
+    "D",
 ]
-ignore = ["D203", "D213", "E501"]
+ignore = [
+    "D203",
+    "D213",
+    "E501",
+]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["D"]
-"docs/examples/first-evidence-chain.py" = ["N999"]
+"tests/**/*.py" = [
+    "D",
+]
+"docs/examples/first-evidence-chain.py" = [
+    "N999",
+]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -96,15 +153,34 @@ line-ending = "auto"
 python_version = "3.11"
 files = ["src", "tests", "scripts", "docs"]
 strict = true
-exclude = ["\\.venv", "repository history", "dist", "build"]
+exclude = [
+    "\\.venv",
+    "repository history",
+    "dist",
+    "build",
+]
 warn_unused_ignores = false
-disable_error_code = ["import-untyped"]
+disable_error_code = [
+    "import-untyped",
+]
 follow_imports = "silent"
+follow_imports_for_stubs = true
 
 [[tool.mypy.overrides]]
-module = ["tests.*"]
+module = [
+    "tests.*",
+]
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
 disallow_untyped_calls = false
 warn_return_any = false
-disable_error_code = ["type-arg"]
+disable_error_code = [
+    "type-arg",
+]
+
+[[tool.mypy.overrides]]
+module = [
+    "numpy",
+    "numpy.*",
+]
+follow_imports = "skip"

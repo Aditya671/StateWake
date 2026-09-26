@@ -30,7 +30,7 @@ HTTP validation errors remain generic and do not echo untrusted request payloads
 
 Tier 13 is satisfied when StateWake-controlled data has explicit classification, purpose, minimization, access, retention, deletion/expiration, and disclosure semantics, with regression evidence for leakage and cross-boundary failures.
 
-**Development baseline only — not a release.**
+**Scope:** production-focused data lifecycle and confidentiality controls.
 
 
 ## Regression evidence

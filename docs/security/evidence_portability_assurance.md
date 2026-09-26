@@ -2,7 +2,7 @@
 
 ## Status
 
-This is a **development assurance** artifact. It is not a release approval, certification, production-readiness approval, or publication authorization.
+This document specifies Tier 9 evidence-portability controls and their verification boundary. Independent authenticity checks require an applicable external trust root.
 
 ## Objective
 
@@ -60,4 +60,4 @@ Repository code cannot prove the authenticity of a separately supplied trust roo
 
 ## Exit condition
 
-Tier 9 is satisfied for the development candidate when an independent verifier can establish the claimed subject/outcome, package integrity, evidence-chain binding, state-transition binding, and attestation authenticity when an applicable external trust root is supplied, while explicitly surfacing limitations when that root is unavailable.
+Tier 9 satisfaction requires an independent verifier to establish the claimed subject/outcome, package integrity, evidence-chain binding, state-transition binding, and attestation authenticity when an applicable external trust root is supplied, while explicitly surfacing limitations when that root is unavailable.

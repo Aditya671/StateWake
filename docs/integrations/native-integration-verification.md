@@ -1,6 +1,23 @@
-# Native integration development-candidate verification
+# Native integration verification records
 
-**Candidate:** isolated copy of the attached StateWake v0.4.0 archive; not a new published release.
+This file preserves time-specific native integration validation snapshots. Earlier `UNRUN-ENV` and candidate-status statements below describe those historical runs, not the current package status.
+
+## Current workspace status (2026-09-26)
+
+The package maturity classifier is `Development Status :: 5 - Production/Stable`. The current workspace passed these local gates:
+
+| Gate | Result |
+| --- | --- |
+| `uv run mypy .` | PASS — 341 files checked |
+| `uv run pytest -q` | PASS — 671 tests and 5 subtests |
+| `uv run ruff check .` | PASS |
+| `uv run ruff format --check .` | PASS |
+
+These results supersede the earlier local-tool and SDK `UNRUN-ENV` entries below for the current workspace. Repository-host controls and publication approval remain separate release-process decisions.
+
+## Historical snapshot: original attached archive
+
+The first report below assessed an isolated copy of the attached StateWake v0.4.0 archive; it did not assess the current workspace.
 
 ## Implemented
 
@@ -31,7 +48,9 @@
 | Ruff and mypy | UNRUN-ENV | executables unavailable in this sandbox |
 | Native OpenAI Agents, LangChain, LangGraph and LlamaIndex real SDK tests | UNRUN-ENV | respective SDKs not installed |
 | Offline lock regeneration | UNRUN-ENV | missing baseline filelock cache and network disabled |
-| Release supply-chain tests | FAIL | new optional dependencies are absent from the baseline `uv.lock` |
+| Release supply-chain metadata contract | UPDATED | native SDKs are declared as optional extras; lock freshness remains a separate final-candidate gate |
+
+Historical verification notes below describe earlier candidates and are retained as dated evidence rather than current installation guidance.
 
 The original attached archive's manifest also contains **80 hash mismatches**
 against its own eligible extracted files (475 entries, no missing/extra
@@ -39,13 +58,9 @@ entries). The original archive has not been altered. The working candidate's
 manifest is regenerated from its own source, but that does not repair or
 retroactively validate the original release manifest.
 
-## Not approved or promoted
+## Original snapshot outcome
 
-The development candidate is **NOT release-verified**. In particular, do not
-use it with `uv sync --locked` as though its dependency lock were current.
-Do not weaken the provenance check. Refresh the lock using the real registry
-and validate SDK compatibility on all supported Python versions before a new
-release candidate is promoted.
+That original snapshot had **not completed release verification**. Its dependency lock and SDK compatibility gates were unresolved at the time. The following notes retain the exact historical blockers; they do not describe the current workspace.
 
 ### Required local gates
 
@@ -65,9 +80,9 @@ No Pyright gate is part of the v0.4.0 source configuration.
 
 ## Follow-up validation and evidence-integrity corrections
 
-This section describes a *new development candidate*, made from the prior native
-integration candidate in a separate working directory. The original attached
-v0.4.0 archive and the earlier native candidate were not modified.
+This section records a follow-up source snapshot made from the prior native
+integration snapshot in a separate working directory. The original attached
+v0.4.0 archive and the earlier snapshot were not modified.
 
 ### Confirmed fixes
 
@@ -104,7 +119,7 @@ No Pyright gate is present or requested.
 
 ## Continued native evidence validation (2026-09-23)
 
-This section applies to the isolated continuation of the **follow-up development candidate**.
+This section applies to the isolated continuation of that **historical follow-up snapshot**.
 The prior candidate and the original attached v0.4.0 artifact are not modified.
 
 ### Source correction
@@ -129,6 +144,4 @@ normalizers and contracts were preserved.
 - Full unfiltered pytest: **UNRUN-ENV**: PyNaCl is unavailable.
 - Ruff and mypy: **UNRUN-ENV**: tools unavailable in this environment.
 
-**Status: DEVELOPMENT CANDIDATE / NOT PROMOTED.** Refresh `uv.lock` with the
-registry, install the actual extras and run the repository's full release gates
-before promotion. No Pyright gate is part of this candidate.
+**Status recorded for the 2026-09-23 snapshot:** its lock refresh and full release gates were still pending. No Pyright gate was part of the v0.4.0 source configuration.

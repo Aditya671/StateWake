@@ -38,5 +38,6 @@ def test_telemetry_payload_aliases_do_not_enter_contract_metadata() -> None:
         }
     )
     metadata = result.payload["metadata"]
+    assert isinstance(metadata, dict)
     assert "private" not in str(metadata)
     assert "gen_ai.operation.name" in metadata

@@ -77,6 +77,10 @@ def command_plan(profile: str) -> list[tuple[str, list[str]]]:
                 "ci",
             ],
         ),
+        (
+            "public-trial-regressions",
+            [python, "scripts/testing/run_public_trial_regressions.py"],
+        ),
         ("release-candidate", [python, "scripts/release/verify_release_candidate.py"]),
     ]
 

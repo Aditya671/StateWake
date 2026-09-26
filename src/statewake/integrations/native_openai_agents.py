@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from threading import Lock
 from typing import Any
 
 from statewake.ai_contracts.model import ModelInvocationContract
@@ -13,6 +14,7 @@ from .native_capture import (
     NativeCaptureSink,
     capture_native_runtime,
     digest_observed,
+    digest_sdk_observed,
     safe_metadata,
 )
 
@@ -45,6 +47,8 @@ def create_agents_trace_processor(
 
         def __init__(self) -> None:
             self._trace_start: dict[str, datetime] = {}
+            self._completed_spans: set[tuple[str, str]] = set()
+            self._span_lock = Lock()
 
         def on_trace_start(self, trace: Any) -> None:
             """Capture start time locally; the SDK Trace has no timestamp."""
@@ -75,9 +79,29 @@ def create_agents_trace_processor(
 
         def on_span_end(self, span: Any) -> None:
             """Capture an actual completed Agents span without raw span data."""
+            with self._span_lock:
+                self._capture_span_end(span)
+
+        def _capture_span_end(self, span: Any) -> None:
+            """Admit one completion per native trace/span identity."""
             try:
-                trace_id = str(span.trace_id)
-                span_id = str(span.span_id)
+                raw_trace_id = getattr(span, "trace_id", None)
+                raw_span_id = getattr(span, "span_id", None)
+                if not isinstance(raw_trace_id, str) or not raw_trace_id.strip():
+                    raise ValueError("missing trace identity")
+                if not isinstance(raw_span_id, str) or not raw_span_id.strip():
+                    raise ValueError("missing span identity")
+                trace_id = raw_trace_id
+                span_id = raw_span_id
+                identity = (trace_id, span_id)
+                if identity in self._completed_spans:
+                    return
+                if len(self._completed_spans) >= sink.capacity:
+                    sink.fail(
+                        "agents.span_identity_capacity",
+                        ValueError("completed span identity window exhausted"),
+                    )
+                    return
                 error = getattr(span, "error", None)
                 capture_native_runtime(
                     sink,
@@ -94,6 +118,7 @@ def create_agents_trace_processor(
                         parent_span_id=getattr(span, "parent_id", None),
                     ),
                 )
+                self._completed_spans.add(identity)
                 data = getattr(span, "span_data", None)
                 kind = getattr(data, "type", None)
                 if error or data is None:
@@ -118,7 +143,9 @@ def create_agents_trace_processor(
                                     provider="not-recorded-by-producer",
                                     model_name=str(model_name),
                                     model_version=None,
-                                    model_version_omission_reason="SDK span does not identify model snapshot",
+                                    model_version_omission_reason=(
+                                        "SDK span does not identify model snapshot"
+                                    ),
                                     parameters={},
                                     request_digest=digest_observed(request),
                                     response_digest=digest_observed(response),
@@ -130,6 +157,48 @@ def create_agents_trace_processor(
                         )
                     except (ValueError, TypeError) as exc:
                         sink.fail("agents.generation_contract", exc)
+                elif kind == "response":
+                    request = getattr(data, "input", None)
+                    response = getattr(data, "response", None)
+                    model_name = getattr(response, "model", None)
+                    if (
+                        request is None
+                        or response is None
+                        or not isinstance(model_name, str)
+                        or not model_name.strip()
+                        or len(model_name) > 128
+                        or not model_name.isprintable()
+                    ):
+                        sink.fail(
+                            "agents.response_missing",
+                            ValueError("missing observed response identity or content"),
+                        )
+                        return
+                    try:
+                        # Digest the entire JSON-mode SDK response envelope.
+                        sink.add(
+                            capture_contract(
+                                ModelInvocationContract(
+                                    contract_version="openai-agents.native.model.v1",
+                                    producer_id="openai-agents-native",
+                                    run_id=span_id,
+                                    provider="not-recorded-by-producer",
+                                    model_name=model_name,
+                                    model_version=None,
+                                    model_version_omission_reason=(
+                                        "SDK response does not identify model snapshot"
+                                    ),
+                                    parameters={},
+                                    request_digest=digest_sdk_observed(request),
+                                    response_digest=digest_sdk_observed(response),
+                                    finish_reason=None,
+                                    captured_at=datetime.now(UTC),
+                                    metadata={"trace_id": trace_id, "span_id": span_id},
+                                )
+                            )
+                        )
+                    except Exception as exc:
+                        sink.fail("agents.response_contract", exc)
                 elif kind == "function":
                     name = getattr(data, "name", None)
                     request = getattr(data, "input", None)
@@ -175,6 +244,8 @@ def create_agents_trace_processor(
         def shutdown(self) -> None:
             """Discard incomplete trace starts; keep completed evidence."""
             self._trace_start.clear()
+            with self._span_lock:
+                self._completed_spans.clear()
 
         def force_flush(self) -> None:
             """Sink is synchronous; no buffered exporter remains."""

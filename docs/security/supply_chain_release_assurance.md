@@ -2,7 +2,7 @@
 
 ## Status
 
-This document defines the StateWake Tier 8 **development assurance** mechanism. It is not a release approval, certification, production-readiness approval, or publication authorization.
+This document defines the StateWake Tier 8 supply-chain and release assurance mechanism. Evidence verification is distinct from human release approval and publication authorization.
 
 ## Objective
 
@@ -109,15 +109,15 @@ passed result
 
 This prevents a green result from one source/dependency state from being silently presented as evidence for another state.
 
-## Development-only boundary
+## Record and authorization semantics
 
-This tier is intentionally usable for development baselines without authorizing publication. The current package identity is `v0.4.0`. The workspace extra is the explicit dependency surface for the v0.4.0 dataset/export/analytical adapters. A provenance record must explicitly carry `release_status = development-only` and `publication_authorized = false` for this workflow.
+The workspace extra is the explicit dependency surface for the v0.4.0 dataset/export/analytical adapters. A provenance record describes its own build. `release_status` and `publication_authorized` record that build's release authorization; for example, a build not authorized for publication carries `release_status = development-only` and `publication_authorized = false`. These per-build fields do not override the package's PyPI maturity classifier.
 
-A successful Tier 8 verification therefore means **the described development artifact is internally attributable and integrity-bound**. It does not mean that a public release is approved or that external CI/repository controls have been independently audited.
+A successful Tier 8 verification means **the described artifact is internally attributable and integrity-bound**. It does not by itself approve a public release or independently audit external CI/repository controls.
 
 ## Exit condition
 
-Tier 8 is complete for this development baseline when a relying party can establish:
+Tier 8 is complete for a given build when a relying party can establish:
 
 - what source produced the artifact;
 - what locked dependencies were used;
@@ -139,3 +139,5 @@ The repository-side verifier cannot prove:
 - operational publication controls.
 
 Those boundaries are documented rather than silently converted into repository-level passes.
+
+# temporary test drift

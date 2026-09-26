@@ -64,6 +64,7 @@ from .native_langgraph import capture_langgraph_history
 from .native_llamaindex import (
     attach_llamaindex_event_handler,
     create_llamaindex_event_handler,
+    detach_llamaindex_event_handler,
 )
 from .native_openai_agents import create_agents_trace_processor
 from .native_opentelemetry import create_genai_span_processor
@@ -78,5 +79,6 @@ __all__ += [
     "capture_langgraph_history",
     "create_llamaindex_event_handler",
     "attach_llamaindex_event_handler",
+    "detach_llamaindex_event_handler",
     "create_genai_span_processor",
 ]

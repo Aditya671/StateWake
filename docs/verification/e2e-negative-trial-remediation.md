@@ -1,4 +1,4 @@
-# Frozen negative-trial remediation (current development candidate)
+# Frozen negative-trial remediation (historical validation record)
 
 Baseline: `statewake_release_scope_clean_candidate.zip`; frozen synthetic input data: `statewake_e2e_negative_trial_pack.zip`. Both originals remain unchanged.
 

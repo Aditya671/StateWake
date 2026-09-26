@@ -17,14 +17,9 @@ uv sync --extra integrations-opentelemetry
 uv sync --extra integrations
 ```
 
-Core Phase 1 contracts and existing Phase 5 event-mapping functions remain in
-place; the native SDKs are imported when a native handler is constructed.
-The current offline sandbox could **not** resolve/regenerate `uv.lock`: its
-package cache lacks the pinned baseline `filelock` dependency and network
-access is disabled. The source's previous `uv.lock` must not be represented as
-an updated lock for the newly introduced extras. Resolve it on an authorized
-online development machine, then run the full CI/SDK compatibility matrix
-before promoting a new release.
+Core Phase 1 contracts and existing Phase 5 event-mapping functions remain in place; native SDK modules are imported only when a native handler is constructed. The base package therefore remains usable when no framework extra is installed. Missing SDKs produce an integration-specific install instruction rather than failing `import statewake`.
+
+The `integrations` extra is convenience metadata for installing all five supported native SDK families in one compatible environment. It does not claim that every historical framework version can coexist; each advertised version range must still pass its SDK-backed compatibility tests.
 
 ## Native observation entry points
 

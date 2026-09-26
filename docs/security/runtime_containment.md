@@ -1,6 +1,6 @@
 # Tier 12 — Runtime & Hostile-Input Containment
 
-Status: promoted development-assurance baseline; not a release.
+Scope: production-focused runtime and hostile-input containment controls.
 
 ## Objective
 
@@ -41,7 +41,7 @@ Tier 12 therefore adds only the missing reusable containment contract and applie
 - maximum concurrency and temporary-byte budget as deployment policy parameters;
 - external-reference scheme validation.
 
-Defaults are deliberately bounded development-safe envelopes. Deployment owners may override the values for their workload; enterprise-specific values are not embedded in pure business semantics.
+Defaults are deliberately bounded safe envelopes. Deployment owners may override the values for their workload; enterprise-specific values are not embedded in pure business semantics.
 
 ## Archive safety
 
@@ -67,8 +67,8 @@ Containment failures are deterministic failures, not successful verification res
 
 The dedicated suite covers archive bombs, compression ratio, deep JSON, object counts, oversized strings, malformed packages, traversal and symlinks, external-reference rejection, verification deadlines, server request-size handling, archive non-execution, and bounded archive expansion.
 
-The inherited end-to-end suite remains mandatory; Tier 12 is not promoted by focused tests alone.
+Tier 12 validation requires the inherited end-to-end suite in addition to its focused tests.
 
 ## Exit condition
 
-Tier 12 is satisfied for the development baseline when untrusted-input boundaries have explicit validation, resource envelopes, containment/isolation requirements, safe archive processing, no implicit execution, no arbitrary external network dependency, and executable tests demonstrating bounded failure behavior.
+Tier 12 is satisfied when untrusted-input boundaries have explicit validation, resource envelopes, containment/isolation requirements, safe archive processing, no implicit execution, no arbitrary external network dependency, and executable tests demonstrating bounded failure behavior.

@@ -9,6 +9,7 @@ import pytest
 
 from statewake.workspace import StateWakeWorkspace
 from statewake.workspace.errors import WorkspaceRecordConflictError
+from statewake.workspace.sqlite_repository import SqliteWorkspaceRepository
 
 BASE = datetime(2026, 9, 21, tzinfo=UTC)
 
@@ -37,7 +38,9 @@ def test_distinct_events_same_run_different_times_and_out_of_order(
         latest = _write(workspace, "latest", 30)
         for record in (later, earlier, latest):
             workspace.verify(record)
-        with workspace.repository.connect() as database:
+        repository = workspace.repository
+        assert isinstance(repository, SqliteWorkspaceRepository)
+        with repository.connect() as database:
             run = database.execute(
                 "SELECT producer_id, started_at, finished_at FROM runs WHERE run_id = ?",
                 ("shared-run",),
@@ -67,7 +70,9 @@ def test_same_run_rejects_different_producer_without_altering_index(
         with pytest.raises(WorkspaceRecordConflictError, match="run identity conflict"):
             _write(workspace, "wrong-producer", 20, producer="other")
         workspace.verify(original)
-        with workspace.repository.connect() as database:
+        repository = workspace.repository
+        assert isinstance(repository, SqliteWorkspaceRepository)
+        with repository.connect() as database:
             assert database.execute(
                 "SELECT producer_id, started_at, finished_at FROM runs WHERE run_id = ?",
                 ("shared-run",),

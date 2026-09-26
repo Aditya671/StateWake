@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import sys
+from collections.abc import Mapping
+from datetime import UTC, datetime
 from types import ModuleType, SimpleNamespace
+from typing import Protocol
 from unittest.mock import patch
 from uuid import uuid4
 
@@ -11,12 +14,31 @@ import pytest
 
 from statewake.integrations import (
     NativeCaptureSink,
+    attach_llamaindex_event_handler,
     capture_langgraph_history,
     create_agents_trace_processor,
     create_genai_span_processor,
     create_langchain_callback_handler,
     create_llamaindex_event_handler,
+    detach_llamaindex_event_handler,
 )
+from statewake.integrations.base import digest_json
+from statewake.utils.json_support import JsonValue
+
+
+def object_field(payload: Mapping[str, JsonValue], key: str) -> dict[str, JsonValue]:
+    """Narrow nested serialized JSON for contract assertions."""
+    value = payload[key]
+    assert isinstance(value, dict)
+    return value
+
+
+class FakeDispatcherProtocol(Protocol):
+    """Minimal observable surface of an SDK dispatcher in attachment tests."""
+
+    event_handlers: list[object]
+
+    def add_event_handler(self, handler: object) -> None: ...
 
 
 def test_native_sink_rejects_unobserved_success_and_redacts_failures() -> None:
@@ -94,7 +116,9 @@ def test_langchain_callback_pairs_tool_start_and_end_without_raw_input() -> None
         handler.on_tool_end("secret-output", run_id=run_id)
         assert len(sink.snapshot()) == 2
         assert sink.snapshot()[0].payload["contract_type"] == "tool_call"
-        assert sink.snapshot()[1].payload["metadata"]["event_kind"] == "tool"
+        assert (
+            object_field(sink.snapshot()[1].payload, "metadata")["event_kind"] == "tool"
+        )
         assert "secret-input" not in str(sink.snapshot()[0].payload)
         assert "secret-output" not in str(sink.snapshot()[0].payload)
         handler.on_tool_end("no start", run_id=run_id)
@@ -128,7 +152,8 @@ def test_llamaindex_handler_captures_event_without_payload() -> None:
         event.class_name = lambda: "RetrievalEndEvent"
         handler.handle(event)
         assert (
-            sink.snapshot()[0].payload["metadata"]["operation"] == "RetrievalEndEvent"
+            object_field(sink.snapshot()[0].payload, "metadata")["operation"]
+            == "RetrievalEndEvent"
         )
         assert "secret" not in str(sink.snapshot()[0].payload)
 
@@ -155,7 +180,9 @@ def test_langgraph_history_binds_checkpoint_and_state_digest() -> None:
     )
     assert len(results) == 1
     assert results[0].payload["span_id"] == "ckpt-1"
-    assert results[0].payload["metadata"]["parent_checkpoint_id"] == "ckpt-0"
+    assert (
+        object_field(results[0].payload, "metadata")["parent_checkpoint_id"] == "ckpt-0"
+    )
     assert "hello" not in str(results[0].payload)
 
 
@@ -208,7 +235,10 @@ def test_openai_native_generation_and_function_contracts() -> None:
         )
         processor.on_trace_start(SimpleNamespace(trace_id="trace-2"))
         processor.on_trace_end(SimpleNamespace(trace_id="trace-2"))
-        assert sink.snapshot()[0].payload["metadata"]["event_kind"] == "trace_end"
+        assert (
+            object_field(sink.snapshot()[0].payload, "metadata")["event_kind"]
+            == "trace_end"
+        )
         for kind, data in (
             (
                 "generation",
@@ -376,3 +406,211 @@ def test_langchain_tool_missing_authorization_is_not_approved() -> None:
             "runtime_trace"
         ]
         assert sink.failures == ["langchain.tool_authorization: ValueError"]
+
+
+def _fake_llamaindex_modules() -> tuple[
+    dict[str, ModuleType], FakeDispatcherProtocol, FakeDispatcherProtocol
+]:
+    parent = ModuleType("llama_index")
+    core = ModuleType("llama_index.core")
+    instrumentation = ModuleType("llama_index.core.instrumentation")
+    events = ModuleType("llama_index.core.instrumentation.event_handlers")
+    sdk_instrumentation = ModuleType("llama_index_instrumentation")
+
+    class BaseEventHandler:
+        pass
+
+    class Dispatcher:
+        def __init__(self) -> None:
+            self.event_handlers: list[object] = []
+
+        def add_event_handler(self, handler: object) -> None:
+            self.event_handlers.append(handler)
+
+    root = Dispatcher()
+    named = Dispatcher()
+
+    def get_dispatcher(name: str | None = None) -> Dispatcher:
+        return root if name is None else named
+
+    events.BaseEventHandler = BaseEventHandler  # type: ignore[attr-defined]
+    instrumentation.get_dispatcher = get_dispatcher  # type: ignore[attr-defined]
+    sdk_instrumentation.get_dispatcher = get_dispatcher  # type: ignore[attr-defined]
+    modules = {
+        "llama_index": parent,
+        "llama_index.core": core,
+        "llama_index.core.instrumentation": instrumentation,
+        "llama_index.core.instrumentation.event_handlers": events,
+        "llama_index_instrumentation": sdk_instrumentation,
+    }
+    return modules, root, named
+
+
+def test_llamaindex_attachment_defaults_to_root_and_can_detach() -> None:
+    modules, root, named = _fake_llamaindex_modules()
+    with patch.dict(sys.modules, modules):
+        sink = NativeCaptureSink()
+        handler = attach_llamaindex_event_handler(sink)
+        assert root.event_handlers == [handler]
+        assert named.event_handlers == []
+        detach_llamaindex_event_handler(handler)
+        assert root.event_handlers == []
+
+
+def test_llamaindex_naive_timestamp_uses_labeled_receipt_time() -> None:
+    parent = ModuleType("llama_index")
+    core = ModuleType("llama_index.core")
+    instrumentation = ModuleType("llama_index.core.instrumentation")
+    events = ModuleType("llama_index.core.instrumentation.event_handlers")
+
+    class BaseEventHandler:
+        pass
+
+    events.BaseEventHandler = BaseEventHandler  # type: ignore[attr-defined]
+    with patch.dict(
+        sys.modules,
+        {
+            "llama_index": parent,
+            "llama_index.core": core,
+            "llama_index.core.instrumentation": instrumentation,
+            "llama_index.core.instrumentation.event_handlers": events,
+        },
+    ):
+        sink = NativeCaptureSink()
+        handler = create_llamaindex_event_handler(sink)
+        event = SimpleNamespace(
+            id_="event-naive",
+            span_id="span-naive",
+            timestamp=datetime(2026, 9, 25, 12, 0, 0, tzinfo=UTC).replace(tzinfo=None),
+        )
+        event.class_name = lambda: "QueryStartEvent"
+        handler.handle(event)
+        assert not sink.failures
+        result = sink.snapshot()[0].payload
+        assert result["contract_type"] == "observation"
+        metadata = object_field(result, "metadata")
+        assert metadata["timestamp_origin"] == "adapter_receipt_time"
+        assert (
+            metadata["native_timestamp_status"]
+            == "native_datetime_timezone_unspecified"
+        )
+        observed_at = result["observed_at"]
+        assert isinstance(observed_at, str)
+        assert observed_at.endswith("Z")
+
+
+def test_llamaindex_missing_timestamp_is_specific_failure() -> None:
+    parent = ModuleType("llama_index")
+    core = ModuleType("llama_index.core")
+    instrumentation = ModuleType("llama_index.core.instrumentation")
+    events = ModuleType("llama_index.core.instrumentation.event_handlers")
+
+    class BaseEventHandler:
+        pass
+
+    events.BaseEventHandler = BaseEventHandler  # type: ignore[attr-defined]
+    with patch.dict(
+        sys.modules,
+        {
+            "llama_index": parent,
+            "llama_index.core": core,
+            "llama_index.core.instrumentation": instrumentation,
+            "llama_index.core.instrumentation.event_handlers": events,
+        },
+    ):
+        sink = NativeCaptureSink()
+        handler = create_llamaindex_event_handler(sink)
+        event = SimpleNamespace(id_="event-missing", span_id="span-missing")
+        event.class_name = lambda: "QueryStartEvent"
+        handler.handle(event)
+        assert sink.snapshot() == ()
+        assert sink.failures == ["llamaindex.timestamp_missing: ValueError"]
+
+
+def test_llamaindex_retrieval_correlates_query_digest_from_start() -> None:
+    parent = ModuleType("llama_index")
+    core = ModuleType("llama_index.core")
+    instrumentation = ModuleType("llama_index.core.instrumentation")
+    events = ModuleType("llama_index.core.instrumentation.event_handlers")
+
+    class BaseEventHandler:
+        pass
+
+    events.BaseEventHandler = BaseEventHandler  # type: ignore[attr-defined]
+    with patch.dict(
+        sys.modules,
+        {
+            "llama_index": parent,
+            "llama_index.core": core,
+            "llama_index.core.instrumentation": instrumentation,
+            "llama_index.core.instrumentation.event_handlers": events,
+        },
+    ):
+        sink = NativeCaptureSink()
+        handler = create_llamaindex_event_handler(
+            sink,
+            corpus_identity="corpus-1",
+            corpus_snapshot_id="snapshot-1",
+            citation_boundary="node-ids",
+        )
+        start = SimpleNamespace(
+            id_="retrieval-start",
+            span_id="retrieval-span",
+            str_or_query_bundle="private query",
+            timestamp=datetime(2026, 9, 25, 12, 0, 0, tzinfo=UTC).replace(tzinfo=None),
+        )
+        start.class_name = lambda: "RetrievalStartEvent"
+        handler.handle(start)
+        node = SimpleNamespace(node_id="node-1", get_content=lambda: "private chunk")
+        end = SimpleNamespace(
+            id_="retrieval-end",
+            span_id="retrieval-span",
+            nodes=[SimpleNamespace(node=node)],
+            timestamp=datetime(2026, 9, 25, 12, 0, 1, tzinfo=UTC).replace(tzinfo=None),
+        )
+        end.class_name = lambda: "RetrievalEndEvent"
+        handler.handle(end)
+        payloads = [entry.payload for entry in sink.snapshot()]
+        retrieval = next(p for p in payloads if p["contract_type"] == "retrieval")
+        assert retrieval["query_digest"] == digest_json("private query")
+        assert retrieval["retrieved_item_ids"] == ["node-1"]
+        assert (
+            object_field(retrieval, "metadata")["timestamp_origin"]
+            == "adapter_receipt_time"
+        )
+        assert not sink.failures
+        assert "private query" not in str(payloads)
+        assert "private chunk" not in str(payloads)
+
+
+def test_llamaindex_duplicate_native_event_is_idempotent() -> None:
+    parent = ModuleType("llama_index")
+    core = ModuleType("llama_index.core")
+    instrumentation = ModuleType("llama_index.core.instrumentation")
+    events = ModuleType("llama_index.core.instrumentation.event_handlers")
+
+    class BaseEventHandler:
+        pass
+
+    events.BaseEventHandler = BaseEventHandler  # type: ignore[attr-defined]
+    with patch.dict(
+        sys.modules,
+        {
+            "llama_index": parent,
+            "llama_index.core": core,
+            "llama_index.core.instrumentation": instrumentation,
+            "llama_index.core.instrumentation.event_handlers": events,
+        },
+    ):
+        sink = NativeCaptureSink()
+        handler = create_llamaindex_event_handler(sink)
+        event = SimpleNamespace(
+            id_="event-duplicate",
+            span_id="span-duplicate",
+            timestamp="2026-09-25T12:00:00+00:00",
+        )
+        event.class_name = lambda: "QueryStartEvent"
+        handler.handle(event)
+        handler.handle(event)
+        assert len(sink.snapshot()) == 1
+        assert not sink.failures

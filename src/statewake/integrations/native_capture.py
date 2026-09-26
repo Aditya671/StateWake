@@ -112,6 +112,8 @@ def safe_metadata(**items: object) -> dict[str, str]:
         "task_count",
         "interrupt_count",
         "parent_span_id",
+        "timestamp_origin",
+        "native_timestamp_status",
     }
     result: dict[str, str] = {}
     for key, value in items.items():

@@ -2329,16 +2329,35 @@ source = { editable = "." }
 dependencies = [
     { name = "duckdb" },
     { name = "filelock" },
+    { name = "openpyxl" },
+    { name = "opentelemetry-api" },
+    { name = "pyarrow" },
+    { name = "pynacl" },
+    { name = "sqlalchemy" },
+]
+
+[package.optional-dependencies]
+integrations = [
     { name = "langchain-core" },
     { name = "langgraph" },
     { name = "llama-index-core" },
     { name = "openai-agents" },
-    { name = "openpyxl" },
-    { name = "opentelemetry-api" },
     { name = "opentelemetry-sdk" },
-    { name = "pyarrow" },
-    { name = "pynacl" },
-    { name = "sqlalchemy" },
+]
+integrations-langchain = [
+    { name = "langchain-core" },
+]
+integrations-langgraph = [
+    { name = "langgraph" },
+]
+integrations-llamaindex = [
+    { name = "llama-index-core" },
+]
+integrations-openai-agents = [
+    { name = "openai-agents" },
+]
+integrations-opentelemetry = [
+    { name = "opentelemetry-sdk" },
 ]
 
 [package.dev-dependencies]
@@ -2352,17 +2371,23 @@ dev = [
 requires-dist = [
     { name = "duckdb", specifier = "==1.5.5" },
     { name = "filelock", specifier = "==3.32.4" },
-    { name = "langchain-core", specifier = ">=0.3,<2" },
-    { name = "langgraph", specifier = ">=0.3,<2" },
-    { name = "llama-index-core", specifier = ">=0.12,<1" },
-    { name = "openai-agents", specifier = ">=0.3,<1" },
+    { name = "langchain-core", marker = "extra == 'integrations'", specifier = ">=0.3,<2" },
+    { name = "langchain-core", marker = "extra == 'integrations-langchain'", specifier = ">=0.3,<2" },
+    { name = "langgraph", marker = "extra == 'integrations'", specifier = ">=0.3,<2" },
+    { name = "langgraph", marker = "extra == 'integrations-langgraph'", specifier = ">=0.3,<2" },
+    { name = "llama-index-core", marker = "extra == 'integrations'", specifier = ">=0.12,<1" },
+    { name = "llama-index-core", marker = "extra == 'integrations-llamaindex'", specifier = ">=0.12,<1" },
+    { name = "openai-agents", marker = "extra == 'integrations'", specifier = ">=0.3,<1" },
+    { name = "openai-agents", marker = "extra == 'integrations-openai-agents'", specifier = ">=0.3,<1" },
     { name = "openpyxl", specifier = "==3.1.5" },
     { name = "opentelemetry-api", specifier = "==1.44.0" },
-    { name = "opentelemetry-sdk", specifier = ">=1.44,<2" },
+    { name = "opentelemetry-sdk", marker = "extra == 'integrations'", specifier = ">=1.44,<2" },
+    { name = "opentelemetry-sdk", marker = "extra == 'integrations-opentelemetry'", specifier = ">=1.44,<2" },
     { name = "pyarrow", specifier = "==25.0.1" },
     { name = "pynacl", specifier = "==1.6.2" },
     { name = "sqlalchemy", specifier = "==2.0.54" },
 ]
+provides-extras = ["integrations-openai-agents", "integrations-langchain", "integrations-langgraph", "integrations-llamaindex", "integrations-opentelemetry", "integrations"]
 
 [package.metadata.requires-dev]
 dev = [

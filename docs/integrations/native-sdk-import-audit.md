@@ -1,6 +1,8 @@
-# Native SDK import and hook audit — 2026-09-23
+# Native SDK import and hook audit — 2026-09-23 (historical snapshot)
 
-**Source candidate:** `statewake_native_sdk_integrations_v040_continued_candidate.zip`, extracted read-only into the baseline folder and edited only in a separate working directory. **Status:** development candidate; no release approval.
+This dated audit describes the source archive and environment assessed on 2026-09-23. Its environment and release-status findings are historical and do not describe the current workspace, whose package classifier is `Development Status :: 5 - Production/Stable`.
+
+**Source snapshot:** `statewake_native_sdk_integrations_v040_continued_candidate.zip`, extracted read-only into the baseline folder and edited only in a separate working directory.
 
 ## Confirmed upstream interfaces and source decisions
 
@@ -33,7 +35,7 @@ The earlier fake SDK tests were updated to mock the defining package paths rathe
 
 ## Limits and release blocker
 
-- Real OpenAI Agents, LangChain, LangGraph, and LlamaIndex SDKs are absent in this environment; their smoke tests cannot establish installed-SDK compatibility here.
+- Real OpenAI Agents, LangChain, LangGraph, and LlamaIndex SDKs were absent in the 2026-09-23 audit environment; its smoke tests could not establish installed-SDK compatibility.
 - OpenTelemetry SDK is present, including the real span lifecycle regression.
-- The optional integration extras remain unresolved in `uv.lock`. No lock entries were invented; supply-chain verification must stay blocked until actual dependency resolution and a full release gate pass on the same candidate.
+- The optional integration extras were unresolved in the 2026-09-23 snapshot's `uv.lock`. No lock entries were invented; that snapshot's supply-chain verification remained blocked pending actual dependency resolution and a full release gate.
 - No Pyright gate was introduced; use the repository's mypy gate.
