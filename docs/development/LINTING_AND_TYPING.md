@@ -23,15 +23,18 @@ import organization, and diagnostics on the native server path.
 ```bash
 uvx ruff check src tests scripts docs
 uvx ruff format --check src tests scripts docs
-uv run mypy
+uv run --extra integrations mypy
 ```
 
 Ruff and mypy are configured in `pyproject.toml` and check active Python code
 under `src/`, `tests/`, `scripts/`, and `docs/`. Mypy applies strict rules to
 source, scripts, and documentation examples, with fixture-friendly overrides
 for `tests/` so dynamic test doubles do not require exhaustive annotations.
-Imports from third-party packages without type information are excluded from
-mypy diagnostics; StateWake code remains checked.
+Mypy installs the locked `integrations` extra because it checks adapter
+subclasses and tests that import those optional SDKs. The extra remains
+optional for normal package consumers. Imports from third-party packages
+without type information are excluded from mypy diagnostics; StateWake code
+remains checked.
 
 ## Documentation requirement
 

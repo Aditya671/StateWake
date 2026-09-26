@@ -8,6 +8,18 @@ from config.project_paths import PROJECT_ROOT
 ROOT = PROJECT_ROOT
 
 
+def test_strict_typecheck_installs_optional_integration_types() -> None:
+    """Type checking must resolve the optional SDK APIs checked by mypy."""
+    commands = dict(sdlc.command_plan("check"))
+    assert commands["strict-typecheck"] == [
+        "uv",
+        "run",
+        "--extra",
+        "integrations",
+        "mypy",
+    ]
+
+
 def test_check_profile_has_required_ordered_gates() -> None:
     """Require the inexpensive SDLC profile to preserve the intended gate order."""
     names = [name for name, _ in sdlc.command_plan("check")]
