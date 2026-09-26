@@ -97,10 +97,13 @@ def test_anchor_compromise_never_self_authenticates() -> None:
     assert "does not by itself prove administrative independence" in text
 
 
-def test_trust_domain_assurance_is_not_a_release() -> None:
+def test_trust_domain_assurance_does_not_publish_a_package() -> None:
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     document = (ROOT / "docs/security/trust_domain_anchor_assurance.md").read_text(
         encoding="utf-8"
     )
     assert 'version = "0.4.0"' in pyproject
-    assert "not a release approval" in document.lower()
+    assert (
+        "does not itself perform release tagging, package upload, or publication"
+        in document
+    )

@@ -24,7 +24,7 @@ def test_release_workflow_tests_built_wheel_and_persists_security_evidence():
     assert "actions/attest-build-provenance@v3" in text
 
 
-def test_release_governance_docs_do_not_claim_production_readiness():
+def test_release_governance_separates_maturity_from_deployment_security():
     text = (ROOT / "docs/governance/RELEASE_GOVERNANCE.md").read_text(encoding="utf-8")
     assert "does not by itself authorize publication" in text
-    assert "must not be described as production readiness" in text
+    assert "not a certification of every host deployment" in text
