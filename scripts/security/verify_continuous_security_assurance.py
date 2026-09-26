@@ -116,6 +116,7 @@ def write_snapshot_manifest(path: Path, snapshot_data: dict[str, str]) -> None:
             f"{digest}  {name}\n" for name, digest in sorted(snapshot_data.items())
         ),
         encoding="utf-8",
+        newline="\n",
     )
 
 

@@ -16,6 +16,7 @@ def test_release_scope_is_explicit() -> None:
     included = (
         "src/statewake/__init__.py",
         "config/project_paths.py",
+        ".gitattributes",
         "pyproject.toml",
         "uv.lock",
         "tests/test_release_identity.py",
@@ -36,6 +37,12 @@ def test_release_scope_is_explicit() -> None:
     )
     assert all(is_release_input(Path(name)) for name in included)
     assert all(not is_release_input(Path(name)) for name in excluded)
+
+
+def test_git_text_checkout_policy_is_line_ending_stable() -> None:
+    """Release-input text hashes must not depend on the checkout platform."""
+    attributes = Path(__file__).resolve().parents[2] / ".gitattributes"
+    assert "* text=auto eol=lf" in attributes.read_text(encoding="utf-8")
 
 
 def test_all_release_digest_consumers_share_one_scope(tmp_path: Path) -> None:

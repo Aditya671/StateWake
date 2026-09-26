@@ -11,6 +11,7 @@ from pathlib import Path
 
 CURRENT_TOP_LEVEL = frozenset(
     {
+        ".gitattributes",
         ".editorconfig",
         ".pre-commit-config.yaml",
         ".python-version",

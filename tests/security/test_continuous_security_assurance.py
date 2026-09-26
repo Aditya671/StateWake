@@ -125,6 +125,13 @@ class ContinuousSecurityAssuranceTests(unittest.TestCase):
             ASSURANCE_VERIFIER.assess(self.root, self.baseline_path).state, allowed
         )
 
+    def test_snapshot_manifest_uses_platform_independent_lf(self) -> None:
+        """Generated assurance manifests use LF regardless of host platform."""
+        target = self.root / "snapshot-manifest.txt"
+        ASSURANCE_VERIFIER.write_snapshot_manifest(target, {"README.md": "a" * 64})
+        expected = f"{'a' * 64}  README.md\n".encode("ascii")
+        self.assertEqual(target.read_bytes(), expected)
+
 
 if __name__ == "__main__":
     unittest.main()
