@@ -13,7 +13,6 @@ if str(PROJECT_CONFIG_BOOTSTRAP) not in sys.path:
 from config.project_paths import PROJECT_ROOT  # noqa: E402
 
 ROOT = PROJECT_ROOT
-EXPECTED_VERSION = "0.1.1"
 EXPECTED_DISTRIBUTION = "statewake-ai"
 EXPECTED_IMPORT_PACKAGE = "statewake"
 EXPECTED_API_CONTRACT_VERSION = "1"
@@ -30,6 +29,11 @@ def extract(pattern: str, text: str, label: str) -> str:
     if match is None:
         raise AssertionError(f"missing {label}")
     return match.group(1)
+
+
+def current_version() -> str:
+    """Read the authoritative project version."""
+    return extract(r'^version = "([^"]+)"', read("pyproject.toml"), "project version")
 
 
 def main() -> None:
@@ -57,15 +61,18 @@ def main() -> None:
     lock_version = project_match.group(1)
 
     assert distribution == EXPECTED_DISTRIBUTION, distribution
-    assert version == package_version == lock_version == EXPECTED_VERSION, (
+    assert version == package_version == lock_version == current_version(), (
         version,
         package_version,
         lock_version,
     )
     assert api_contract_version == EXPECTED_API_CONTRACT_VERSION
     assert 'statewake = "statewake.cli.main:main"' in pyproject
-    assert "## [v0.1.1]" in changelog
-    assert "public package baseline is **v0.1.1**" in readme
+    assert f"## [v{current_version()}]" in changelog
+    assert (
+        f"public package baseline is **v{current_version()}**" in readme
+        or f"current public package baseline is **v{current_version()}**" in readme
+    )
     assert "statewake-ai" in readme
     assert "https://github.com/Aditya671/StateWake" in readme
     assert "https://github.com/Aditya671/StateWake/tree/main/docs/user-guide" in readme

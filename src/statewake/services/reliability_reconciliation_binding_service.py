@@ -2,11 +2,6 @@
 
 from __future__ import annotations
 
-# pyright: reportUnknownMemberType=false
-# pyright: reportUnknownVariableType=false
-# pyright: reportUnknownArgumentType=false
-# pyright: reportUnknownParameterType=false
-# pyright: reportMissingParameterType=false
 import json
 from collections.abc import Mapping
 from hashlib import sha256
@@ -22,14 +17,6 @@ from ..services.persistence import atomic_write_text
 def _file_digest(path: Path) -> str:
     """Return the SHA-256 digest of a file."""
     return sha256(path.read_bytes()).hexdigest()
-
-
-def _safe(root: Path, source: str) -> Path:  # type: ignore
-    """Return a sanitized value suitable for reconciliation diagnostics."""
-    candidate = (root.resolve() / source.replace("\\", "/")).resolve()
-    if candidate != root.resolve() and root.resolve() not in candidate.parents:
-        raise ValueError(f"reconciliation source escapes root: {source}")
-    return candidate
 
 
 def _reconciliation_semantics(path: Path) -> tuple[str, str]:

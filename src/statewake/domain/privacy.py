@@ -133,22 +133,22 @@ class Redactor:
             return self._redact_mapping(value, path=path)  # type: ignore
         if isinstance(value, list):
             output = []
-            findings: list[str] = []
+            list_findings: list[str] = []
             for index, item in enumerate(value):  # type: ignore
                 redacted_item, item_findings = self._redact_value(
                     item, path + (str(index),)
                 )
                 output.append(redacted_item)  # type: ignore
-                findings.extend(item_findings)
-            return output, findings  # type: ignore
+                list_findings.extend(item_findings)
+            return output, list_findings  # type: ignore
         if isinstance(value, str):
             redacted = value
-            findings: list[str] = []
+            string_findings: list[str] = []
             for rule in self.policy.rules:
                 redacted, matched = rule.apply(redacted)
                 if matched:
-                    findings.append(f"rule:{rule.rule_id}:{'.'.join(path)}")
-            return redacted, findings
+                    string_findings.append(f"rule:{rule.rule_id}:{'.'.join(path)}")
+            return redacted, string_findings
         return value, []
 
 

@@ -11,6 +11,7 @@ if str(PROJECT_CONFIG_BOOTSTRAP) not in sys.path:
     sys.path.insert(0, str(PROJECT_CONFIG_BOOTSTRAP))
 
 from config.project_paths import PROJECT_ROOT  # noqa: E402
+from scripts.common.release_scope import release_input_files  # noqa: E402
 
 ROOT: Final[Path] = PROJECT_ROOT
 EXPECTED_DIRECTORIES: Final[tuple[str, ...]] = (
@@ -76,28 +77,19 @@ def main() -> int:
     for directory in EXPECTED_DIRECTORIES:
         if not (ROOT / directory).is_dir():
             failures.append(f"missing expected directory: {directory}")
-    for path in FORBIDDEN_PATHS:
-        if (ROOT / path).exists():
-            failures.append(f"obsolete repository path exists: {path}")
+    for forbidden_path in FORBIDDEN_PATHS:
+        if (ROOT / forbidden_path).exists():
+            failures.append(f"obsolete repository path exists: {forbidden_path}")
 
-    scan_roots = (ROOT / "docs", ROOT / "scripts", ROOT / "tests", ROOT / "README.md")
-    for scan_root in scan_roots:
-        paths = [scan_root] if scan_root.is_file() else scan_root.rglob("*")
-        for path in paths:
-            if not path.is_file() or path.suffix.lower() not in {
-                ".md",
-                ".py",
-                ".txt",
-                ".yml",
-                ".yaml",
-            }:
-                continue
-            text = path.read_text(encoding="utf-8")
-            for identifier in FORBIDDEN_IDENTIFIERS:
-                if identifier in text:
-                    failures.append(
-                        f"obsolete project identity {identifier!r}: {path.relative_to(ROOT)}"
-                    )
+    for candidate in release_input_files(ROOT):
+        if candidate.suffix.lower() not in {".md", ".py", ".txt", ".yml", ".yaml"}:
+            continue
+        text = candidate.read_text(encoding="utf-8")
+        for identifier in FORBIDDEN_IDENTIFIERS:
+            if identifier in text:
+                failures.append(
+                    f"obsolete project identity {identifier!r}: {candidate.relative_to(ROOT)}"
+                )
     if failures:
         print("REPOSITORY STRUCTURE: FAIL")
         for failure in failures:

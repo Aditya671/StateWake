@@ -38,7 +38,10 @@ def command_plan(profile: str) -> list[tuple[str, list[str]]]:
             "ruff-format",
             [python, "-m", "ruff", "format", "--check", "src", "tests", "scripts"],
         ),
-        ("strict-typecheck", ["uv", "run", "pyright"]),
+        (
+            "strict-typecheck",
+            ["uv", "run", "--extra", "integrations", "mypy"],
+        ),
         (
             "source-compilation",
             [python, "-m", "compileall", "-q", "src", "tests", "scripts"],
@@ -76,6 +79,10 @@ def command_plan(profile: str) -> list[tuple[str, list[str]]]:
                 "--mode",
                 "ci",
             ],
+        ),
+        (
+            "public-trial-regressions",
+            [python, "scripts/testing/run_public_trial_regressions.py"],
         ),
         ("release-candidate", [python, "scripts/release/verify_release_candidate.py"]),
     ]

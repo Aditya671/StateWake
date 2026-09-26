@@ -16,7 +16,7 @@ format-check:
 	uvx ruff@0.16.5 format --check src tests scripts
 
 typecheck:
-	uv run pyright
+	uv run mypy
 
 check: lint format-check typecheck test
 

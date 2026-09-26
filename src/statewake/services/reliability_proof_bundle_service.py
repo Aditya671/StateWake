@@ -2,11 +2,6 @@
 
 from __future__ import annotations
 
-# pyright: reportUnknownMemberType=false
-# pyright: reportUnknownVariableType=false
-# pyright: reportUnknownArgumentType=false
-# pyright: reportUnknownParameterType=false
-# pyright: reportMissingParameterType=false
 import json
 import tempfile
 from hashlib import sha256
@@ -18,6 +13,7 @@ from statewake.domain.operations import OperationalArtifact, OperationalBundle
 from statewake.domain.reliability_attestation import SignedReliabilityOutcomeEnvelope
 from statewake.domain.reliability_lineage import ReliabilityLineageClosure
 
+from ..domain.cryptographic_trust import CryptographicProfile
 from ..domain.reliability_attestation_trust_context import (
     ReliabilityAttestationTrustContext,
 )
@@ -65,13 +61,6 @@ def _safe_source(root: Path, source: str) -> Path:
     if candidate != root_resolved and root_resolved not in candidate.parents:
         raise ValueError(f"reliability proof source escapes evidence root: {source}")
     return candidate
-
-
-def _write_json(path: Path, payload: object) -> bytes:  # type: ignore
-    """Write a canonical JSON member to the proof bundle."""
-    content = (json.dumps(payload, indent=2, sort_keys=True) + "\n").encode("utf-8")
-    path.write_bytes(content)
-    return content
 
 
 def _reference_items(
@@ -125,6 +114,7 @@ def build_reliability_proof_bundle(
     signed_attestation_path: Path | None = None,
     attestation_trust_state_path: Path | None = None,
     attestation_authority_store_path: Path | None = None,
+    cryptographic_profile: CryptographicProfile | None = None,
 ) -> tuple[OperationalBundle, ReliabilityOutcomeVerificationReport]:
     """Verify an outcome, then package its exact evidence graph using OperationalBundle."""
     attestation = load_reliability_outcome_attestation(attestation_path)
@@ -460,14 +450,14 @@ def build_reliability_proof_bundle(
             target = staging / artifact.path
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(content)
-        for artifact_id, (path, kind, content) in special.items():
-            target = staging / path
+        for artifact_id, (member_path, kind, content) in special.items():
+            target = staging / member_path
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(content)
             spec_artifacts.append(
                 {
                     "artifact_id": artifact_id,
-                    "path": path,
+                    "path": member_path,
                     "kind": kind,
                     "sha256": sha256(content).hexdigest(),
                     "sensitivity": "restricted"

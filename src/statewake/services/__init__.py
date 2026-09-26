@@ -14,6 +14,7 @@ from .evidence_service import load_manifest, store_content
 from .operations_service import (
     build_bundle,
     export_bundle,
+    export_disclosed_bundle,
     inspect_bundle,
     load_bundle_spec,
     retention_decision,
@@ -125,6 +126,7 @@ __all__ = [
     "current_reliability_state",
     "evaluate_claim_profile",
     "export_bundle",
+    "export_disclosed_bundle",
     "get_builtin_claim_profile",
     "ingest_evidence_file",
     "inspect_bundle",

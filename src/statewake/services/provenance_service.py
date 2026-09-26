@@ -2,16 +2,10 @@
 
 from __future__ import annotations
 
-# pyright: reportUnknownMemberType=false
-# pyright: reportUnknownVariableType=false
-# pyright: reportUnknownArgumentType=false
-# pyright: reportUnknownParameterType=false
-# pyright: reportMissingParameterType=false
 import json
 from collections.abc import Mapping
 from hashlib import sha256
 from pathlib import Path
-from typing import Any
 
 from statewake.utils.json_support import load_object
 
@@ -22,13 +16,6 @@ from ..domain.provenance import (
     ProvenanceNode,
 )
 from ..services.persistence import atomic_write_text
-
-
-def _canonical_bytes(payload: Any) -> bytes:  # type: ignore
-    """Return canonical bytes for deterministic provenance hashing."""
-    return json.dumps(
-        payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False
-    ).encode("utf-8")
 
 
 def load_provenance_graph(path: Path) -> ProvenanceGraph:

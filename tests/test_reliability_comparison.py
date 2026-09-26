@@ -5,11 +5,6 @@ The active test suite protects the public package behavior and integration bound
 
 from __future__ import annotations
 
-# pyright: reportUnknownMemberType=false
-# pyright: reportUnknownVariableType=false
-# pyright: reportUnknownArgumentType=false
-# pyright: reportUnknownParameterType=false
-# pyright: reportMissingParameterType=false
 import json
 import sys
 import tempfile
@@ -365,8 +360,8 @@ class ReliabilityComparisonPortableProofTests(unittest.TestCase):
             def ref(kind, identity, path) -> EvidenceReference:  # type: ignore
                 """Verify the `ref` behavior and its expected invariants."""
                 return EvidenceReference(
-                    kind,  # pyright: ignore[reportUnknownArgumentType]
-                    identity,  # pyright: ignore[reportUnknownArgumentType]
+                    kind,
+                    identity,
                     sha256(path.read_bytes()).hexdigest(),  # type: ignore
                     path.name,  # type: ignore
                 )

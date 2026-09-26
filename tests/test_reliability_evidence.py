@@ -3,11 +3,6 @@
 The active test suite protects the public package behavior and integration boundaries.
 """
 
-# pyright: reportUnknownMemberType=false
-# pyright: reportUnknownVariableType=false
-# pyright: reportUnknownArgumentType=false
-# pyright: reportUnknownParameterType=false
-# pyright: reportMissingParameterType=false
 import json
 import tempfile
 import unittest

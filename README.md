@@ -1,3 +1,6 @@
+
+> **Package status:** StateWake is classified as `Development Status :: 5 - Production/Stable`.
+
 # StateWake
 
 > **Evidence-backed reliability infrastructure for AI systems.**
@@ -7,8 +10,10 @@ StateWake helps AI systems establish a verifiable record of what happened, what 
 It is designed to integrate with existing AI runtimes, evaluation systems, telemetry, CI/CD, storage, and operational tooling. It does not replace them.
 
 **Project:** [GitHub repository](https://github.com/Aditya671/StateWake)  
-**Version:** `v0.1.1`  
+**Version:** `v0.4.0`  
 **License:** Apache-2.0
+
+StateWake v0.4.0 supports Python `>=3.11,<3.14`. Python 3.14 is intentionally outside the supported release compatibility matrix; use a supported interpreter and avoid forced wheel installation on Python 3.14.
 
 ## Why StateWake
 
@@ -64,13 +69,19 @@ The package published to PyPI/TestPyPI is `statewake-ai`; the Python import pack
 python -m pip install statewake-ai
 ```
 
-For the current TestPyPI release, use:
+The workspace dataset/export adapters and native framework integrations are included in the package's required runtime dependencies; no workspace extra is needed.
+
+CSV, JSON, portable-bundle, and SQLite reference persistence use Python/SQLite standard-library capabilities and do not require additional packages.
+
+For the previously published v0.1.1 package, use:
 
 ```bash
-python -m pip install --index-url https://test.pypi.org/simple/ --no-deps statewake-ai==v0.1.1
+python -m pip install statewake-ai==0.1.1
 ```
 
-See the repository for the dependency and development setup used by the project.
+Release history and version-specific verification records are maintained under `docs/releases/`; see those records for historical gate outcomes.
+
+See `pyproject.toml` for the authoritative dependency declarations and `uv.lock` for the exact locked dependency state.
 
 ## Python integration
 
@@ -159,7 +170,7 @@ Project-level documents:
 
 ## Versioning
 
-The current public package baseline is **v0.1.1**. Historical implementation identifiers are retained only as development provenance.
+The current public package baseline is **v0.4.0**. Historical implementation identifiers are retained only as development provenance.
 
 See the project's versioning policy in the repository documentation:
 

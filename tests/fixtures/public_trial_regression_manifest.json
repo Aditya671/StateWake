@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "campaign": "statewake-public-repository-trial-2026-09-25",
+  "outcomes": [
+    "PASS",
+    "FAIL_STATEWAKE",
+    "FAIL_HOST",
+    "FAIL_INTEGRATION",
+    "INCONCLUSIVE",
+    "BLOCKED_ENV",
+    "NOT_APPLICABLE"
+  ],
+  "cases": [
+    {
+      "case_id": "OA-RESPONSES-001",
+      "anomaly": "SW-INT-01",
+      "repository": "openai/openai-agents-python",
+      "commit": "74636ac9b9c5b7fe9e2e4ca62daff59248769c02",
+      "source_tests": [
+        "tests/unit/integrations/test_openai_response_spans.py"
+      ],
+      "requires_extra": "integrations-openai-agents",
+      "qualification_requires_sdk": true,
+      "expected": "eligible response span produces exactly one model_invocation plus runtime evidence; incomplete/error input fails closed"
+    },
+    {
+      "case_id": "LC-RAG-SYNTHETIC-001",
+      "anomaly": "SW-INT-02",
+      "repository": "langchain-ai/rag-from-scratch",
+      "commit": "1fdb7d0e4f1d3e731c8397332452715512f18667",
+      "source_tests": [
+        "tests/unit/integrations/test_langchain_retriever_lifecycle.py"
+      ],
+      "requires_extra": "integrations-langchain",
+      "qualification_requires_sdk": true,
+      "expected": "nullable serialized retriever lifecycle pairs; retrieval evidence requires stable IDs and configured context"
+    },
+    {
+      "case_id": "LG-STARTER-CHECKPOINT-002",
+      "anomaly": "NON_REGRESSION",
+      "repository": "langchain-ai/new-langgraph-project",
+      "commit": "f15b8239910d142c7dab3ecdd40cc49e29040cfd",
+      "source_tests": [
+        "tests/unit/integrations/test_native_capture_durability_and_observations.py",
+        "tests/unit/integrations/test_native_sdk_capture.py::test_langgraph_history_binds_checkpoint_and_state_digest",
+        "tests/unit/integrations/test_native_sdk_import_contracts.py::test_real_langgraph_checkpoint_api"
+      ],
+      "requires_extra": "integrations-langgraph",
+      "qualification_requires_sdk": true,
+      "expected": "checkpoint observation remains distinct from completed execution and parent/state identity is preserved"
+    },
+    {
+      "case_id": "LI-RAG-ROOT-DIAGNOSTIC-002",
+      "anomaly": "SW-INT-03+SW-INT-04",
+      "repository": "run-llama/llama_index",
+      "commit": "2b1f239e39d7c96e6a075309cc6697993a7210bf",
+      "source_tests": [
+        "tests/unit/integrations/test_native_sdk_capture.py::test_llamaindex_attachment_defaults_to_root_and_can_detach",
+        "tests/unit/integrations/test_native_sdk_capture.py::test_llamaindex_naive_timestamp_uses_labeled_receipt_time",
+        "tests/unit/integrations/test_native_sdk_capture.py::test_llamaindex_retrieval_correlates_query_digest_from_start",
+        "tests/unit/integrations/test_native_sdk_capture.py::test_llamaindex_duplicate_native_event_is_idempotent",
+        "tests/unit/integrations/test_native_sdk_import_contracts.py::test_real_llamaindex_event_handler_base"
+      ],
+      "requires_extra": "integrations-llamaindex",
+      "qualification_requires_sdk": true,
+      "expected": "default attachment observes relevant events; timestamp provenance is explicit; retrieval start/end correlates without fabricated time/query"
+    },
+    {
+      "case_id": "ST-CHATBOT-APPTEST-001",
+      "anomaly": "SW-PKG-01",
+      "repository": "streamlit/llm-examples",
+      "commit": "7cf260745675e41f92e7436d3777aafdab9dad9f",
+      "source_tests": [
+        "tests/release/test_optional_integration_packaging.py"
+      ],
+      "requires_extra": null,
+      "qualification_requires_sdk": false,
+      "expected": "base package does not force framework SDK upgrades; optional integration metadata remains isolated"
+    },
+    {
+      "case_id": "FA-LOCAL-ROUTES-001",
+      "anomaly": "SW-PY-01",
+      "repository": "fastapi/full-stack-fastapi-template",
+      "commit": "cb740b656d7a0a6c5e12c7bf8e50343ec94ee9c7",
+      "source_tests": [
+        "tests/release/test_python_support_policy.py"
+      ],
+      "requires_extra": null,
+      "qualification_requires_sdk": false,
+      "expected": "v0.4.0 advertises 3.11-3.13 only and Python 3.14 remains outside the support boundary"
+    }
+  ]
+}

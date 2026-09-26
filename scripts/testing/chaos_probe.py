@@ -2,11 +2,6 @@
 
 from __future__ import annotations
 
-# pyright: reportUnknownMemberType=false
-# pyright: reportUnknownVariableType=false
-# pyright: reportUnknownArgumentType=false
-# pyright: reportUnknownParameterType=false
-# pyright: reportMissingParameterType=false
 import json
 import tempfile
 import zipfile
@@ -93,7 +88,7 @@ def test_content_concurrent() -> None:
     with tempfile.TemporaryDirectory() as d:
         s = ContentAddressedArtifactStore(Path(d))
         with ThreadPoolExecutor(max_workers=32) as ex:
-            vals = list(ex.map(lambda _: s.put(b"same"), range(200)))  # type: ignore
+            vals = list(ex.map(lambda _: s.put(b"same"), range(200)))
         assert len(set(vals)) == 1 and s.get(vals[0]) == b"same"
 
 
@@ -118,7 +113,7 @@ def test_receipt_conflict_concurrent() -> None:
             JsonEvidenceReceiptStore(Path(d) / "r"),
         )
 
-        def one(i):
+        def one(i: int) -> str:
             try:
                 receipt(a, content=f"x{i}".encode())
                 return "ok"
@@ -138,7 +133,7 @@ def test_jsonl_concurrent_tip() -> None:
         t1 = transition("1", "x", "unknown", "reliable")
         # force same stale predecessor concurrently
 
-        def put(t):
+        def put(t: ReliabilityStateTransition) -> str:
             try:
                 s.append(t)
                 return "ok"
@@ -166,7 +161,7 @@ def test_sqlite_concurrent_tip() -> None:
         a = transition("2", "x", "reliable", "degraded", t1.computed_digest)
         b = transition("3", "x", "reliable", "unreliable", t1.computed_digest)
 
-        def put(t):
+        def put(t: ReliabilityStateTransition) -> str:
             try:
                 s.append(t)
                 return "ok"

@@ -64,4 +64,4 @@ The real-world matrix is paired with separate chaos suites for duplicate receipt
 
 ## Validation boundary
 
-The sandbox used for this report does not have PyNaCl, Ruff, or Pyright installed and cannot resolve the required packages from the network. The repository configuration and CI gates retain the pinned versions. The project owner has separately confirmed that PyNaCl, Ruff, and Pyright execute in the local development environment; this report therefore does not convert the sandbox dependency limitation into a product defect claim.
+The sandbox used for this report does not have PyNaCl, Ruff, or mypy installed and cannot resolve the required packages from the network. The repository configuration and CI gates retain the pinned versions. The project owner has separately confirmed that PyNaCl, Ruff, and mypy execute in the local development environment; this report therefore does not convert the sandbox dependency limitation into a product defect claim.

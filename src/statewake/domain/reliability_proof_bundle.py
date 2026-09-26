@@ -10,6 +10,7 @@ from typing import Any
 
 from statewake.utils.json_support import JsonValue
 
+from .cryptographic_trust import CryptographicProfile
 from .reliability_attestation_trust_context import ReliabilityAttestationTrustContext
 from .reliability_lineage import ReliabilityLineageClosure
 
@@ -92,6 +93,7 @@ class ReliabilityProofBundleDescriptor:
     lineage_closure: ReliabilityLineageClosure | None = None
     completeness_artifact_id: str | None = None
     completeness_digest: str | None = None
+    cryptographic_profile: CryptographicProfile | None = None
 
     def __post_init__(self) -> None:
         """Validate and normalize the initialized object state."""
@@ -186,6 +188,8 @@ class ReliabilityProofBundleDescriptor:
         if self.format_version == "3":
             payload["completeness_artifact_id"] = self.completeness_artifact_id
             payload["completeness_digest"] = self.completeness_digest
+        if self.cryptographic_profile is not None:
+            payload["cryptographic_profile"] = self.cryptographic_profile.to_dict()
         return payload
 
     @property
@@ -234,6 +238,12 @@ class ReliabilityProofBundleDescriptor:
             if raw_context is None
             else ReliabilityAttestationTrustContext.from_dict(raw_context)
         )
+        raw_crypto = payload.get("cryptographic_profile")
+        if raw_crypto is not None and not isinstance(raw_crypto, dict):
+            raise ValueError("cryptographic_profile must be an object when present.")
+        crypto = (
+            None if raw_crypto is None else CryptographicProfile.from_dict(raw_crypto)
+        )
         raw_lineage = payload.get("lineage_closure")
         if raw_lineage is not None and not isinstance(raw_lineage, dict):
             raise ValueError("lineage_closure must be an object when present.")
@@ -264,6 +274,7 @@ class ReliabilityProofBundleDescriptor:
             sources=sources,
             attestation_trust_context=context,
             lineage_closure=lineage,
+            cryptographic_profile=crypto,
             completeness_artifact_id=None
             if payload.get("completeness_artifact_id") is None
             else str(payload.get("completeness_artifact_id")),

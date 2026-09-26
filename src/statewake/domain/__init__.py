@@ -9,6 +9,31 @@ from .attestation_trust import (
     attestation_signing_key_status,
     create_signed_attestation_trust_state,
 )
+from .cryptographic_trust import (
+    CryptographicAlgorithm,
+    CryptographicKeyIdentity,
+    CryptographicProfile,
+    HistoricalSignatureVerifier,
+    KeyLifecycleTransition,
+    KeyStatus,
+    ProofFormatMigration,
+    TrustMigration,
+    retire_key,
+    revoke_key,
+    rotate_key,
+    validate_algorithm_transition,
+    validate_historical_verification,
+    verify_historical_signature,
+)
+from .data_lifecycle import (
+    DataLifecycleDecision,
+    DataLifecyclePolicy,
+    DeletionRecord,
+    assess_data_lifecycle,
+    build_deletion_record,
+    filter_disclosable_ids,
+    inherit_sensitivity,
+)
 from .diff import ActionChange, BehavioralDiff, FieldChange, compare
 from .events import EventEnvelope
 from .evidence import EvidenceItem, EvidenceManifest
@@ -44,6 +69,10 @@ from .privacy import (
     RedactionRule,
     Redactor,
     redact_events,
+)
+from .producer_authentication import (
+    AuthenticatedProducerReceipt,
+    authenticate_producer_receipt,
 )
 from .provenance import IntegrityProof, ProvenanceGraph, ProvenanceNode
 from .reliability_attestation import (
@@ -96,6 +125,23 @@ __all__ = [
     "create_trust_checkpoint",
     "ensure_checkpoint_sequence",
     "ActionChange",
+    "CryptographicAlgorithm",
+    "CryptographicKeyIdentity",
+    "CryptographicProfile",
+    "HistoricalSignatureVerifier",
+    "KeyLifecycleTransition",
+    "KeyStatus",
+    "ProofFormatMigration",
+    "TrustMigration",
+    "retire_key",
+    "revoke_key",
+    "rotate_key",
+    "validate_algorithm_transition",
+    "validate_historical_verification",
+    "verify_historical_signature",
+    "DataLifecycleDecision",
+    "DataLifecyclePolicy",
+    "DeletionRecord",
     "AttestationTrustAnchor",
     "AttestationTrustStateVerifier",
     "BehavioralDiff",
@@ -108,6 +154,8 @@ __all__ = [
     "EvidenceRetentionRequirement",
     "ExternalEvidenceAdmission",
     "ExternalEvidenceReceipt",
+    "AuthenticatedProducerReceipt",
+    "authenticate_producer_receipt",
     "FieldChange",
     "EventEnvelope",
     "IntegrityProof",
@@ -152,6 +200,10 @@ __all__ = [
     "assess_retention",
     "attestation_signing_key_status",
     "compare",
+    "assess_data_lifecycle",
+    "build_deletion_record",
+    "inherit_sensitivity",
+    "filter_disclosable_ids",
     "create_signed_attestation_trust_state",
     "evaluate_evidence_governance",
     "project_manifest_for_telemetry",

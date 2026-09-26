@@ -1,5 +1,7 @@
 # Release Governance Contract
 
+Python 3.14 is deliberately outside the StateWake v0.4.0 compatibility matrix.
+
 This document defines the repository-side release gates for the next StateWake public developer package. It intentionally does not authorize a release; publication remains a separate approval decision.
 
 ## Main and protected changes
@@ -25,4 +27,4 @@ The dependency audit and SBOM are uploaded as machine-readable workflow artifact
 
 A successful workflow does not by itself authorize publication. The publication decision must identify the exact tested artifact, source commit, verification result, and any known caveats.
 
-A public developer release must not be described as production readiness. The WSGI adapter remains a thin trusted integration edge; internet-facing authentication, authorization, TLS termination, tenant isolation, rate limiting, and remote object ingestion remain host/application concerns.
+The `Development Status :: 5 - Production/Stable` classifier describes package maturity; it is not a certification of every host deployment. The WSGI adapter remains a thin trusted integration edge; internet-facing authentication, authorization, TLS termination, tenant isolation, rate limiting, and remote object ingestion remain host/application concerns.

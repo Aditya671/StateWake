@@ -1,0 +1,2 @@
+0e14dc3737167a0c2e96fdbe707bd1daf8cc8d6b4054781c6b24abee5f56bd67  dist/statewake_ai-0.1.1-py3-none-any.whl
+facb98ea2f58b4f5095b066a1358496f53f2e652690f54e3a59938cbccbe0726  dist/statewake_ai-0.1.1.tar.gz

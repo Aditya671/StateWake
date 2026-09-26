@@ -2,11 +2,6 @@
 
 from __future__ import annotations
 
-# pyright: reportUnknownMemberType=false
-# pyright: reportUnknownVariableType=false
-# pyright: reportUnknownArgumentType=false
-# pyright: reportUnknownParameterType=false
-# pyright: reportMissingParameterType=false
 import json
 import os
 from dataclasses import dataclass
@@ -16,6 +11,11 @@ from wsgiref.simple_server import make_server
 from wsgiref.types import StartResponse, WSGIApplication, WSGIEnvironment
 
 from . import __version__
+from .domain.runtime_containment import (
+    MalformedJSONError,
+    RuntimeContainmentLimits,
+    load_bounded_json,
+)
 from .public_api import load_evidence_chain, verify_evidence_chain
 from .services.reliability_proof_bundle_service import verify_reliability_proof_bundle
 
@@ -29,6 +29,7 @@ class VerificationServiceConfig:
     read_only: bool = True
     require_https: bool = True
     allow_insecure_http: bool = False
+    runtime_limits: RuntimeContainmentLimits = RuntimeContainmentLimits()
 
     def __post_init__(self) -> None:
         """Validate and normalize the instance after initialization."""
@@ -156,7 +157,7 @@ def create_application(
                     "INCOMPLETE_BODY",
                     "request body is incomplete",
                 )
-            payload = json.loads(raw.decode("utf-8"))
+            payload = load_bounded_json(raw, limits=cfg.runtime_limits)
             if not isinstance(payload, dict):
                 raise ValueError("request body must be a JSON object")
 
@@ -204,7 +205,7 @@ def create_application(
                 "ARTIFACT_NOT_FOUND",
                 "referenced verification artifact was not found",
             )
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, MalformedJSONError):
             return _error(
                 start_response,
                 "400 Bad Request",

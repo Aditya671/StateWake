@@ -1,6 +1,6 @@
 # StateWake Threat Model v0.1
 
-**Status:** canonical security model for the current v0.1.1 Production/Stable baseline.
+**Status:** canonical security model for the StateWake reliability-evidence core.
 
 ## Scope
 

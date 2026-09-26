@@ -3,18 +3,12 @@ import unittest
 from statewake.adapters.key_management import ExternalSigningAdapter
 from statewake.domain.key_management import SigningKeyReference, public_key_digest
 
-# pyright: reportUnknownMemberType=false
-# pyright: reportUnknownVariableType=false
-# pyright: reportUnknownArgumentType=false
-# pyright: reportUnknownParameterType=false
-# pyright: reportMissingParameterType=false
-
 
 class _Signer:
     def __init__(self) -> None:
-        self.calls = []
+        self.calls: list[tuple[str, bytes]] = []
 
-    def sign(self, key, payload):
+    def sign(self, key: SigningKeyReference, payload: bytes) -> bytes:
         self.calls.append((key.key_id, payload))
         return b"sig"
 

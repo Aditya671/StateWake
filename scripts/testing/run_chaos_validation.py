@@ -1,8 +1,5 @@
 """Execute high-stress, adversarial StateWake reliability-boundary probes."""
 
-# pyright: reportUnknownMemberType=false
-# pyright: reportUnknownVariableType=false
-# pyright: reportUnknownArgumentType=false
 from __future__ import annotations
 
 import json
@@ -36,6 +33,7 @@ from statewake.adapters.reliability_state import (  # noqa: E402
     JsonlReliabilityStateStore,
     SqliteReliabilityStateStore,
 )
+from statewake.domain.evidence_receipt import ExternalEvidenceReceipt  # noqa: E402
 from statewake.domain.provenance import ProvenanceGraph, ProvenanceNode  # noqa: E402
 from statewake.domain.reliability_state import ReliabilityStateTransition  # noqa: E402
 
@@ -96,7 +94,7 @@ def _probe_receipt_concurrency() -> None:
             JsonEvidenceReceiptStore(root / "receipts"),
         )
 
-        def ingest(_: int):
+        def ingest(_: int) -> ExternalEvidenceReceipt:
             return adapter.ingest_bytes(
                 b"event",
                 producer_type="payment-gateway",

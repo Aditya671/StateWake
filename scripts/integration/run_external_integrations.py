@@ -14,8 +14,6 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Final
 
-from statewake import IntegrationContext, StateWakeClient
-
 PROJECT_CONFIG_BOOTSTRAP = Path(__file__).resolve().parents[2]
 if str(PROJECT_CONFIG_BOOTSTRAP) not in sys.path:
     sys.path.insert(0, str(PROJECT_CONFIG_BOOTSTRAP))
@@ -25,6 +23,7 @@ from config.project_paths import PROJECT_ROOT, SRC_PATH  # noqa: E402
 if str(SRC_PATH) not in sys.path:
     sys.path.insert(0, str(SRC_PATH))
 
+from statewake import IntegrationContext, StateWakeClient  # noqa: E402
 from statewake.utils.time import parse_datetime  # noqa: E402
 
 REPO_ROOT = PROJECT_ROOT
@@ -166,7 +165,7 @@ def main() -> int:
     parser.add_argument("--mode", choices=("live", "fixture", "ci"), default="ci")
     parser.add_argument("--fixture", type=Path)
     args = parser.parse_args()
-
+    captures: list[ExternalCapture] = []
     if args.mode == "fixture":
         if args.fixture is None:
             parser.error("--fixture is required in fixture mode")

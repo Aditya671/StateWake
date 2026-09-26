@@ -36,6 +36,38 @@ jobs:
           name: release-dist
           path: dist/
 
+  native-sdk-integrations:
+    # These checks must use installed SDKs: importorskip-only tests cannot
+    # establish compatibility when optional dependencies were not installed.
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12', '3.13']
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - run: uv python install ${{ matrix.python-version }}
+      - run: uv lock --check
+      - run: uv sync --locked --python ${{ matrix.python-version }} --group dev --extra integrations
+      - name: Require real native SDKs before compatibility tests
+        run: >-
+          uv run --no-sync python -c
+          "import agents.tracing.processor_interface;
+          import langchain_core.callbacks.base;
+          import langgraph.graph;
+          import llama_index.core.instrumentation.event_handlers;
+          import opentelemetry.sdk.trace"
+      - name: Run native SDK import and capture tests
+        run: >-
+          uv run --no-sync python -m pytest -q
+          tests/unit/integrations/test_native_sdk_import_contracts.py
+          tests/unit/integrations/test_native_sdk_capture.py
+          tests/unit/integrations/test_native_evidence_boundaries.py
+
   clean-consumer:
     needs: build
     strategy:
@@ -65,6 +97,37 @@ jobs:
         run: python -c "import statewake; from statewake import load_evidence_chain, verify_evidence_chain; print(statewake.__version__)"
       - name: CLI smoke
         run: statewake version
+
+
+  workspace-consumer:
+    needs: build
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12', '3.13']
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-dist
+          path: dist
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install built wheel and workspace dependencies
+        shell: bash
+        run: |
+          python -m pip install --no-deps "$(find dist -name '*.whl' -print -quit)"
+          python -m pip install 'PyNaCl==1.6.2' 'opentelemetry-api==1.44.0' 'filelock==3.32.4'
+          python -m pip install 'duckdb==1.5.5' 'openpyxl==3.1.5' 'pyarrow==25.0.1' 'sqlalchemy==2.0.54'
+      - name: Workspace adapter import smoke
+        run: >-
+          python -c "import duckdb, openpyxl, pyarrow, sqlalchemy;
+          import statewake.workspace as workspace;
+          print('workspace-adapters-ok', duckdb.__version__, openpyxl.__version__, pyarrow.__version__, sqlalchemy.__version__);
+          print(workspace.DuckDBAnalyticalAdapter, workspace.SqlAlchemyWorkspaceRepository)"
+      - name: Workspace regression suite
+        run: python -m pytest -q tests/workspace
 
   dependency-scan:
     needs: build

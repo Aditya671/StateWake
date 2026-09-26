@@ -114,7 +114,10 @@ def main() -> int:
     for example in EXAMPLES:
         elapsed, output = run_example(example, golden=example.parent.name == "golden")
         if example.name == "first-evidence-chain.py":
-            required_markers = ("verification: PASS", "deliberate tampering: REJECTED")
+            required_markers: tuple[str, ...] = (
+                "verification: PASS",
+                "deliberate tampering: REJECTED",
+            )
         else:
             required_markers = (
                 '"chain_verified": true',

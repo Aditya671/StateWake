@@ -1,10 +1,5 @@
 """Regression tests for the bounded verification HTTP adapter."""
 
-# pyright: reportUnknownMemberType=false
-# pyright: reportUnknownVariableType=false
-# pyright: reportUnknownArgumentType=false
-# pyright: reportUnknownParameterType=false
-# pyright: reportMissingParameterType=false
 import io
 import json
 from pathlib import Path

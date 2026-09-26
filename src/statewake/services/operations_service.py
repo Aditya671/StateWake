@@ -1,8 +1,5 @@
 """Application services for deterministic operational packages."""
 
-# pyright: reportUnknownMemberType=false
-# pyright: reportUnknownVariableType=false
-# pyright: reportUnknownArgumentType=false
 from __future__ import annotations
 
 import json
@@ -14,12 +11,18 @@ from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 from statewake import __version__
 from statewake.utils.time import parse_datetime
 
+from ..domain.data_lifecycle import filter_disclosable_ids
 from ..domain.operations import (
     OperationalArtifact,
     OperationalBundle,
     RetentionDecision,
     RetentionPolicy,
     assess_retention,
+)
+from ..domain.runtime_containment import (
+    DEFAULT_MAX_INPUT_BYTES,
+    RuntimeContainmentLimits,
+    validate_archive_envelope,
 )
 
 
@@ -225,6 +228,9 @@ def _read_manifest(bundle_path: Path) -> tuple[OperationalBundle, dict[str, byte
             raise ValueError(
                 f"Bundle contents do not match manifest; missing={missing}, unexpected={unexpected}"
             )
+        validate_archive_envelope(
+            tuple(archive.infolist()), limits=RuntimeContainmentLimits()
+        )
         for item in bundle.artifacts:
             member_name = f"artifacts/{item.artifact_id}/{item.path}"
             info = archive.getinfo(member_name)
@@ -239,6 +245,10 @@ def _read_manifest(bundle_path: Path) -> tuple[OperationalBundle, dict[str, byte
 
 def verify_bundle(bundle_path: Path) -> OperationalBundle:
     """Verify the bundle plus its derived provenance integrity."""
+    if bundle_path.stat().st_size > DEFAULT_MAX_INPUT_BYTES:
+        raise ValueError(
+            f"bundle exceeds maximum input size of {DEFAULT_MAX_INPUT_BYTES} bytes"
+        )
     bundle, files = _read_manifest(bundle_path)
     if bundle.manifest_id != bundle.computed_manifest_id():
         raise ValueError("Bundle manifest_id integrity check failed.")
@@ -268,6 +278,54 @@ def verify_bundle(bundle_path: Path) -> OperationalBundle:
 
     verify_bundle_provenance(bundle_path, bundle)
     return bundle
+
+
+def export_disclosed_bundle(
+    bundle: OperationalBundle,
+    files: dict[str, bytes],
+    output: Path,
+    *,
+    max_sensitivity: str,
+) -> OperationalBundle:
+    """Export only artifacts permitted by an explicit disclosure sensitivity ceiling."""
+    selected_ids = set(
+        filter_disclosable_ids(
+            {item.artifact_id: item.sensitivity for item in bundle.artifacts},
+            max_sensitivity=max_sensitivity,
+        )
+    )
+    artifacts = tuple(
+        item for item in bundle.artifacts if item.artifact_id in selected_ids
+    )
+    artifact_files = {
+        f"artifacts/{item.artifact_id}/{item.path}": files[
+            f"artifacts/{item.artifact_id}/{item.path}"
+        ]
+        for item in artifacts
+    }
+    disclosed = OperationalBundle(
+        bundle_id="pending",
+        manifest_id="pending",
+        agent_name=bundle.agent_name,
+        engine_version=bundle.engine_version,
+        created_at=bundle.created_at,
+        artifacts=artifacts,
+        retention_policy=bundle.retention_policy,
+    )
+    disclosed = OperationalBundle(
+        bundle_id=disclosed.computed_bundle_id(),
+        manifest_id=disclosed.computed_manifest_id(),
+        agent_name=disclosed.agent_name,
+        engine_version=disclosed.engine_version,
+        created_at=disclosed.created_at,
+        artifacts=disclosed.artifacts,
+        retention_policy=disclosed.retention_policy,
+    )
+    manifest = (
+        json.dumps(disclosed.to_dict(), indent=2, sort_keys=True) + "\n"
+    ).encode("utf-8")
+    export_bundle(disclosed, {**artifact_files, "manifest.json": manifest}, output)
+    return disclosed
 
 
 def inspect_bundle(bundle_path: Path) -> OperationalBundle:

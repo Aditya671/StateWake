@@ -46,6 +46,8 @@ class ReliabilityClaimProfile:
     required_rationale: bool = True
     required_reconciliation_states: tuple[str, ...] = ()
     required_reliability_states: tuple[str, ...] = ()
+    required_ai_contract_types: tuple[str, ...] = ()
+    caveats: tuple[str, ...] = ()
     description: str = ""
 
     def __post_init__(self) -> None:
@@ -74,6 +76,16 @@ class ReliabilityClaimProfile:
             raise ValueError("allowed_decisions must not contain duplicates.")
         if len(self.required_evidence_kinds) != len(set(self.required_evidence_kinds)):
             raise ValueError("required_evidence_kinds must not contain duplicates.")
+        if len(self.required_ai_contract_types) != len(
+            set(self.required_ai_contract_types)
+        ):
+            raise ValueError("required_ai_contract_types must not contain duplicates.")
+        if any(not item.strip() for item in self.required_ai_contract_types):
+            raise ValueError(
+                "required_ai_contract_types must not contain blank values."
+            )
+        if any(not item.strip() for item in self.caveats):
+            raise ValueError("caveats must not contain blank values.")
 
     def payload(self) -> dict[str, Any]:
         """Return the canonical payload represented by this object."""
@@ -90,6 +102,8 @@ class ReliabilityClaimProfile:
             "required_rationale": self.required_rationale,
             "required_reconciliation_states": list(self.required_reconciliation_states),
             "required_reliability_states": list(self.required_reliability_states),
+            "required_ai_contract_types": list(self.required_ai_contract_types),
+            "caveats": list(self.caveats),
         }
 
     @property
@@ -130,6 +144,14 @@ class ReliabilityClaimProfile:
             required_reliability_states=string_sequence(
                 payload.get("required_reliability_states", []),
                 field="required_reliability_states",
+            ),
+            required_ai_contract_types=string_sequence(
+                payload.get("required_ai_contract_types", []),
+                field="required_ai_contract_types",
+            ),
+            caveats=string_sequence(
+                payload.get("caveats", []),
+                field="caveats",
             ),
         )
         supplied = str(payload.get("digest", ""))

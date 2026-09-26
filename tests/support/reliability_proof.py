@@ -69,14 +69,14 @@ def _refresh_lineage_graph(
         payload: dict[str, object] = json.loads(basis_path.read_text(encoding="utf-8"))
         input_digests = tuple(str(x) for x in payload.get("input_digests", []))  # type: ignore
         digest_nodes: dict[str, str] = {n.digest: n.node_id for n in nodes}
-        parents: tuple[str, ...] = tuple(
+        input_parents: tuple[str, ...] = tuple(
             digest_nodes[x] for x in input_digests if x in digest_nodes
         ) or ("run",)
         basis_id = role_node["decision_basis"]
         nodes = [
             n
             if n.node_id != basis_id
-            else ProvenanceNode(n.node_id, n.kind, n.digest, n.identity, parents)
+            else ProvenanceNode(n.node_id, n.kind, n.digest, n.identity, input_parents)
             for n in nodes
         ]
     graph = ProvenanceGraph(

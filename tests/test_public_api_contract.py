@@ -2,11 +2,6 @@
 
 from __future__ import annotations
 
-# pyright: reportUnknownMemberType=false
-# pyright: reportUnknownVariableType=false
-# pyright: reportUnknownArgumentType=false
-# pyright: reportUnknownParameterType=false
-# pyright: reportMissingParameterType=false
 import inspect
 import json
 from typing import Required, TypedDict, get_type_hints
@@ -154,6 +149,7 @@ def test_cli_command_names_match_the_frozen_contract() -> None:
         "reliability-proof-completeness-verify",
         "reliability-decision-basis-build",
         "release-proof",
+        "claim-profiles",
     }
     assert set(supported_commands()) == expected
     assert len(supported_commands()) == len(expected)

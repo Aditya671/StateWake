@@ -96,4 +96,4 @@ python scripts/testing/run_extreme_validation.py
 pytest -q
 ```
 
-The local sandbox used for this report does not contain the project's PyNaCl/Ruff/Pyright executables, so the cryptographic test module and those exact static-analysis commands are not represented as locally executed results here. The project owner has independently confirmed those tools work in the development environment; the remaining authoritative gate is the actual local/CI execution against the exact release tree.
+The local sandbox used for this report does not contain the project's PyNaCl/Ruff/mypy executables, so the cryptographic test module and those exact static-analysis commands are not represented as locally executed results here. The project owner has independently confirmed those tools work in the development environment; the remaining authoritative gate is the actual local/CI execution against the exact release tree.

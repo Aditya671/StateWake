@@ -1,0 +1,1457 @@
+{
+  "baselines": [
+    {
+      "captured_properties": [
+        "final_output"
+      ],
+      "limitation": "Retains final response only; cannot verify evidence, provenance, or recovery.",
+      "mode": "final_output_only"
+    },
+    {
+      "captured_properties": [
+        "final_output",
+        "timestamp",
+        "error_status"
+      ],
+      "limitation": "Shows coarse execution history but not digest-bound claim evidence.",
+      "mode": "conventional_logs"
+    },
+    {
+      "captured_properties": [
+        "final_output",
+        "timestamp",
+        "error_status",
+        "trace_identity"
+      ],
+      "limitation": "Shows spans and timing but not StateWake evidence contracts or claim profiles.",
+      "mode": "structured_traces"
+    },
+    {
+      "captured_properties": [
+        "final_output",
+        "timestamp",
+        "error_status",
+        "trace_identity",
+        "evidence_contract",
+        "profile_result",
+        "workspace_history",
+        "human_report",
+        "release_trust",
+        "recovery_history"
+      ],
+      "limitation": "Fixture-based study; does not claim statistical superiority beyond tested workloads.",
+      "mode": "statewake_full"
+    }
+  ],
+  "cases": [
+    {
+      "baseline": "final_output_only",
+      "checkable_properties": [
+        "final_output"
+      ],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [],
+      "missing_properties": [
+        "trace_identity",
+        "retrieval_corpus_identity",
+        "retrieval_chunk_digest",
+        "citation_boundary",
+        "profile_result"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "final_output",
+        "trace_identity",
+        "retrieval_corpus_identity",
+        "retrieval_chunk_digest",
+        "citation_boundary",
+        "profile_result"
+      ],
+      "workload": "rag_answer"
+    },
+    {
+      "baseline": "final_output_only",
+      "checkable_properties": [
+        "final_output"
+      ],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [
+        "omitted_evidence",
+        "stale_corpus"
+      ],
+      "missing_properties": [
+        "trace_identity",
+        "retrieval_corpus_identity",
+        "retrieval_chunk_digest",
+        "citation_boundary",
+        "profile_result"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "final_output",
+        "trace_identity",
+        "retrieval_corpus_identity",
+        "retrieval_chunk_digest",
+        "citation_boundary",
+        "profile_result"
+      ],
+      "workload": "rag_answer"
+    },
+    {
+      "baseline": "conventional_logs",
+      "checkable_properties": [
+        "final_output"
+      ],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [],
+      "missing_properties": [
+        "trace_identity",
+        "retrieval_corpus_identity",
+        "retrieval_chunk_digest",
+        "citation_boundary",
+        "profile_result"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "final_output",
+        "trace_identity",
+        "retrieval_corpus_identity",
+        "retrieval_chunk_digest",
+        "citation_boundary",
+        "profile_result"
+      ],
+      "workload": "rag_answer"
+    },
+    {
+      "baseline": "conventional_logs",
+      "checkable_properties": [
+        "final_output"
+      ],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [
+        "omitted_evidence",
+        "stale_corpus"
+      ],
+      "missing_properties": [
+        "trace_identity",
+        "retrieval_corpus_identity",
+        "retrieval_chunk_digest",
+        "citation_boundary",
+        "profile_result"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "final_output",
+        "trace_identity",
+        "retrieval_corpus_identity",
+        "retrieval_chunk_digest",
+        "citation_boundary",
+        "profile_result"
+      ],
+      "workload": "rag_answer"
+    },
+    {
+      "baseline": "structured_traces",
+      "checkable_properties": [
+        "final_output",
+        "trace_identity"
+      ],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [],
+      "missing_properties": [
+        "retrieval_corpus_identity",
+        "retrieval_chunk_digest",
+        "citation_boundary",
+        "profile_result"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "final_output",
+        "trace_identity",
+        "retrieval_corpus_identity",
+        "retrieval_chunk_digest",
+        "citation_boundary",
+        "profile_result"
+      ],
+      "workload": "rag_answer"
+    },
+    {
+      "baseline": "structured_traces",
+      "checkable_properties": [
+        "final_output",
+        "trace_identity"
+      ],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [
+        "omitted_evidence",
+        "stale_corpus"
+      ],
+      "missing_properties": [
+        "retrieval_corpus_identity",
+        "retrieval_chunk_digest",
+        "citation_boundary",
+        "profile_result"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "final_output",
+        "trace_identity",
+        "retrieval_corpus_identity",
+        "retrieval_chunk_digest",
+        "citation_boundary",
+        "profile_result"
+      ],
+      "workload": "rag_answer"
+    },
+    {
+      "baseline": "statewake_full",
+      "checkable_properties": [
+        "final_output",
+        "trace_identity",
+        "retrieval_corpus_identity",
+        "retrieval_chunk_digest",
+        "citation_boundary",
+        "profile_result"
+      ],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [],
+      "missing_properties": [],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": true,
+      "target_properties": [
+        "final_output",
+        "trace_identity",
+        "retrieval_corpus_identity",
+        "retrieval_chunk_digest",
+        "citation_boundary",
+        "profile_result"
+      ],
+      "workload": "rag_answer"
+    },
+    {
+      "baseline": "statewake_full",
+      "checkable_properties": [
+        "final_output",
+        "trace_identity",
+        "retrieval_corpus_identity",
+        "retrieval_chunk_digest",
+        "citation_boundary",
+        "profile_result"
+      ],
+      "detected_faults": [
+        "omitted_evidence"
+      ],
+      "false_positive": false,
+      "injected_faults": [
+        "omitted_evidence",
+        "stale_corpus"
+      ],
+      "missing_properties": [],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": false,
+      "target_properties": [
+        "final_output",
+        "trace_identity",
+        "retrieval_corpus_identity",
+        "retrieval_chunk_digest",
+        "citation_boundary",
+        "profile_result"
+      ],
+      "workload": "rag_answer"
+    },
+    {
+      "baseline": "final_output_only",
+      "checkable_properties": [],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [],
+      "missing_properties": [
+        "tool_schema_version",
+        "tool_input_digest",
+        "tool_output_digest",
+        "tool_authorization",
+        "side_effect_classification",
+        "profile_result"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "tool_schema_version",
+        "tool_input_digest",
+        "tool_output_digest",
+        "tool_authorization",
+        "side_effect_classification",
+        "profile_result"
+      ],
+      "workload": "tool_action"
+    },
+    {
+      "baseline": "final_output_only",
+      "checkable_properties": [],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [
+        "missing_tool_authorization",
+        "modified_tool_output"
+      ],
+      "missing_properties": [
+        "tool_schema_version",
+        "tool_input_digest",
+        "tool_output_digest",
+        "tool_authorization",
+        "side_effect_classification",
+        "profile_result"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "tool_schema_version",
+        "tool_input_digest",
+        "tool_output_digest",
+        "tool_authorization",
+        "side_effect_classification",
+        "profile_result"
+      ],
+      "workload": "tool_action"
+    },
+    {
+      "baseline": "conventional_logs",
+      "checkable_properties": [],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [],
+      "missing_properties": [
+        "tool_schema_version",
+        "tool_input_digest",
+        "tool_output_digest",
+        "tool_authorization",
+        "side_effect_classification",
+        "profile_result"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "tool_schema_version",
+        "tool_input_digest",
+        "tool_output_digest",
+        "tool_authorization",
+        "side_effect_classification",
+        "profile_result"
+      ],
+      "workload": "tool_action"
+    },
+    {
+      "baseline": "conventional_logs",
+      "checkable_properties": [],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [
+        "missing_tool_authorization",
+        "modified_tool_output"
+      ],
+      "missing_properties": [
+        "tool_schema_version",
+        "tool_input_digest",
+        "tool_output_digest",
+        "tool_authorization",
+        "side_effect_classification",
+        "profile_result"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "tool_schema_version",
+        "tool_input_digest",
+        "tool_output_digest",
+        "tool_authorization",
+        "side_effect_classification",
+        "profile_result"
+      ],
+      "workload": "tool_action"
+    },
+    {
+      "baseline": "structured_traces",
+      "checkable_properties": [],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [],
+      "missing_properties": [
+        "tool_schema_version",
+        "tool_input_digest",
+        "tool_output_digest",
+        "tool_authorization",
+        "side_effect_classification",
+        "profile_result"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "tool_schema_version",
+        "tool_input_digest",
+        "tool_output_digest",
+        "tool_authorization",
+        "side_effect_classification",
+        "profile_result"
+      ],
+      "workload": "tool_action"
+    },
+    {
+      "baseline": "structured_traces",
+      "checkable_properties": [],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [
+        "missing_tool_authorization",
+        "modified_tool_output"
+      ],
+      "missing_properties": [
+        "tool_schema_version",
+        "tool_input_digest",
+        "tool_output_digest",
+        "tool_authorization",
+        "side_effect_classification",
+        "profile_result"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "tool_schema_version",
+        "tool_input_digest",
+        "tool_output_digest",
+        "tool_authorization",
+        "side_effect_classification",
+        "profile_result"
+      ],
+      "workload": "tool_action"
+    },
+    {
+      "baseline": "statewake_full",
+      "checkable_properties": [
+        "tool_schema_version",
+        "tool_input_digest",
+        "tool_output_digest",
+        "tool_authorization",
+        "side_effect_classification",
+        "profile_result"
+      ],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [],
+      "missing_properties": [],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": true,
+      "target_properties": [
+        "tool_schema_version",
+        "tool_input_digest",
+        "tool_output_digest",
+        "tool_authorization",
+        "side_effect_classification",
+        "profile_result"
+      ],
+      "workload": "tool_action"
+    },
+    {
+      "baseline": "statewake_full",
+      "checkable_properties": [
+        "tool_schema_version",
+        "tool_input_digest",
+        "tool_output_digest",
+        "tool_authorization",
+        "side_effect_classification",
+        "profile_result"
+      ],
+      "detected_faults": [
+        "modified_tool_output"
+      ],
+      "false_positive": false,
+      "injected_faults": [
+        "missing_tool_authorization",
+        "modified_tool_output"
+      ],
+      "missing_properties": [],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": true,
+      "target_properties": [
+        "tool_schema_version",
+        "tool_input_digest",
+        "tool_output_digest",
+        "tool_authorization",
+        "side_effect_classification",
+        "profile_result"
+      ],
+      "workload": "tool_action"
+    },
+    {
+      "baseline": "final_output_only",
+      "checkable_properties": [],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [],
+      "missing_properties": [
+        "failure_record",
+        "recovery_action",
+        "post_recovery_state",
+        "recovery_history",
+        "profile_result"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "failure_record",
+        "recovery_action",
+        "post_recovery_state",
+        "recovery_history",
+        "profile_result"
+      ],
+      "workload": "incident_recovery"
+    },
+    {
+      "baseline": "final_output_only",
+      "checkable_properties": [],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [
+        "recovery_without_preserved_failure"
+      ],
+      "missing_properties": [
+        "failure_record",
+        "recovery_action",
+        "post_recovery_state",
+        "recovery_history",
+        "profile_result"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "failure_record",
+        "recovery_action",
+        "post_recovery_state",
+        "recovery_history",
+        "profile_result"
+      ],
+      "workload": "incident_recovery"
+    },
+    {
+      "baseline": "conventional_logs",
+      "checkable_properties": [],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [],
+      "missing_properties": [
+        "failure_record",
+        "recovery_action",
+        "post_recovery_state",
+        "recovery_history",
+        "profile_result"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "failure_record",
+        "recovery_action",
+        "post_recovery_state",
+        "recovery_history",
+        "profile_result"
+      ],
+      "workload": "incident_recovery"
+    },
+    {
+      "baseline": "conventional_logs",
+      "checkable_properties": [],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [
+        "recovery_without_preserved_failure"
+      ],
+      "missing_properties": [
+        "failure_record",
+        "recovery_action",
+        "post_recovery_state",
+        "recovery_history",
+        "profile_result"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "failure_record",
+        "recovery_action",
+        "post_recovery_state",
+        "recovery_history",
+        "profile_result"
+      ],
+      "workload": "incident_recovery"
+    },
+    {
+      "baseline": "structured_traces",
+      "checkable_properties": [],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [],
+      "missing_properties": [
+        "failure_record",
+        "recovery_action",
+        "post_recovery_state",
+        "recovery_history",
+        "profile_result"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "failure_record",
+        "recovery_action",
+        "post_recovery_state",
+        "recovery_history",
+        "profile_result"
+      ],
+      "workload": "incident_recovery"
+    },
+    {
+      "baseline": "structured_traces",
+      "checkable_properties": [],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [
+        "recovery_without_preserved_failure"
+      ],
+      "missing_properties": [
+        "failure_record",
+        "recovery_action",
+        "post_recovery_state",
+        "recovery_history",
+        "profile_result"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "failure_record",
+        "recovery_action",
+        "post_recovery_state",
+        "recovery_history",
+        "profile_result"
+      ],
+      "workload": "incident_recovery"
+    },
+    {
+      "baseline": "statewake_full",
+      "checkable_properties": [
+        "failure_record",
+        "recovery_action",
+        "post_recovery_state",
+        "recovery_history",
+        "profile_result"
+      ],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [],
+      "missing_properties": [],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": true,
+      "target_properties": [
+        "failure_record",
+        "recovery_action",
+        "post_recovery_state",
+        "recovery_history",
+        "profile_result"
+      ],
+      "workload": "incident_recovery"
+    },
+    {
+      "baseline": "statewake_full",
+      "checkable_properties": [
+        "failure_record",
+        "recovery_action",
+        "post_recovery_state",
+        "recovery_history",
+        "profile_result"
+      ],
+      "detected_faults": [
+        "recovery_without_preserved_failure"
+      ],
+      "false_positive": false,
+      "injected_faults": [
+        "recovery_without_preserved_failure"
+      ],
+      "missing_properties": [],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": false,
+      "target_properties": [
+        "failure_record",
+        "recovery_action",
+        "post_recovery_state",
+        "recovery_history",
+        "profile_result"
+      ],
+      "workload": "incident_recovery"
+    },
+    {
+      "baseline": "final_output_only",
+      "checkable_properties": [],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [],
+      "missing_properties": [
+        "package_digest",
+        "lock_status",
+        "test_result",
+        "release_limitation",
+        "release_trust",
+        "human_release_decision"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "package_digest",
+        "lock_status",
+        "test_result",
+        "release_limitation",
+        "release_trust",
+        "human_release_decision"
+      ],
+      "workload": "release_verification"
+    },
+    {
+      "baseline": "final_output_only",
+      "checkable_properties": [],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [
+        "unsigned_release_artifact"
+      ],
+      "missing_properties": [
+        "package_digest",
+        "lock_status",
+        "test_result",
+        "release_limitation",
+        "release_trust",
+        "human_release_decision"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "package_digest",
+        "lock_status",
+        "test_result",
+        "release_limitation",
+        "release_trust",
+        "human_release_decision"
+      ],
+      "workload": "release_verification"
+    },
+    {
+      "baseline": "conventional_logs",
+      "checkable_properties": [],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [],
+      "missing_properties": [
+        "package_digest",
+        "lock_status",
+        "test_result",
+        "release_limitation",
+        "release_trust",
+        "human_release_decision"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "package_digest",
+        "lock_status",
+        "test_result",
+        "release_limitation",
+        "release_trust",
+        "human_release_decision"
+      ],
+      "workload": "release_verification"
+    },
+    {
+      "baseline": "conventional_logs",
+      "checkable_properties": [],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [
+        "unsigned_release_artifact"
+      ],
+      "missing_properties": [
+        "package_digest",
+        "lock_status",
+        "test_result",
+        "release_limitation",
+        "release_trust",
+        "human_release_decision"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "package_digest",
+        "lock_status",
+        "test_result",
+        "release_limitation",
+        "release_trust",
+        "human_release_decision"
+      ],
+      "workload": "release_verification"
+    },
+    {
+      "baseline": "structured_traces",
+      "checkable_properties": [],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [],
+      "missing_properties": [
+        "package_digest",
+        "lock_status",
+        "test_result",
+        "release_limitation",
+        "release_trust",
+        "human_release_decision"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "package_digest",
+        "lock_status",
+        "test_result",
+        "release_limitation",
+        "release_trust",
+        "human_release_decision"
+      ],
+      "workload": "release_verification"
+    },
+    {
+      "baseline": "structured_traces",
+      "checkable_properties": [],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [
+        "unsigned_release_artifact"
+      ],
+      "missing_properties": [
+        "package_digest",
+        "lock_status",
+        "test_result",
+        "release_limitation",
+        "release_trust",
+        "human_release_decision"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "package_digest",
+        "lock_status",
+        "test_result",
+        "release_limitation",
+        "release_trust",
+        "human_release_decision"
+      ],
+      "workload": "release_verification"
+    },
+    {
+      "baseline": "statewake_full",
+      "checkable_properties": [
+        "package_digest",
+        "lock_status",
+        "test_result",
+        "release_limitation",
+        "release_trust",
+        "human_release_decision"
+      ],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [],
+      "missing_properties": [],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": true,
+      "target_properties": [
+        "package_digest",
+        "lock_status",
+        "test_result",
+        "release_limitation",
+        "release_trust",
+        "human_release_decision"
+      ],
+      "workload": "release_verification"
+    },
+    {
+      "baseline": "statewake_full",
+      "checkable_properties": [
+        "package_digest",
+        "lock_status",
+        "test_result",
+        "release_limitation",
+        "release_trust",
+        "human_release_decision"
+      ],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [
+        "unsigned_release_artifact"
+      ],
+      "missing_properties": [],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": true,
+      "target_properties": [
+        "package_digest",
+        "lock_status",
+        "test_result",
+        "release_limitation",
+        "release_trust",
+        "human_release_decision"
+      ],
+      "workload": "release_verification"
+    },
+    {
+      "baseline": "final_output_only",
+      "checkable_properties": [],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [],
+      "missing_properties": [
+        "actor_identity_reference",
+        "actor_role",
+        "approval_scope",
+        "approval_basis_digest",
+        "approval_timestamp",
+        "profile_result"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "actor_identity_reference",
+        "actor_role",
+        "approval_scope",
+        "approval_basis_digest",
+        "approval_timestamp",
+        "profile_result"
+      ],
+      "workload": "human_approval_workflow"
+    },
+    {
+      "baseline": "final_output_only",
+      "checkable_properties": [],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [
+        "omitted_evidence"
+      ],
+      "missing_properties": [
+        "actor_identity_reference",
+        "actor_role",
+        "approval_scope",
+        "approval_basis_digest",
+        "approval_timestamp",
+        "profile_result"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "actor_identity_reference",
+        "actor_role",
+        "approval_scope",
+        "approval_basis_digest",
+        "approval_timestamp",
+        "profile_result"
+      ],
+      "workload": "human_approval_workflow"
+    },
+    {
+      "baseline": "conventional_logs",
+      "checkable_properties": [],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [],
+      "missing_properties": [
+        "actor_identity_reference",
+        "actor_role",
+        "approval_scope",
+        "approval_basis_digest",
+        "approval_timestamp",
+        "profile_result"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "actor_identity_reference",
+        "actor_role",
+        "approval_scope",
+        "approval_basis_digest",
+        "approval_timestamp",
+        "profile_result"
+      ],
+      "workload": "human_approval_workflow"
+    },
+    {
+      "baseline": "conventional_logs",
+      "checkable_properties": [],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [
+        "omitted_evidence"
+      ],
+      "missing_properties": [
+        "actor_identity_reference",
+        "actor_role",
+        "approval_scope",
+        "approval_basis_digest",
+        "approval_timestamp",
+        "profile_result"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "actor_identity_reference",
+        "actor_role",
+        "approval_scope",
+        "approval_basis_digest",
+        "approval_timestamp",
+        "profile_result"
+      ],
+      "workload": "human_approval_workflow"
+    },
+    {
+      "baseline": "structured_traces",
+      "checkable_properties": [],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [],
+      "missing_properties": [
+        "actor_identity_reference",
+        "actor_role",
+        "approval_scope",
+        "approval_basis_digest",
+        "approval_timestamp",
+        "profile_result"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "actor_identity_reference",
+        "actor_role",
+        "approval_scope",
+        "approval_basis_digest",
+        "approval_timestamp",
+        "profile_result"
+      ],
+      "workload": "human_approval_workflow"
+    },
+    {
+      "baseline": "structured_traces",
+      "checkable_properties": [],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [
+        "omitted_evidence"
+      ],
+      "missing_properties": [
+        "actor_identity_reference",
+        "actor_role",
+        "approval_scope",
+        "approval_basis_digest",
+        "approval_timestamp",
+        "profile_result"
+      ],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": null,
+      "target_properties": [
+        "actor_identity_reference",
+        "actor_role",
+        "approval_scope",
+        "approval_basis_digest",
+        "approval_timestamp",
+        "profile_result"
+      ],
+      "workload": "human_approval_workflow"
+    },
+    {
+      "baseline": "statewake_full",
+      "checkable_properties": [
+        "actor_identity_reference",
+        "actor_role",
+        "approval_scope",
+        "approval_basis_digest",
+        "approval_timestamp",
+        "profile_result"
+      ],
+      "detected_faults": [],
+      "false_positive": false,
+      "injected_faults": [],
+      "missing_properties": [],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": true,
+      "target_properties": [
+        "actor_identity_reference",
+        "actor_role",
+        "approval_scope",
+        "approval_basis_digest",
+        "approval_timestamp",
+        "profile_result"
+      ],
+      "workload": "human_approval_workflow"
+    },
+    {
+      "baseline": "statewake_full",
+      "checkable_properties": [
+        "actor_identity_reference",
+        "actor_role",
+        "approval_scope",
+        "approval_basis_digest",
+        "approval_timestamp",
+        "profile_result"
+      ],
+      "detected_faults": [
+        "omitted_evidence"
+      ],
+      "false_positive": false,
+      "injected_faults": [
+        "omitted_evidence"
+      ],
+      "missing_properties": [],
+      "notes": [
+        "fixture-based deterministic case",
+        "live model calls and human timing studies are out of scope"
+      ],
+      "profile_satisfied": false,
+      "target_properties": [
+        "actor_identity_reference",
+        "actor_role",
+        "approval_scope",
+        "approval_basis_digest",
+        "approval_timestamp",
+        "profile_result"
+      ],
+      "workload": "human_approval_workflow"
+    }
+  ],
+  "digest": "24a2101cdcfc2797930220c2383fc51f800db12069d5aacdb83668c1782a4717",
+  "faults": [
+    {
+      "affected_property": "evidence_contract",
+      "description": "Required evidence reference is absent from the claim support set.",
+      "kind": "omitted_evidence"
+    },
+    {
+      "affected_property": "evidence_contract",
+      "description": "Evidence payload cannot satisfy the expected contract shape.",
+      "kind": "malformed_evidence"
+    },
+    {
+      "affected_property": "retrieval_corpus_identity",
+      "description": "RAG corpus identity no longer matches the verified snapshot.",
+      "kind": "stale_corpus"
+    },
+    {
+      "affected_property": "model_identity",
+      "description": "Model version differs from the model invocation evidence.",
+      "kind": "wrong_model_version"
+    },
+    {
+      "affected_property": "prompt_template_digest",
+      "description": "Prompt template digest differs from the verified prompt evidence.",
+      "kind": "changed_prompt_template"
+    },
+    {
+      "affected_property": "tool_authorization",
+      "description": "Side-effecting tool call lacks authorization evidence.",
+      "kind": "missing_tool_authorization"
+    },
+    {
+      "affected_property": "tool_output_digest",
+      "description": "Tool output digest does not match the recorded evidence.",
+      "kind": "modified_tool_output"
+    },
+    {
+      "affected_property": "trace_identity",
+      "description": "Evidence chain cannot connect output, provenance, and integrity records.",
+      "kind": "broken_provenance_edge"
+    },
+    {
+      "affected_property": "profile_result",
+      "description": "Claim state transition is not allowed by the profile.",
+      "kind": "invalid_reliability_transition"
+    },
+    {
+      "affected_property": "workspace_history",
+      "description": "Workspace contains an incomplete record after interrupted persistence.",
+      "kind": "partial_workspace_write"
+    },
+    {
+      "affected_property": "recovery_history",
+      "description": "Recovery exists but the original failed attempt was erased.",
+      "kind": "recovery_without_preserved_failure"
+    },
+    {
+      "affected_property": "release_trust",
+      "description": "Release artifact lacks signature evidence or explicit signing limitation.",
+      "kind": "unsigned_release_artifact"
+    }
+  ],
+  "limitations": [
+    "Deterministic fixtures are used before live AI calls.",
+    "Metrics are scoped to these workloads and injected faults only.",
+    "Human reconstruction-time measurement requires a separate timed study."
+  ],
+  "metrics": [
+    {
+      "baseline": "conventional_logs",
+      "case_count": 10,
+      "checkable_property_count": 2,
+      "detected_fault_count": 0,
+      "false_positive_count": 0,
+      "false_positive_rate": 0.0,
+      "fault_detection_rate": 0.0,
+      "injected_fault_count": 7,
+      "target_property_count": 58,
+      "valid_case_count": 5,
+      "verification_coverage": 0.034482758620689655
+    },
+    {
+      "baseline": "final_output_only",
+      "case_count": 10,
+      "checkable_property_count": 2,
+      "detected_fault_count": 0,
+      "false_positive_count": 0,
+      "false_positive_rate": 0.0,
+      "fault_detection_rate": 0.0,
+      "injected_fault_count": 7,
+      "target_property_count": 58,
+      "valid_case_count": 5,
+      "verification_coverage": 0.034482758620689655
+    },
+    {
+      "baseline": "statewake_full",
+      "case_count": 10,
+      "checkable_property_count": 58,
+      "detected_fault_count": 4,
+      "false_positive_count": 0,
+      "false_positive_rate": 0.0,
+      "fault_detection_rate": 0.5714285714285714,
+      "injected_fault_count": 7,
+      "target_property_count": 58,
+      "valid_case_count": 5,
+      "verification_coverage": 1.0
+    },
+    {
+      "baseline": "structured_traces",
+      "case_count": 10,
+      "checkable_property_count": 4,
+      "detected_fault_count": 0,
+      "false_positive_count": 0,
+      "false_positive_rate": 0.0,
+      "fault_detection_rate": 0.0,
+      "injected_fault_count": 7,
+      "target_property_count": 58,
+      "valid_case_count": 5,
+      "verification_coverage": 0.06896551724137931
+    }
+  ],
+  "study_id": "phase7-d0a7f7cb840c",
+  "workloads": [
+    {
+      "profile_id": "rag_answer_verified.v1",
+      "required_ai_contracts": [
+        "prompt_evidence",
+        "model_invocation",
+        "retrieval_evidence"
+      ],
+      "target_properties": [
+        "final_output",
+        "trace_identity",
+        "retrieval_corpus_identity",
+        "retrieval_chunk_digest",
+        "citation_boundary",
+        "profile_result"
+      ],
+      "workload": "rag_answer"
+    },
+    {
+      "profile_id": "tool_action_authorized.v1",
+      "required_ai_contracts": [
+        "tool_call",
+        "policy_evidence"
+      ],
+      "target_properties": [
+        "tool_schema_version",
+        "tool_input_digest",
+        "tool_output_digest",
+        "tool_authorization",
+        "side_effect_classification",
+        "profile_result"
+      ],
+      "workload": "tool_action"
+    },
+    {
+      "profile_id": "incident_recovery_verified.v1",
+      "required_ai_contracts": [
+        "runtime_trace"
+      ],
+      "target_properties": [
+        "failure_record",
+        "recovery_action",
+        "post_recovery_state",
+        "recovery_history",
+        "profile_result"
+      ],
+      "workload": "incident_recovery"
+    },
+    {
+      "profile_id": "release_evidence_complete.v1",
+      "required_ai_contracts": [
+        "policy_evidence",
+        "human_approval"
+      ],
+      "target_properties": [
+        "package_digest",
+        "lock_status",
+        "test_result",
+        "release_limitation",
+        "release_trust",
+        "human_release_decision"
+      ],
+      "workload": "release_verification"
+    },
+    {
+      "profile_id": "human_approval_recorded.v1",
+      "required_ai_contracts": [
+        "human_approval"
+      ],
+      "target_properties": [
+        "actor_identity_reference",
+        "actor_role",
+        "approval_scope",
+        "approval_basis_digest",
+        "approval_timestamp",
+        "profile_result"
+      ],
+      "workload": "human_approval_workflow"
+    }
+  ]
+}

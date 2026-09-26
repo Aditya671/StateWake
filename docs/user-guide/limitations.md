@@ -1,6 +1,6 @@
 # StateWake Limitations
 
-This page is part of the public product experience. It states the boundaries of what the current v0.1.1 baseline establishes and what remains the responsibility of an integrating system.
+This page is part of the public product experience. It states the boundaries of what the current v0.4.0 baseline establishes and what remains the responsibility of an integrating system.
 
 ## Verification does not prove truth
 
@@ -36,4 +36,4 @@ Performance measurements in the release evidence are local engineering measureme
 
 ## Native development tools
 
-The canonical source policy expects Ruff and Pyright/Pylance verification. A release evidence record must state when those native tools were unavailable in the validation environment rather than converting a substitute check into an equivalent claim.
+The canonical source policy expects Ruff and mypy verification. A release evidence record must state when those tools were unavailable in the validation environment rather than converting a substitute check into an equivalent claim.

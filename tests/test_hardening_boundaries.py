@@ -17,11 +17,14 @@ from statewake.adapters.reliability_attestation import (
 from statewake.adapters.reliability_state import JsonlReliabilityStateStore
 from statewake.domain.attestation_trust import SignedAttestationTrustState
 from statewake.domain.events import EventEnvelope
+from statewake.domain.evidence_admission import ExternalEvidenceAdmission
+from statewake.domain.evidence_receipt import ExternalEvidenceReceipt
 from statewake.domain.reliability_attestation import ReliabilityOutcomeAttestation
 from statewake.domain.reliability_comparison import ReliabilityBehavioralComparison
 from statewake.domain.reliability_lineage import ReliabilityLineageClosure
 from statewake.domain.reliability_proof_bundle import ReliabilityProofBundleDescriptor
 from statewake.domain.reliability_state import ReliabilityStateTransition
+from statewake.utils.json_support import JsonValue
 
 NOW = datetime(2026, 9, 12, tzinfo=UTC)
 
@@ -272,9 +275,6 @@ class TestSerializedListBoundaries(unittest.TestCase):
 
 def test_numeric_json_boundaries_reject_booleans() -> None:
     """Reject JSON booleans where persisted integer contracts require integers."""
-    from statewake.domain.evidence_admission import ExternalEvidenceAdmission
-    from statewake.domain.evidence_receipt import ExternalEvidenceReceipt
-
     admission = {
         "receipt_id": "r",
         "receipt_digest": "a" * 64,
@@ -294,7 +294,7 @@ def test_numeric_json_boundaries_reject_booleans() -> None:
     with pytest.raises(ValueError, match="artifact_size must be a JSON integer"):
         ExternalEvidenceAdmission.from_dict(admission)  # type: ignore
 
-    receipt = {
+    receipt: dict[str, JsonValue] = {
         "producer_type": "p",
         "producer_id": "i",
         "artifact_digest": "b" * 64,

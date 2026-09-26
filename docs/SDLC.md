@@ -116,3 +116,8 @@ Defects become evidence for improving the system:
 - document the architectural or operational lesson when material.
 
 The canonical baseline is promoted only from a verified artifact.
+
+
+### Frozen public-trial regressions
+
+The release SDLC includes `public-trial-regressions` after external fixture validation and before release-candidate qualification. The SDLC uses source mode; real native-SDK/public-host qualification remains a separate environment-dependent gate and must not be inferred from source-mode success.

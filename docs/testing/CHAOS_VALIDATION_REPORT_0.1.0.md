@@ -2,13 +2,13 @@
 
 **Validation date:** 2026-09-12
 
-## Current campaign result
+## Recorded campaign result
 
 - **24 / 24** real-world scenarios passed.
 - **8 / 8** deterministic chaos probes passed.
 - **8 / 8** extreme probes passed, including 100,000 randomized lifecycle sequences.
 - **8 / 8** deep failure-injection probes passed.
-- **186** non-cryptographic regression tests passed in the current sandbox.
+- **186** non-cryptographic regression tests passed in the 2026-09-12 validation environment.
 - Python compilation passed.
 - `uv lock --check --offline` passed.
 
@@ -81,4 +81,4 @@ python scripts/testing/run_deep_chaos_validation.py
 pytest -q
 ```
 
-The current sandbox cannot execute the PyNaCl-dependent tests or the Ruff/Pyright CLI because those dependencies are unavailable locally.
+The 2026-09-12 validation environment could not execute the PyNaCl-dependent tests or Ruff/mypy because those dependencies were unavailable there.

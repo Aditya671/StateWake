@@ -2,8 +2,12 @@
 
 import os
 import uuid
+from datetime import datetime
 from hashlib import sha256
 from pathlib import Path
+
+from ..domain.data_lifecycle import DeletionRecord, build_deletion_record
+from ..domain.retention import EvidenceRetentionAdapter
 
 
 class ContentAddressedArtifactStore:
@@ -50,6 +54,38 @@ class ContentAddressedArtifactStore:
                 f"Artifact integrity failure: expected {digest}, got {actual}."
             )
         return content
+
+    def delete(
+        self,
+        digest: str,
+        *,
+        retention: EvidenceRetentionAdapter,
+        now: datetime,
+        sensitivity: str = "internal",
+        policy_id: str = "default",
+        reason: str = "retention expired",
+        derived_from: tuple[str, ...] = (),
+    ) -> DeletionRecord:
+        """Delete one retained object only after the host retention contract permits it."""
+        if now.tzinfo is None:
+            raise ValueError("now must be timezone-aware.")
+        target = self._path_for(digest)
+        if not target.is_file():
+            raise FileNotFoundError(f"Artifact not found: {digest}")
+        if not retention.can_delete(digest, now=now):
+            raise PermissionError(
+                f"artifact deletion is blocked by retention policy: {digest}"
+            )
+        target.unlink()
+        return build_deletion_record(
+            digest,
+            digest=digest,
+            sensitivity=sensitivity,
+            deleted_at=now,
+            policy_id=policy_id,
+            reason=reason,
+            derived_from=derived_from,
+        )
 
     def exists(self, digest: str) -> bool:
         """Return whether the content address exists."""
