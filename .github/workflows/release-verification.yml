@@ -107,6 +107,7 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
+      - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
         with:
           name: release-dist
@@ -120,6 +121,7 @@ jobs:
           python -m pip install --no-deps "$(find dist -name '*.whl' -print -quit)"
           python -m pip install 'PyNaCl==1.6.2' 'opentelemetry-api==1.44.0' 'filelock==3.32.4'
           python -m pip install 'duckdb==1.5.5' 'openpyxl==3.1.5' 'pyarrow==25.0.1' 'sqlalchemy==2.0.54'
+          python -m pip install 'pytest==9.1.1'
       - name: Workspace adapter import smoke
         run: >-
           python -c "import duckdb, openpyxl, pyarrow, sqlalchemy;
@@ -127,7 +129,7 @@ jobs:
           print('workspace-adapters-ok', duckdb.__version__, openpyxl.__version__, pyarrow.__version__, sqlalchemy.__version__);
           print(workspace.DuckDBAnalyticalAdapter, workspace.SqlAlchemyWorkspaceRepository)"
       - name: Workspace regression suite
-        run: python -m pytest -q tests/workspace
+        run: python -m pytest -q --override-ini=pythonpath= tests/workspace
 
   dependency-scan:
     needs: build
