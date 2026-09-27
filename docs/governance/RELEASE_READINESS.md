@@ -1,8 +1,10 @@
 # Release Readiness Decision
 
-**Current package baseline:** `v0.4.0`
+**Current source candidate:** `v0.4.1`
 
-This document records the current release boundary. Publication to an external package index or repository remains a separate human authorization and platform gate.
+**Last recorded public release:** `v0.4.0`
+
+This document records the v0.4.1 source candidate and the evidence required before its publication. Each future publication remains a separate human authorization and platform gate.
 
 ## Current architecture
 
@@ -25,4 +27,4 @@ The current release line preserves the completed cybersecurity architecture thro
 
 ## Publication boundary
 
-A successful local candidate does not by itself authorize publication. The exact tested candidate, external CI evidence, repository governance checks, and human publication approval remain separate controls.
+For future releases, a successful local candidate does not by itself authorize publication. The exact tested candidate, external CI evidence, repository governance checks, and human publication approval remain separate controls.

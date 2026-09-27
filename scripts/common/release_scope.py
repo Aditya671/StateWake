@@ -45,6 +45,7 @@ CURRENT_DIRECTORIES = frozenset(
         "docs/specifications",
         "docs/testing",
         "docs/user-guide",
+        "docs/whitepaper",
         "benchmarks/faults",
         "benchmarks/statewake_enabled",
         "benchmarks/baselines",
@@ -54,6 +55,8 @@ CURRENT_DIRECTORIES = frozenset(
 CURRENT_DOCS = frozenset(
     {
         "docs/README.md",
+        "docs/releases/README.md",
+        "docs/releases/v0.4.1/RELEASE_NOTES.md",
         "docs/SDLC.md",
         "docs/QUALITY_GATES.md",
         "docs/DEFINITION_OF_DONE.md",

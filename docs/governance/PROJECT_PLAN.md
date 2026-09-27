@@ -6,7 +6,7 @@ Maintain a coherent, verifiable reliability infrastructure layer for AI systems 
 
 ## Current baseline
 
-**StateWake v0.4.0** is the current package baseline.
+**StateWake v0.4.1** is the current source candidate; v0.4.0 is the last recorded public release.
 
 The completed release sequence is:
 

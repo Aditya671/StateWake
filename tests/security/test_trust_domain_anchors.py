@@ -102,7 +102,7 @@ def test_trust_domain_assurance_does_not_publish_a_package() -> None:
     document = (ROOT / "docs/security/trust_domain_anchor_assurance.md").read_text(
         encoding="utf-8"
     )
-    assert 'version = "0.4.0"' in pyproject
+    assert 'version = "0.4.1"' in pyproject
     assert (
         "does not itself perform release tagging, package upload, or publication"
         in document

@@ -25,7 +25,7 @@ The complete dependency set and supported version bounds are declared in `pyproj
 
 ## Adapter boundaries
 
-These packages remain optional rather than becoming mandatory core dependencies:
+The packages above are installed as runtime dependencies, while adapters are constructed or invoked only for the corresponding operation:
 
 - SQLite remains the reference repository implementation.
 - CSV and JSON exports do not require third-party packages.
@@ -34,4 +34,4 @@ These packages remain optional rather than becoming mandatory core dependencies:
 - XLSX requires openpyxl only when XLSX operations are invoked.
 - SQLAlchemy is loaded lazily only when the alternative repository backend is constructed.
 
-This preserves the lightweight core while making the implemented v0.4.0 workspace capabilities discoverable and installable as one coherent optional surface.
+This keeps adapter execution explicit while making the v0.4.1 workspace capabilities available through the standard installation.

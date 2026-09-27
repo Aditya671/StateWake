@@ -69,10 +69,7 @@ def main() -> None:
     assert api_contract_version == EXPECTED_API_CONTRACT_VERSION
     assert 'statewake = "statewake.cli.main:main"' in pyproject
     assert f"## [v{current_version()}]" in changelog
-    assert (
-        f"public package baseline is **v{current_version()}**" in readme
-        or f"current public package baseline is **v{current_version()}**" in readme
-    )
+    assert f"current source package version is **v{current_version()}**" in readme
     assert "statewake-ai" in readme
     assert "https://github.com/Aditya671/StateWake" in readme
     assert "https://github.com/Aditya671/StateWake/tree/main/docs/user-guide" in readme

@@ -1,5 +1,9 @@
 from datetime import UTC, datetime
 
+from statewake.domain.reliability_evidence import (
+    EvidenceReference,
+    ReliabilityEvidenceChain,
+)
 from statewake.services.reliability_claim_profile_service import (
     evaluate_claim_profile,
     get_builtin_claim_profile,
@@ -7,13 +11,54 @@ from statewake.services.reliability_claim_profile_service import (
 )
 from statewake.workspace.models import WorkspaceRecordQuery
 from statewake.workspace.workspace import StateWakeWorkspace
-from tests.test_reliability_claim_profiles import chain
+
+_DIGEST = "a" * 64
+
+
+def _reference(
+    kind: str, identity: str, source: str | None = None
+) -> EvidenceReference:
+    return EvidenceReference(kind, identity, _DIGEST, source or f"{identity}.json")
+
+
+def _claim_chain() -> ReliabilityEvidenceChain:
+    contract_types = (
+        "prompt_evidence",
+        "model_invocation",
+        "retrieval_evidence",
+        "policy_evidence",
+        "human_approval",
+        "tool_call",
+        "runtime_trace",
+        "evaluator_evidence",
+    )
+    evidence = tuple(
+        _reference(
+            "evidence",
+            f"ai-contract:{contract_type}:run-1:1",
+            f"statewake.ai_contracts.{contract_type}",
+        )
+        for contract_type in contract_types
+    )
+    return ReliabilityEvidenceChain(
+        chain_id="c1",
+        run=_reference("run", "run-1"),
+        state=_reference("state", "state-1"),
+        evidence=evidence,
+        provenance=_reference("provenance", "p1"),
+        integrity=_reference("integrity", "i1"),
+        verification_status="verified",
+        reliability_state="reliable",
+        reconciliation_state="verified",
+        decision="accept",
+        decision_rationale=("bounded claim",),
+    )
 
 
 def test_profile_result_round_trips_through_workspace(tmp_path):
     workspace = StateWakeWorkspace.open(tmp_path / "statewake")
     profile = get_builtin_claim_profile("rag_answer_verified.v1")
-    result = evaluate_claim_profile(chain(), profile)
+    result = evaluate_claim_profile(_claim_chain(), profile)
     result_path = tmp_path / "profile-result.json"
     write_claim_profile_evaluation(result, result_path)
 

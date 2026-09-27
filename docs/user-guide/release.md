@@ -1,12 +1,14 @@
 # Release Information
 
-## Current package baseline
+## Source and public release versions
 
-**StateWake v0.4.0 — Production/Stable package baseline**
+**Current source version: StateWake v0.4.1 (release candidate)**
+
+**Last recorded public release: StateWake v0.4.0**
 
 PyPI maturity classifier: `Development Status :: 5 - Production/Stable`.
 
-Distribution: `statewake-ai`
+Distribution: [`statewake-ai`](https://pypi.org/project/statewake-ai/)
 
 Import package: `statewake`
 
@@ -20,7 +22,7 @@ The public release sequence represented by this repository is:
 
 ## Current scope
 
-The v0.4.0 baseline combines the completed reliability lifecycle, cybersecurity architecture, and Persistence & Dataset Architecture. The workspace provides durable operational indexing, historical query/projection, tabular and portable exports, lifecycle/retention orchestration, integrity verification, analytical access, backend abstraction, and production workspace operations.
+The v0.4.1 source preserves the v0.4.0 baseline, which combines the completed reliability lifecycle, cybersecurity architecture, and Persistence & Dataset Architecture. The workspace provides durable operational indexing, historical query/projection, tabular and portable exports, lifecycle/retention orchestration, integrity verification, analytical access, backend abstraction, and production workspace operations.
 
 ## Release boundary
 
@@ -38,7 +40,7 @@ For a future package publication, verify:
 10. repository-level and platform-specific release gates are externally verified;
 11. the exact source/distribution artifacts are checksum locked.
 
-The current source tree's local quality gates were run on 2026-09-26: mypy passed on 341 files; pytest passed 671 tests and 5 subtests; Ruff lint and formatting checks passed. Repository-host, multi-platform clean-consumer, and publication-approval gates remain part of the separate release workflow.
+A prior v0.4.0 source snapshot passed local quality gates on 2026-09-26: mypy checked 341 files; pytest passed 671 tests and 5 subtests; Ruff lint and formatting checks passed. Those results do not qualify the current v0.4.1 source candidate. Repository-host, multi-platform clean-consumer, and publication-approval gates remain separate release checks.
 
 ## Evidence flow
 

@@ -22,6 +22,10 @@ def test_release_scope_is_explicit() -> None:
         "tests/test_release_identity.py",
         "scripts/release/verify_release_candidate.py",
         "docs/governance/RELEASE_SCOPE.md",
+        "docs/releases/README.md",
+        "docs/releases/v0.4.1/RELEASE_NOTES.md",
+        "docs/whitepaper/StateWake_Technical_White_Paper_v0.4.0.md",
+        "docs/whitepaper/StateWake_Technical_White_Paper_v0.4.0.pdf",
         ".github/workflows/python-publish.yml",
     )
     excluded = (
