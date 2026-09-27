@@ -2,9 +2,9 @@
 
 This file preserves time-specific native integration validation snapshots. Earlier `UNRUN-ENV` and candidate-status statements below describe those historical runs, not the current package status.
 
-## Current workspace status (2026-09-26)
+## Earlier workspace status (2026-09-26; v0.4.0 source)
 
-The package maturity classifier is `Development Status :: 5 - Production/Stable`. The current workspace passed these local gates:
+The package maturity classifier was `Development Status :: 5 - Production/Stable`. That workspace snapshot passed these local gates:
 
 | Gate | Result |
 | --- | --- |
@@ -13,7 +13,7 @@ The package maturity classifier is `Development Status :: 5 - Production/Stable`
 | `uv run ruff check .` | PASS |
 | `uv run ruff format --check .` | PASS |
 
-These results supersede the earlier local-tool and SDK `UNRUN-ENV` entries below for the current workspace. Repository-host controls and publication approval remain separate release-process decisions.
+These results superseded the earlier local-tool and SDK `UNRUN-ENV` entries for that v0.4.0 snapshot. They do not qualify the current v0.4.1 source. Repository-host controls and publication approval remain separate release-process decisions.
 
 ## Historical snapshot: original attached archive
 

@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased — Native SDK integration development copy
+## [v0.4.1] - Reliability and integration updates
+
+This section describes the v0.4.1 source candidate after the v0.4.0 release. It records source changes; publication and artifact qualification require their own release gates.
+
+- Added the dated v0.4.0 technical white paper in Markdown and PDF with its grounding map and dependency errata; indexed these documents and included them in the current release-input fingerprint.
+- Synchronized the v0.4.1 package, lockfile, public API documentation, active release guidance, and version regressions while preserving v0.4.0 historical records.
 - Improved Phase 7 negative-trial findings: `broken_provenance_edge` and `invalid_reliability_transition` now exercise their distinct existing domain validators instead of inheriting detection from a generic failed-profile fixture. Preserved structural profile and underlying evidence verification as separate results; added positive/negative control regressions.
 - Corrected prior release-boundary overreach: centralized current-project file selection for provenance, release-candidate fingerprint, Tier 5 security snapshots, and current-identity scans; excluded historical audit copies, prior release notes, generated reports, and scratch files without excluding live source, verification scripts, tests, build inputs, or shipped wheel contents.
 - Removed only the duplicated historical audit report/catalog copies from the clean runnable candidate; earlier release records and active scripts remain intact.

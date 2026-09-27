@@ -111,7 +111,7 @@ This prevents a green result from one source/dependency state from being silentl
 
 ## Record and authorization semantics
 
-The workspace extra is the explicit dependency surface for the v0.4.0 dataset/export/analytical adapters. A provenance record describes its own build. `release_status` and `publication_authorized` record that build's release authorization; for example, a build not authorized for publication carries `release_status = development-only` and `publication_authorized = false`. These per-build fields do not override the package's PyPI maturity classifier.
+The v0.4.1 dataset/export/analytical adapters use standard runtime dependencies declared in `pyproject.toml`. A provenance record describes its own build. `release_status` and `publication_authorized` record that build's release authorization; for example, a build not authorized for publication carries `release_status = development-only` and `publication_authorized = false`. These per-build fields do not override the package's PyPI maturity classifier.
 
 A successful Tier 8 verification means **the described artifact is internally attributable and integrity-bound**. It does not by itself approve a public release or independently audit external CI/repository controls.
 

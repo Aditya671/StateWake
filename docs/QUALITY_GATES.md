@@ -53,4 +53,4 @@ Run `python scripts/testing/run_public_trial_regressions.py --mode source` on ev
 
 ### License metadata / PEP 639
 
-Release packaging must retain `project.license = "Apache-2.0"` and `project.license-files = ["LICENSE"]`. Deprecated `License :: ...` Trove classifiers are not part of the StateWake v0.4.0 package metadata. `tests/release/test_license_metadata_policy.py` protects this boundary, and release builds should inspect wheel metadata and build output for license-metadata deprecation warnings.
+Release packaging must retain `project.license = "Apache-2.0"` and `project.license-files = ["LICENSE"]`. Deprecated `License :: ...` Trove classifiers are not part of the StateWake v0.4.1 package metadata. `tests/release/test_license_metadata_policy.py` protects this boundary, and release builds should inspect wheel metadata and build output for license-metadata deprecation warnings.

@@ -1,6 +1,6 @@
 # Release Governance Contract
 
-Python 3.14 is deliberately outside the StateWake v0.4.0 compatibility matrix.
+Python 3.14 is deliberately outside the StateWake v0.4.1 compatibility matrix.
 
 This document defines the repository-side release gates for the next StateWake public developer package. It intentionally does not authorize a release; publication remains a separate approval decision.
 

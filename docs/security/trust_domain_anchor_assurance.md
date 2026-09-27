@@ -112,4 +112,4 @@ This tier does not create separate hosts, external registries, KMS/HSM systems, 
 
 ## Relationship to package release
 
-Tier 7 describes trust-domain and anchor controls in the v0.4.0 package. It does not itself perform release tagging, package upload, or publication.
+Tier 7 describes trust-domain and anchor controls in the v0.4.1 package. It does not itself perform release tagging, package upload, or publication.

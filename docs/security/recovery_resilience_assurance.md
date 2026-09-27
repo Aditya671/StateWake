@@ -119,4 +119,4 @@ Independent verification in this project means execution from a fresh clean copy
 
 ## Relationship to package release
 
-Tier 6 describes recovery and resilience controls in the v0.4.0 package. It does not itself perform release tagging or publication, and it does not replace deployment-specific recovery services.
+Tier 6 describes recovery and resilience controls in the v0.4.1 package. It does not itself perform release tagging or publication, and it does not replace deployment-specific recovery services.

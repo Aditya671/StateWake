@@ -2,7 +2,7 @@
 
 ## Current position
 
-**v0.4.0 — completed public release sequence through the Persistence & Dataset Architecture**
+**Current source: v0.4.1 candidate. Last recorded public release: v0.4.0.**
 
 The release sequence records three deliberate boundaries: packaging stabilization at v0.1.1, cybersecurity completion at v0.2.0, and Persistence & Dataset completion at v0.4.0.
 

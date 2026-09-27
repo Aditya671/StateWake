@@ -1,6 +1,6 @@
 """Public package API for StateWake's stabilized reliability lifecycle."""
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 __public_api_contract_version__ = "1"
 
 from statewake.adapters.first_party_evidence import (

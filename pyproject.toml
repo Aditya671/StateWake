@@ -1,6 +1,6 @@
 [project]
 name = "statewake-ai"
-version = "0.4.0"
+version = "0.4.1"
 description = "Evidence-backed reliability infrastructure for AI systems."
 keywords = [
     "ai",

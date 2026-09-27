@@ -1,7 +1,6 @@
-# Native framework capabilities — v0.4.0 development extension
+# Native framework capabilities - v0.4.1
 
-This document applies to the **isolated development copy** of StateWake v0.4.0.
-It does not change the uploaded verified release, which remains the baseline.
+StateWake v0.4.1 is the current source package version; v0.4.0 is the last recorded public release. Native SDK integrations are optional extras declared in `pyproject.toml`; install the frameworks that your application uses.
 
 ## Installation
 
@@ -74,4 +73,4 @@ assert not sink.failures
   remain `UNRUN-ENV` here because those packages are absent. Fake native
   callback protocol tests exercise the implemented StateWake behavior but do
   not establish compatibility with all SDK releases.
-- No `pyright` gate is added; StateWake v0.4.0 uses **mypy**.
+- No `pyright` gate is added; StateWake v0.4.1 uses **mypy**.

@@ -15,13 +15,13 @@ def _pyproject() -> dict[str, object]:
         return tomllib.load(stream)
 
 
-def test_v040_requires_python_stops_before_314() -> None:
+def test_v041_requires_python_stops_before_314() -> None:
     project = _pyproject()["project"]
     assert isinstance(project, dict)
     assert project["requires-python"] == ">=3.11,<3.14"
 
 
-def test_v040_classifiers_advertise_only_qualified_minors() -> None:
+def test_v041_classifiers_advertise_only_qualified_minors() -> None:
     project = _pyproject()["project"]
     assert isinstance(project, dict)
     classifiers = project["classifiers"]
@@ -44,7 +44,7 @@ def test_ci_and_release_matrices_do_not_claim_python_314() -> None:
         assert "3.14" not in text
 
 
-def test_current_docs_state_314_is_unsupported_for_v040() -> None:
+def test_current_docs_state_314_is_unsupported_for_v041() -> None:
     policy = (ROOT / "docs/user-guide/python-support.md").read_text(encoding="utf-8")
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     governance = (ROOT / "docs/governance/RELEASE_GOVERNANCE.md").read_text(
@@ -60,5 +60,5 @@ def test_current_docs_state_314_is_unsupported_for_v040() -> None:
 def test_fastapi_trial_boundary_is_documented_without_support_claim() -> None:
     policy = (ROOT / "docs/user-guide/python-support.md").read_text(encoding="utf-8")
     assert "FastAPI Full Stack Template" in policy
-    assert "outside the StateWake v0.4.0 compatibility matrix" in policy
+    assert "outside the StateWake v0.4.1 compatibility matrix" in policy
     assert "not a StateWake compatibility result" in policy

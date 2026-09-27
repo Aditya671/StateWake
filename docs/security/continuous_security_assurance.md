@@ -65,4 +65,4 @@ Tier 5 evidence is sufficient when StateWake can determine, from executable evid
 
 ## Relationship to package release
 
-Tier 5 describes change-aware assurance controls in the v0.4.0 package. It does not itself perform release tagging or publication.
+Tier 5 describes change-aware assurance controls in the v0.4.1 package. It does not itself perform release tagging or publication.

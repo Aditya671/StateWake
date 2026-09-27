@@ -2,7 +2,9 @@
 
 ## Current package version
 
-**StateWake: `v0.4.0`**
+**StateWake source: `v0.4.1`**
+
+The last recorded public release is `v0.4.0`. The v0.4.1 source version is being prepared for separate release qualification.
 
 The public release sequence is:
 
@@ -10,7 +12,7 @@ The public release sequence is:
 - `v0.2.0` — cybersecurity capability release completing the V1/V2/V3 security progression through V3 Tier 15.
 - `v0.4.0` — AI Systems Seven-Phase Roadmap release completing AI evidence contracts, claim profiles, reports, workspace guarantees, integrations, release trust, and comparative validation.
 
-Historical implementation identifiers remain provenance and do not override these public package versions.
+Historical implementation identifiers remain provenance and do not override these public package versions. The current v0.4.1 source candidate is not listed as a published release.
 
 ## Version sources of truth
 
@@ -32,6 +34,8 @@ The public API contract version remains `1` across this release sequence because
 `v0.2.0` is a minor release because it introduces the completed cybersecurity capability set and additional security-facing public surfaces without changing the public contract version.
 
 `v0.4.0` is a minor release because it introduces the completed StateWake AI Systems Seven-Phase Roadmap while preserving existing public contracts.
+
+`v0.4.1` is the requested patch candidate for the cumulative compatible changes after v0.4.0. Its changelog includes native SDK integration surfaces, which would ordinarily meet the MINOR criterion above. The v0.4.1 number is an explicit pre-1.0 exception for this candidate; it does not relax API compatibility or release qualification. Publication requires separate approval and artifact verification.
 
 ## Release discipline
 
