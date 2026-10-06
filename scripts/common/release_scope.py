@@ -70,6 +70,8 @@ CURRENT_DOCS = frozenset(
         "data/README.md",
     }
 )
+LOCAL_ENV_TEMPLATE_NAMES = frozenset({".env.example", ".env.sample", ".env.template"})
+
 GENERATED_PARTS = frozenset(
     {
         ".git",
@@ -99,7 +101,12 @@ def is_ignored_repository_path(relative: Path) -> bool:
         return True
     if not relative.parts or any(part in GENERATED_PARTS for part in relative.parts):
         return True
-    return relative.name.endswith(".tsbuildinfo")
+    name = relative.name
+    if name == ".env" or (
+        name.startswith(".env.") and name not in LOCAL_ENV_TEMPLATE_NAMES
+    ):
+        return True
+    return name.endswith(".tsbuildinfo")
 
 
 def repository_files(root: Path) -> tuple[Path, ...]:

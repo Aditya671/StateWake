@@ -1,9 +1,10 @@
 """Prepare deterministic StateWake validation state without hiding source drift.
 
-This preflight refreshes only generated release identity.  It deliberately does
-not rewrite dependency locks, current source/document boundaries, or the
-continuous-security baseline.  Those artifacts have independent governance and
-must fail closed when stale or inconsistent.
+This preflight refreshes only generated release identity in the repository and
+stabilizes the current Python environment from the already-locked validation
+profile. It deliberately does not rewrite dependency locks, current
+source/document boundaries, or the continuous-security baseline. Those artifacts
+have independent governance and must fail closed when stale or inconsistent.
 """
 
 from __future__ import annotations
@@ -33,7 +34,7 @@ class ValidationPreparationError(RuntimeError):
 
 
 def _run_check(name: str, command: list[str], *, timeout: int) -> dict[str, object]:
-    """Run one non-mutating preparation check and return structured evidence."""
+    """Run one bounded preparation step and return structured evidence."""
     try:
         completed = subprocess.run(
             command,
@@ -62,13 +63,35 @@ def prepare_validation_state(*, timeout: int = 180) -> dict[str, object]:
     """Refresh safe generated state and verify governed non-generated state.
 
     Release identity is derived entirely from the current maintained source
-    boundary, so refreshing it is safe and deterministic.  Dependency locks and
-    the continuous-security baseline are *verified*, never silently rewritten.
+    boundary, so refreshing it is safe and deterministic. The current Python
+    environment is synchronized from the existing lock with the canonical dev +
+    integrations profile. Dependency locks and the continuous-security baseline
+    are *verified*, never silently rewritten.
     """
     identity = refresh_release_identity(ROOT)
     validate_release_identity(ROOT)
     checks = [
         _run_check("uv-lock-check", ["uv", "lock", "--check"], timeout=timeout),
+        _run_check(
+            "validation-environment-sync",
+            [
+                "uv",
+                "sync",
+                "--locked",
+                "--python",
+                sys.executable,
+                "--group",
+                "dev",
+                "--extra",
+                "integrations",
+            ],
+            timeout=timeout,
+        ),
+        _run_check(
+            "validation-environment-verify",
+            [sys.executable, "scripts/release/verify_validation_environment.py"],
+            timeout=timeout,
+        ),
         _run_check(
             "continuous-security-assurance",
             [
@@ -85,6 +108,10 @@ def prepare_validation_state(*, timeout: int = 180) -> dict[str, object]:
         "mutated_authorities": [
             "verification_manifest.txt",
             "candidate-fingerprint.txt",
+        ],
+        "stabilized_environment": [
+            "locked dependency group: dev",
+            "locked optional extra: integrations",
         ],
         "not_auto_refreshed": [
             "uv.lock",

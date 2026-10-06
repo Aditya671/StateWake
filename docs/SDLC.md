@@ -123,3 +123,14 @@ The canonical baseline is promoted only from a verified artifact.
 ### Frozen public-trial regressions
 
 The release SDLC includes `public-trial-regressions` after external fixture validation and before release-candidate qualification. The SDLC uses source mode; real native-SDK/public-host qualification remains a separate environment-dependent gate and must not be inferred from source-mode success. Native qualification reuses the same coordinator in `--mode qualification`, records the installed integration versions, and requires the dedicated real-SDK probes documented in `docs/testing/NATIVE_INTEGRATION_QUALIFICATION.md`.
+
+## Validation environment preparation
+
+`run_sdlc_validation.py` begins by running `prepare_sdlc_validation.py`. The
+preparation step verifies the lockfile, synchronizes the current interpreter with
+the locked `dev` dependency group plus the aggregate `integrations` extra, and
+verifies that every distribution declared by those profiles is installed before
+strict type checking or pytest begins. Individual gates then use the prepared
+environment without dependency resolution. Release identity may be refreshed
+deterministically; governed security baselines and dependency lockfiles are never
+silently rewritten by this preparation step.

@@ -41,6 +41,26 @@ def test_preparation_refreshes_only_release_identity_and_verifies_other_authorit
     assert run_check.call_args_list == [
         call("uv-lock-check", ["uv", "lock", "--check"], timeout=17),
         call(
+            "validation-environment-sync",
+            [
+                "uv",
+                "sync",
+                "--locked",
+                "--python",
+                sys.executable,
+                "--group",
+                "dev",
+                "--extra",
+                "integrations",
+            ],
+            timeout=17,
+        ),
+        call(
+            "validation-environment-verify",
+            [sys.executable, "scripts/release/verify_validation_environment.py"],
+            timeout=17,
+        ),
+        call(
             "continuous-security-assurance",
             [
                 sys.executable,
@@ -66,5 +86,5 @@ def test_preparation_never_passes_security_baseline_promotion_flag() -> None:
         run_check.return_value = {"status": "passed"}
         preparation.prepare_validation_state()
 
-    security_command = run_check.call_args_list[1].args[1]
+    security_command = run_check.call_args_list[3].args[1]
     assert "--promote-on-success" not in security_command

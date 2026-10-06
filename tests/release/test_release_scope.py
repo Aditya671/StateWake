@@ -55,6 +55,7 @@ def test_release_scope_is_explicit() -> None:
         "ui/coverage/index.html",
         "ui/tsconfig.tsbuildinfo",
         ".venv/Lib/site-packages/openai/lib/.keep",
+        "ui/.env.local",
     )
     assert all(is_release_input(Path(name)) for name in included)
     assert all(not is_release_input(Path(name)) for name in excluded)
@@ -90,9 +91,13 @@ def test_local_dependency_trees_are_pruned_before_repository_enumeration(
     node_file = tmp_path / "ui/node_modules/next/index.js"
     node_file.parent.mkdir(parents=True)
     node_file.write_text("generated", encoding="utf-8")
+    local_env = tmp_path / "ui/.env.local"
+    local_env.parent.mkdir(parents=True, exist_ok=True)
+    local_env.write_text("TOKEN=local-only", encoding="utf-8")
 
     assert is_ignored_repository_path(venv_placeholder.relative_to(tmp_path))
     assert is_ignored_repository_path(node_file.relative_to(tmp_path))
+    assert is_ignored_repository_path(local_env.relative_to(tmp_path))
     assert repository_files(tmp_path) == (source,)
     assert release_input_files(tmp_path) == (source,)
 
