@@ -1,18 +1,170 @@
-.venv/
+# -----------------------------------------------------------------------------
+# Python bytecode, interpreter caches, and test/type-check caches
+# -----------------------------------------------------------------------------
 __pycache__/
-.mypy_cache/
 *.py[cod]
+*$py.class
 .pytest_cache/
+.mypy_cache/
 .ruff_cache/
+.hypothesis/
+.pytype/
+.pyre/
+.pyright/
+.ipynb_checkpoints/
+.tox/
+.nox/
+
+# Coverage / test reports
 .coverage
+.coverage.*
+coverage/
+coverage.xml
 htmlcov/
-dist/
-build/
-*.egg-info/
-.DS_Store
-.vscode/
-.idea/
-.env
-.env.*
+junit*.xml
+pytest-report*.xml
 test_results*.txt
 
+# -----------------------------------------------------------------------------
+# Python environments and local package-manager state
+# -----------------------------------------------------------------------------
+.venv/
+venv/
+env/
+ENV/
+.uv/
+.uv-cache/
+pip-wheel-metadata/
+
+# -----------------------------------------------------------------------------
+# Python packaging / distribution output
+# -----------------------------------------------------------------------------
+build/
+dist/
+.eggs/
+*.egg-info/
+*.egg
+*.whl
+*.tar.gz
+
+# -----------------------------------------------------------------------------
+# StateWake local runtime, workspace, validation, and generated evidence
+# -----------------------------------------------------------------------------
+# Canonical source-controlled fixtures under tests/ and benchmarks/ are
+# intentionally NOT ignored by these root-scoped rules.
+/verification/
+/evidence/
+/reports/
+/runtime/
+/local-runtime/
+/workspace/
+/workspaces/
+/statewake-workspace/
+/statewake-workspaces/
+/.statewake/
+
+# A workspace opened directly at the repository root must not pollute source.
+/statewake.db
+/statewake.db-wal
+/statewake.db-shm
+/statewake.db-journal
+/artifacts/
+/receipts/
+/state/
+/proofs/
+/exports/
+/manifests/
+/locks/
+
+# Conventional local development database documented by StateWake.
+/data/statewake.db
+/data/statewake.db-wal
+/data/statewake.db-shm
+/data/statewake.db-journal
+/data/statewake/
+
+# Optional local UI/review runtime files when operators choose repository-local
+# paths. JSONL fixtures elsewhere in the repository remain trackable.
+/review-statements.jsonl
+/reviews.jsonl
+/reliability-state.jsonl
+/security-audit.jsonl
+/.human-approval.lock
+
+# -----------------------------------------------------------------------------
+# StateWake UI / Node / Next.js generated output
+# -----------------------------------------------------------------------------
+ui/node_modules/
+ui/.next/
+ui/out/
+ui/coverage/
+ui/.turbo/
+ui/.vercel/
+ui/.eslintcache
+ui/.cache/
+ui/test-results/
+ui/playwright-report/
+ui/blob-report/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# The repository root is not a Node package; ignore accidental root npm locks.
+/package-lock.json
+
+# The UI dependency lockfile is maintained source and MUST remain trackable.
+!ui/package-lock.json
+
+# -----------------------------------------------------------------------------
+# Environment configuration and local secrets
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+
+.secrets/
+*.local.pem
+*.local.key
+*.local.crt
+*.local.p12
+*.local.pfx
+
+# -----------------------------------------------------------------------------
+# Logs, temporary files, editor swap/backup files
+# -----------------------------------------------------------------------------
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*.orig
+*.rej
+*.pid
+*.pid.lock
+*~
+
+# -----------------------------------------------------------------------------
+# IDE / editor metadata
+# -----------------------------------------------------------------------------
+.vscode/
+.idea/
+.fleet/
+.history/
+*.iml
+.project
+.classpath
+.settings/
+
+# -----------------------------------------------------------------------------
+# Operating-system metadata
+# -----------------------------------------------------------------------------
+.DS_Store
+._*
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/

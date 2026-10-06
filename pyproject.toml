@@ -1,6 +1,6 @@
 [project]
 name = "statewake-ai"
-version = "0.4.1"
+version = "0.5.0"
 description = "Evidence-backed reliability infrastructure for AI systems."
 keywords = [
     "ai",
@@ -81,7 +81,7 @@ dev = [
 statewake = "statewake.cli.main:main"
 
 [build-system]
-requires = ["uv_build>=0.9.0,<1.0"]
+requires = ["uv_build>=0.10.0,<0.11"]
 build-backend = "uv_build"
 
 [tool.pytest.ini_options]
@@ -99,18 +99,11 @@ source-exclude = [
     "*.pyo",
 ]
 
-[[tool.uv.index]]
-name = "testpypi"
-url = "https://test.pypi.org/simple/"
-publish-url = "https://test.pypi.org/legacy/"
-check-url = "https://test.pypi.org/simple/"
-explicit = true
 
 [tool.ruff]
 line-length = 88
 target-version = "py311"
 exclude = [
-    "repository history",
     "dist",
     ".venv",
     ".pytest_cache",
@@ -140,7 +133,7 @@ ignore = [
 "tests/**/*.py" = [
     "D",
 ]
-"docs/examples/first-evidence-chain.py" = [
+"examples/first-evidence-chain.py" = [
     "N999",
 ]
 
@@ -151,11 +144,10 @@ line-ending = "auto"
 
 [tool.mypy]
 python_version = "3.11"
-files = ["src", "tests", "scripts", "docs"]
+files = ["src", "tests", "scripts", "examples"]
 strict = true
 exclude = [
     "\\.venv",
-    "repository history",
     "dist",
     "build",
 ]
@@ -183,4 +175,12 @@ module = [
     "numpy",
     "numpy.*",
 ]
+follow_imports = "skip"
+
+[[tool.mypy.overrides]]
+module = [
+    "pyarrow",
+    "pyarrow.*",
+]
+ignore_missing_imports = true
 follow_imports = "skip"

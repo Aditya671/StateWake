@@ -1,31 +1,33 @@
-.PHONY: sync test lint format format-check typecheck check sdlc-check sdlc-release build
+.PHONY: sync test lint format format-check typecheck check prepare-validation sdlc-check sdlc-release build
 
 sync:
-	uv sync
+	uv sync --locked --group dev --extra integrations
 
 test:
-	uv run pytest
+	uv run --no-sync pytest
 
 lint:
-	uvx ruff@0.16.5 check src tests scripts
+	uv run --no-sync ruff check src tests scripts examples
 
 format:
-	uvx ruff@0.16.5 format src tests scripts
+	uv run --no-sync ruff format src tests scripts examples
 
 format-check:
-	uvx ruff@0.16.5 format --check src tests scripts
+	uv run --no-sync ruff format --check src tests scripts examples
 
 typecheck:
-	uv run mypy
+	uv run --no-sync mypy
 
 check: lint format-check typecheck test
 
 build:
-	uv build
+	uv build --no-sources
 
+prepare-validation:
+	uv run --no-sync python scripts/release/prepare_sdlc_validation.py
 
 sdlc-check:
-	uv run python scripts/release/run_sdlc_validation.py --profile check
+	uv run --no-sync python scripts/release/run_sdlc_validation.py --profile check
 
 sdlc-release:
-	uv run python scripts/release/run_sdlc_validation.py --profile release
+	uv run --no-sync python scripts/release/run_sdlc_validation.py --profile release

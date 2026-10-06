@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Literal, cast
+from typing import cast
 from wsgiref.types import StartResponse, WSGIEnvironment
 
 from statewake.adapters.deployment_security import (
@@ -209,7 +209,7 @@ def test_proof_route_maps_to_distinct_operation() -> None:
 
     def authorize(
         _principal: object,
-        operation: Literal["verify:evidence", "verify:proof"],
+        operation: SecurityOperation,
         _environ: WSGIEnvironment,
     ) -> bool:
         seen.append(operation)
@@ -276,3 +276,71 @@ def test_security_events_can_be_persisted_in_independent_audit_store(tmp_path) -
     assert len(records) == 1
     assert records[0].event == "authentication_failed"
     assert records[0].path == "/v1/evidence/verify"
+
+
+def test_review_route_maps_method_to_distinct_security_operations() -> None:
+    """Authorize review reads and writes as separate deployment operations."""
+    seen: list[SecurityOperation] = []
+
+    def authorize_review(
+        _principal: object,
+        operation: SecurityOperation,
+        _environ: WSGIEnvironment,
+    ) -> bool:
+        """Record the operation selected by the deployment-security router."""
+        seen.append(operation)
+        return True
+
+    application = create_secured_application(
+        _application,
+        _config(lambda _environ: "caller", authorize_review),
+    )
+    record_id = "a" * 64
+    get_environ = _environ(f"/api/v1/claims/{record_id}/reviews")
+    get_environ["REQUEST_METHOD"] = "GET"
+    application(get_environ, _response)
+    post_environ = _environ(f"/api/v1/claims/{record_id}/reviews")
+    application(post_environ, _response)
+
+    approval_get = _environ(f"/api/v1/claims/{record_id}/approvals")
+    approval_get["REQUEST_METHOD"] = "GET"
+    application(approval_get, _response)
+    approval_post = _environ(f"/api/v1/claims/{record_id}/approvals")
+    application(approval_post, _response)
+
+    assert seen == [
+        "review:read",
+        "review:write",
+        "approval:read",
+        "approval:write",
+    ]
+
+
+def test_secured_application_exposes_authenticated_principal_only_after_admission() -> (
+    None
+):
+    """Allow downstream bounded APIs to bind server-owned actor identity."""
+    observed: list[object] = []
+
+    def downstream(
+        environ: WSGIEnvironment,
+        start_response: StartResponse,
+    ) -> list[bytes]:
+        """Capture the admitted principal inserted by the security boundary."""
+        observed.append(environ["statewake.authenticated_principal"])
+        start_response("200 OK", [])
+        return [b"ok"]
+
+    application = create_secured_application(
+        downstream,
+        _config(
+            lambda _environ: "authenticated-reviewer",
+            lambda _principal, _operation, _environ: True,
+        ),
+    )
+    environ = _environ(f"/api/v1/claims/{'a' * 64}/reviews")
+    environ["REQUEST_METHOD"] = "GET"
+
+    application(environ, _response)
+
+    assert observed == ["authenticated-reviewer"]

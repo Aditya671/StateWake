@@ -34,4 +34,4 @@ Run:
 statewake --help
 ```
 
-The CLI intentionally exposes only the active StateWake product boundary. Historical commands retained in the `repository history` historical archive are not part of the supported interface.
+The CLI intentionally exposes only the active StateWake product boundary. Commands that appear only in historical release or architecture records are not part of the supported interface.

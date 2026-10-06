@@ -37,6 +37,7 @@ def test_diagnostics_reports_health_storage_backend_and_exports(tmp_path: Path) 
         assert report.backend == "SqliteWorkspaceRepository"
         assert report.storage.total_bytes > 0
         assert report.storage.artifact_bytes > 0
+        assert report.storage.database_bytes > 0
         assert report.export_count == 0
         assert report.latest_export is None
 

@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 import scripts.integration.run_external_integrations as external_integrations
-from config.project_paths import PROJECT_ROOT
+from scripts.common.project_paths import PROJECT_ROOT
 from scripts.integration.run_external_integrations import ingest_capture, load_fixture
 
 ROOT = PROJECT_ROOT

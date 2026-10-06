@@ -28,6 +28,58 @@ class ReliabilityStateStore(Protocol):
         ...
 
 
+def parse_reliability_state_history(
+    raw: bytes, subject_id: str | None = None
+) -> list[ReliabilityStateTransition]:
+    """Parse and verify an immutable reliability-state JSONL snapshot.
+
+    Unlike ``JsonlReliabilityStateStore.read``, this helper performs no locking,
+    repair, directory creation, or writes. Callers that require a read-only
+    inspection boundary can therefore validate already-captured bytes without
+    mutating the authoritative history. An incomplete final line is rejected
+    rather than repaired.
+    """
+    if not raw:
+        return []
+    unterminated_final_line = not raw.endswith(b"\n")
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError("reliability-state history is not valid UTF-8") from exc
+
+    result: list[ReliabilityStateTransition] = []
+    tips: dict[str, str] = {}
+    lines = text.splitlines()
+    for line_number, line in enumerate(lines, start=1):
+        if not line.strip():
+            continue
+        try:
+            payload = json.loads(line)
+            if not isinstance(payload, dict):
+                raise ValueError("transition record must be a JSON object")
+            transition = ReliabilityStateTransition.from_dict(payload)  # type: ignore
+            expected = tips.get(transition.subject_id, "")
+            if transition.previous_transition_digest != expected:
+                raise ValueError(
+                    "previous transition digest does not match subject tip; "
+                    f"expected {expected or '<empty>'}"
+                )
+            if payload.get("digest") != transition.computed_digest:  # type: ignore
+                raise ValueError("stored transition digest mismatch")
+            tips[transition.subject_id] = transition.computed_digest
+        except (json.JSONDecodeError, TypeError, KeyError, ValueError) as exc:
+            if unterminated_final_line and line_number == len(lines):
+                raise ValueError(
+                    "reliability-state history has an incomplete final record"
+                ) from exc
+            raise ValueError(
+                f"Invalid reliability-state transition at line {line_number}: {exc}"
+            ) from exc
+        if subject_id is None or transition.subject_id == subject_id:
+            result.append(transition)
+    return result
+
+
 class JsonlReliabilityStateStore:
     """Append-only JSONL state history with a small local lock for concurrency."""
 
@@ -100,32 +152,7 @@ class JsonlReliabilityStateStore:
             return []
         if self.recover_partial_tail:
             self._recover_partial_tail()
-        result: list[ReliabilityStateTransition] = []
-        tips: dict[str, str] = {}
-        with self.path.open(encoding="utf-8") as handle:
-            for line_number, line in enumerate(handle, start=1):
-                if not line.strip():
-                    continue
-                try:
-                    payload = json.loads(line)
-                    if not isinstance(payload, dict):
-                        raise ValueError("transition record must be a JSON object")
-                    transition = ReliabilityStateTransition.from_dict(payload)  # type: ignore
-                    expected = tips.get(transition.subject_id, "")
-                    if transition.previous_transition_digest != expected:
-                        raise ValueError(
-                            f"previous transition digest does not match subject tip; expected {expected or '<empty>'}"
-                        )
-                    if payload.get("digest") != transition.computed_digest:  # type: ignore
-                        raise ValueError("stored transition digest mismatch")
-                    tips[transition.subject_id] = transition.computed_digest
-                except (json.JSONDecodeError, TypeError, KeyError, ValueError) as exc:
-                    raise ValueError(
-                        f"Invalid reliability-state transition at line {line_number}: {exc}"
-                    ) from exc
-                if subject_id is None or transition.subject_id == subject_id:
-                    result.append(transition)
-        return result
+        return parse_reliability_state_history(self.path.read_bytes(), subject_id)
 
     def _recover_partial_tail(self) -> None:
         """Truncate an incomplete final UTF-8/JSONL record after a crash."""

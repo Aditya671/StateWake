@@ -304,3 +304,42 @@ def test_timeline_makes_observation_order_explicit_without_claiming_causality() 
         "preserved",
         "contained",
     ]
+
+
+def test_read_only_incident_snapshot_does_not_create_lock_or_mutate_source(
+    tmp_path: Path,
+) -> None:
+    """Read canonical incident evidence without acquiring the writer lock."""
+    from statewake.adapters.incident_evidence import read_incident_evidence_snapshot
+
+    path = tmp_path / "incidents.jsonl"
+    store = JsonlIncidentEvidenceStore(path)
+    stored = store.append(_incident())
+    store.lock_path.unlink(missing_ok=True)
+    before = path.read_bytes()
+
+    records = read_incident_evidence_snapshot(
+        path, max_bytes=1024 * 1024, max_records=10
+    )
+
+    assert [record.digest for record in records] == [stored.digest]
+    assert path.read_bytes() == before
+    assert not store.lock_path.exists()
+
+
+def test_read_only_incident_snapshot_enforces_byte_and_record_limits(
+    tmp_path: Path,
+) -> None:
+    """Fail closed rather than partially reading an oversized incident chain."""
+    from statewake.adapters.incident_evidence import read_incident_evidence_snapshot
+
+    path = tmp_path / "incidents.jsonl"
+    store = JsonlIncidentEvidenceStore(path)
+    store.append(_incident())
+    store.append(_incident(category="network-compromise"))
+    store.lock_path.unlink(missing_ok=True)
+
+    with pytest.raises(OverflowError, match="read limit"):
+        read_incident_evidence_snapshot(path, max_bytes=1, max_records=10)
+    with pytest.raises(OverflowError, match="record count"):
+        read_incident_evidence_snapshot(path, max_bytes=1024 * 1024, max_records=1)

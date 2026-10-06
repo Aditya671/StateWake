@@ -12,41 +12,47 @@ PROJECT_CONFIG_BOOTSTRAP = Path(__file__).resolve().parents[2]
 if str(PROJECT_CONFIG_BOOTSTRAP) not in sys.path:
     sys.path.insert(0, str(PROJECT_CONFIG_BOOTSTRAP))
 
-from config.project_paths import DIST_PATH, PROJECT_ROOT, SRC_PATH  # noqa: E402
+from scripts.common.project_metadata import load_project_metadata  # noqa: E402
+from scripts.common.project_paths import DIST_PATH, PROJECT_ROOT  # noqa: E402
 
-if str(SRC_PATH) not in sys.path:
-    sys.path.insert(0, str(SRC_PATH))
+METADATA = load_project_metadata(PROJECT_ROOT)
+SOURCE_ROOT = PROJECT_ROOT / METADATA.module_root
+if str(SOURCE_ROOT) not in sys.path:
+    sys.path.insert(0, str(SOURCE_ROOT))
 
 
-FORBIDDEN_MODULES = (
-    "statewake.domain.chaos",
-    "statewake.domain.control",
-    "statewake.domain.control_audit",
-    "statewake.domain.fairness",
-    "statewake.domain.federation",
-    "statewake.domain.impact",
-    "statewake.domain.indexing",
-    "statewake.domain.recording",
-    "statewake.domain.remediation_execution",
-    "statewake.domain.remediation_reconciliation",
-    "statewake.domain.remediation_recovery",
-    "statewake.domain.replay",
-    "statewake.domain.runtime",
-    "statewake.services.chaos_service",
-    "statewake.services.control_audit_service",
-    "statewake.services.federation_service",
-    "statewake.services.impact_service",
-    "statewake.services.index_service",
-    "statewake.services.remediation_reconciliation_service",
-    "statewake.services.remediation_recovery_service",
-    "statewake.services.replay_service",
-    "statewake.adapters.control_audit",
-    "statewake.adapters.operational_index",
-    "statewake.adapters.remediation_control",
-    "statewake.adapters.remediation_execution",
-    "statewake.adapters.remediation_reconciliation",
-    "statewake.adapters.remediation_recovery",
-    "statewake.adapters.runtime",
+FORBIDDEN_MODULE_SUFFIXES = (
+    "domain.chaos",
+    "domain.control",
+    "domain.control_audit",
+    "domain.fairness",
+    "domain.federation",
+    "domain.impact",
+    "domain.indexing",
+    "domain.recording",
+    "domain.remediation_execution",
+    "domain.remediation_reconciliation",
+    "domain.remediation_recovery",
+    "domain.replay",
+    "domain.runtime",
+    "services.chaos_service",
+    "services.control_audit_service",
+    "services.federation_service",
+    "services.impact_service",
+    "services.index_service",
+    "services.remediation_reconciliation_service",
+    "services.remediation_recovery_service",
+    "services.replay_service",
+    "adapters.control_audit",
+    "adapters.operational_index",
+    "adapters.remediation_control",
+    "adapters.remediation_execution",
+    "adapters.remediation_reconciliation",
+    "adapters.remediation_recovery",
+    "adapters.runtime",
+)
+FORBIDDEN_MODULES = tuple(
+    f"{METADATA.import_package}.{suffix}" for suffix in FORBIDDEN_MODULE_SUFFIXES
 )
 
 FORBIDDEN_PARTS = (
@@ -83,7 +89,7 @@ FORBIDDEN_PARTS = (
 
 def _source_module_map() -> dict[str, Path]:
     """Return importable source modules keyed by fully qualified module name."""
-    root = SRC_PATH
+    root = SOURCE_ROOT
     modules: dict[str, Path] = {}
     for path in root.rglob("*.py"):
         relative = path.relative_to(root).with_suffix("")
@@ -133,15 +139,18 @@ def _verify_cli_import_closure() -> None:
     with (project_root / "pyproject.toml").open("rb") as handle:
         config = tomllib.load(handle)
     excluded = {
-        path.removeprefix("src/").removesuffix(".py").replace("/", ".")
+        path.removeprefix(f"{METADATA.module_root.rstrip('/')}/")
+        .removesuffix(".py")
+        .replace("/", ".")
         for path in config.get("tool", {})
         .get("uv", {})
         .get("build-backend", {})
         .get("source-exclude", [])
-        if path.startswith("src/") and path.endswith(".py")
+        if path.startswith(f"{METADATA.module_root.rstrip('/')}/")
+        and path.endswith(".py")
     }
 
-    start = "statewake.cli.main"
+    start = METADATA.cli_module
     seen: set[str] = set()
     stack = [start]
     offenders: set[tuple[str, str]] = set()
@@ -196,11 +205,12 @@ def verify(wheel: Path) -> None:
         raise SystemExit(
             "forbidden historical package entries: " + ", ".join(sorted(offenders))
         )
+    package_prefix = METADATA.import_package.replace(".", "/")
     required = {
-        "statewake/__init__.py",
-        "statewake/public_api.py",
-        "statewake/server.py",
-        "statewake/adapters/first_party_evidence.py",
+        f"{package_prefix}/__init__.py",
+        f"{package_prefix}/public_api.py",
+        f"{package_prefix}/server.py",
+        f"{package_prefix}/adapters/first_party_evidence.py",
     }
     missing = sorted(required - set(names))
     if missing:

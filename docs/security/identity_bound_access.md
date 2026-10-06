@@ -2,7 +2,7 @@
 
 ## Scope
 
-This document specifies Tier 11 authorization controls, evidence requirements, and verification criteria. Independent certification and publication decisions remain separate governance activities.
+This document specifies Tier 11 authorization controls, evidence requirements, and verification criteria for the published Production/Stable v0.4.1 release. Independent certification and future publication decisions remain separate governance activities.
 
 ## Objective
 

@@ -11,6 +11,10 @@ from pathlib import Path
 from zipfile import ZipFile
 
 from statewake.adapters.content_store import ContentAddressedArtifactStore
+from statewake.adapters.evidence_ingestion import (
+    JsonEvidenceReceiptStore,
+    LocalEvidenceIngestionAdapter,
+)
 from statewake.adapters.opentelemetry import OpenTelemetryTelemetrySink
 from statewake.adapters.retention import InMemoryEvidenceRetentionAdapter
 from statewake.domain.access_control import (
@@ -28,6 +32,11 @@ from statewake.domain.data_lifecycle import (
     inherit_sensitivity,
 )
 from statewake.domain.events import EventEnvelope
+from statewake.domain.evidence import EvidenceItem, EvidenceManifest
+from statewake.domain.governance import (
+    EvidenceGovernancePolicy,
+    PrivacyGovernanceRuntimeConfig,
+)
 from statewake.domain.operations import OperationalArtifact, OperationalBundle
 from statewake.domain.privacy import PrivacyPolicy
 from statewake.domain.retention import EvidenceRetentionRequirement
@@ -170,6 +179,81 @@ class DataLifecycleConfidentialityTests(unittest.TestCase):
         self.assertNotIn("secret", json.dumps(tracer.spans[0].attributes))
         self.assertNotIn("secret", json.dumps(tracer.spans[0].events))
         sink.close()
+
+    def test_runtime_governance_omits_restricted_evidence_ids_from_telemetry(
+        self,
+    ) -> None:
+        """Project only policy-permitted evidence identities into telemetry."""
+        tracer = _FakeTracer()
+        runtime = PrivacyGovernanceRuntimeConfig(
+            privacy_policy=PrivacyPolicy(policy_id="privacy"),
+            evidence_policy=EvidenceGovernancePolicy(
+                policy_id="evidence",
+                telemetry_max_sensitivity="internal",
+            ),
+        )
+        sink = OpenTelemetryTelemetrySink(tracer, privacy_governance=runtime)
+        manifest = EvidenceManifest(
+            "manifest-1",
+            "run-1",
+            (
+                EvidenceItem(
+                    "internal-1", "source", digest="a" * 64, sensitivity="internal"
+                ),
+                EvidenceItem(
+                    "restricted-1",
+                    "source",
+                    digest="b" * 64,
+                    sensitivity="restricted",
+                ),
+            ),
+        )
+        sink.emit(
+            EventEnvelope(
+                "run-1",
+                0,
+                datetime(2026, 9, 16, tzinfo=UTC),
+                "run.started",
+                "actor",
+                name="agent",
+            ),
+            evidence_manifest=manifest,
+        )
+        attributes = tracer.spans[0].attributes
+        self.assertIn("internal-1", attributes["statewake.evidence.visible_ids"])
+        self.assertNotIn("restricted-1", attributes["statewake.evidence.visible_ids"])
+        self.assertEqual(attributes["statewake.evidence.omitted_count"], "1")
+        sink.close()
+
+    def test_runtime_governance_rejects_storage_before_artifact_write(self) -> None:
+        """Reject evidence above the storage ceiling before persistent payload writes."""
+        import tempfile
+
+        runtime = PrivacyGovernanceRuntimeConfig(
+            privacy_policy=PrivacyPolicy(policy_id="privacy"),
+            evidence_policy=EvidenceGovernancePolicy(
+                policy_id="evidence",
+                storage_max_sensitivity="confidential",
+            ),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            adapter = LocalEvidenceIngestionAdapter(
+                ContentAddressedArtifactStore(root / "artifacts"),
+                JsonEvidenceReceiptStore(root / "receipts"),
+                privacy_governance=runtime,
+            )
+            with self.assertRaisesRegex(ValueError, "storage rejected"):
+                adapter.ingest_bytes(
+                    b"restricted",
+                    producer_type="test",
+                    producer_id="producer",
+                    source_ref="source",
+                    captured_at=datetime(2026, 9, 16, tzinfo=UTC),
+                    sensitivity="restricted",
+                )
+            self.assertFalse(list((root / "artifacts").rglob("*")))
+            self.assertFalse(list((root / "receipts").rglob("*")))
 
     def test_http_errors_do_not_echo_untrusted_payload(self) -> None:
         """Keep malformed-request errors generic rather than reflective."""

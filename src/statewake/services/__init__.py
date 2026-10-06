@@ -21,6 +21,13 @@ from .operations_service import (
     verify_bundle,
 )
 from .persistence import atomic_write_bytes, atomic_write_text
+from .privacy_governance_runtime_service import (
+    PRIVACY_GOVERNANCE_RUNTIME_SCHEMA_VERSION,
+    load_privacy_governance_runtime_snapshot,
+    runtime_config_digest,
+    runtime_config_payload,
+    write_privacy_governance_runtime_snapshot,
+)
 from .provenance_service import (
     build_integrity_proof,
     build_provenance_graph_for_bundle,
@@ -37,8 +44,15 @@ from .release_proof_service import (
 )
 from .reliability_attestation_service import (
     attest_reliability_outcome,
+    attest_signed_reliability_outcome,
+    build_reliability_attestation_trust_context,
     create_signed_reliability_outcome_envelope,
     load_reliability_outcome_attestation,
+    record_signed_reliability_outcome,
+    resolve_reliability_attestation_trust_state,
+    sign_and_record_reliability_outcome,
+    verify_persisted_signed_reliability_outcome,
+    verify_reliability_attestation_trust_context,
     verify_reliability_outcome_binding,
     verify_signed_reliability_outcome_envelope,
     write_reliability_outcome_attestation,
@@ -98,21 +112,30 @@ from .reliability_state_service import (
 )
 from .state_service import load_state
 from .trust_service import (
+    append_attestation_trust_state,
     load_attestation_trust_state,
     load_authority_store,
+    verify_attestation_trust_history,
     verify_attestation_trust_state,
 )
 
 __all__ = [
     "ClaimProfileEvaluation",
+    "write_privacy_governance_runtime_snapshot",
+    "runtime_config_payload",
+    "runtime_config_digest",
+    "load_privacy_governance_runtime_snapshot",
+    "PRIVACY_GOVERNANCE_RUNTIME_SCHEMA_VERSION",
     "admit_external_evidence",
     "attest_reliability_outcome",
+    "attest_signed_reliability_outcome",
     "atomic_write_bytes",
     "atomic_write_text",
     "build_bundle",
     "build_integrity_proof",
     "build_provenance_graph_for_bundle",
     "build_release_proof",
+    "build_reliability_attestation_trust_context",
     "build_reliability_behavioral_comparison",
     "build_reliability_decision_basis",
     "build_reliability_evidence_chain",
@@ -146,19 +169,26 @@ __all__ = [
     "load_reliability_proof_completeness",
     "load_state",
     "prepare_reliability_decision_basis",
+    "record_signed_reliability_outcome",
+    "resolve_reliability_attestation_trust_state",
     "reliability_state_history",
     "render_verification_report",
     "retention_decision",
     "store_content",
+    "sign_and_record_reliability_outcome",
     "transition_reliability_state",
     "transition_reliability_state_from_file",
     "verify_attestation_trust_state",
+    "append_attestation_trust_state",
+    "verify_attestation_trust_history",
     "verify_artifact_digests",
     "verify_bundle",
     "verify_bundle_provenance",
     "verify_external_evidence_receipts",
     "verify_evidence_receipt",
     "verify_provenance_graph",
+    "verify_persisted_signed_reliability_outcome",
+    "verify_reliability_attestation_trust_context",
     "verify_reliability_behavioral_comparison",
     "verify_reliability_decision_basis",
     "verify_reliability_evidence_chain",

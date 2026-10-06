@@ -34,7 +34,10 @@ The first metrics are:
 
 Human reconstruction time, runtime overhead, storage overhead, and live-model
 behavior require a separate measured study and are not claimed by this fixture
-harness.
+harness. The repository now provides `scripts/testing/system_trial.py` as the
+independent-oracle evidence harness for that next measurement layer. Its local
+controls validate the harness contract only; real public-host and operator
+measurements remain separate qualification evidence.
 
 ## Usage
 
@@ -55,3 +58,7 @@ from statewake.validation_study.report import render_study_json, render_study_ma
 
 The study report must state its limitations. It does not claim general
 statistical superiority beyond the tested workloads and injected faults.
+
+## Measured-study bridge
+
+Use [`../testing/REAL_SYSTEM_VALIDATION_HARNESS.md`](../testing/REAL_SYSTEM_VALIDATION_HARNESS.md) for the `generate -> validate-datasets -> run -> analyze` workflow. The bridge deliberately keeps the comparative fixture study unchanged so measured real-system results cannot be backfilled into the deterministic benchmark as if they were the same evidence.

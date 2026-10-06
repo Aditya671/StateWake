@@ -8,7 +8,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 import scripts.release.verify_release_candidate as verifier
-from config.project_paths import PROJECT_ROOT
+from scripts.common.project_paths import PROJECT_ROOT
 
 ROOT = PROJECT_ROOT
 

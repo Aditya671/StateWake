@@ -67,16 +67,6 @@ class WorkspaceLifecycle:
             now=effective_now,
             legal_hold=legal_hold,
         )
-        if decision.retain_until is not None:
-            requirement = EvidenceRetentionRequirement(
-                record.artifact_digest,
-                datetime.fromisoformat(decision.retain_until),
-                legal_hold=legal_hold,
-                policy_id=policy.policy_id,
-            )
-            print(requirement)
-        else:
-            requirement = None
         self._repository.upsert_retention(
             object_id=record_id,
             policy_id=policy.policy_id,
@@ -171,7 +161,7 @@ class WorkspaceLifecycle:
             retention=adapter,
             now=effective_now,
             sensitivity=record.sensitivity,
-            policy_id=record.policy_id,
+            policy_id=retention.policy_id,
             reason=reason,
         )
         deletion = DeletionRecord(

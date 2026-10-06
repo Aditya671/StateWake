@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from hashlib import sha256
 from typing import Any
+
+from statewake.utils.json_support import JsonValue, require_bool, require_string
 
 
 @dataclass(frozen=True, slots=True)
@@ -147,3 +150,91 @@ class ReliabilityVerificationReport:
     def to_dict(self) -> dict[str, Any]:
         """Serialize this object to a dictionary."""
         return {**self.payload(), "digest": self.digest}
+
+    @classmethod
+    def from_dict(
+        cls, payload: Mapping[str, JsonValue]
+    ) -> ReliabilityVerificationReport:
+        """Construct a report from its canonical JSON representation.
+
+        Durable workspaces store reports as ordinary content-addressed artifacts.
+        The human-inspection surface therefore needs the inverse of ``to_dict``
+        without introducing a second report schema. Runtime JSON types are checked
+        rather than coerced, and a supplied report digest is verified after
+        construction so tampered persisted JSON cannot be rendered as if it were
+        the original report.
+        """
+
+        def string_list(field: str) -> tuple[str, ...]:
+            """Read one canonical JSON string-array field without coercion."""
+            value = payload.get(field, [])
+            if not isinstance(value, list):
+                raise ValueError(f"{field} must be a JSON array.")
+            return tuple(
+                require_string(item, field=f"{field}[{index}]")
+                for index, item in enumerate(value)
+            )
+
+        profile_digest_value = payload.get("profile_evaluation_digest")
+        profile_digest = (
+            None
+            if profile_digest_value is None
+            else require_string(profile_digest_value, field="profile_evaluation_digest")
+        )
+        item = cls(
+            format_version=require_string(
+                payload["format_version"], field="format_version"
+            ),
+            claim=require_string(payload["claim"], field="claim"),
+            decision=require_string(payload["decision"], field="decision"),
+            profile_id=require_string(payload["profile_id"], field="profile_id"),
+            profile_version=require_string(
+                payload["profile_version"], field="profile_version"
+            ),
+            verified=require_bool(payload["verified"], field="verified"),
+            evidence_included=string_list("evidence_included"),
+            evidence_omitted=string_list("evidence_omitted"),
+            checks_passed=string_list("checks_passed"),
+            checks_failed=string_list("checks_failed"),
+            source_identities=string_list("source_identities"),
+            rationale=string_list("rationale"),
+            caveats=string_list("caveats"),
+            recovery_status=require_string(
+                payload["recovery_status"], field="recovery_status"
+            ),
+            verifier_version=require_string(
+                payload["verifier_version"], field="verifier_version"
+            ),
+            generated_at=require_string(payload["generated_at"], field="generated_at"),
+            candidate_identity=require_string(
+                payload.get("candidate_identity", "not-specified"),
+                field="candidate_identity",
+            ),
+            candidate_digest=require_string(
+                payload.get("candidate_digest", "not-specified"),
+                field="candidate_digest",
+            ),
+            report_type=require_string(
+                payload.get("report_type", "engineering"), field="report_type"
+            ),
+            evidence_missing=string_list("evidence_missing"),
+            checks_unrun=string_list("checks_unrun"),
+            checks_unknown=string_list("checks_unknown"),
+            residual_risks=string_list("residual_risks"),
+            human_decisions_required=string_list("human_decisions_required"),
+            allowed_use=string_list("allowed_use"),
+            prohibited_use=string_list("prohibited_use"),
+            machine_readable_appendix=string_list("machine_readable_appendix"),
+            artifact_digests=string_list("artifact_digests"),
+            profile_evaluation_digest=profile_digest,
+            approval_status=require_string(
+                payload.get("approval_status", "not-approval"),
+                field="approval_status",
+            ),
+        )
+        supplied_value = payload.get("digest")
+        if supplied_value is not None:
+            supplied = require_string(supplied_value, field="digest")
+            if supplied != item.digest:
+                raise ValueError("reliability verification report digest mismatch.")
+        return item

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .evidence import EvidenceManifest
+from .privacy import PrivacyPolicy
 
 SENSITIVITY_ORDER = {"public": 0, "internal": 1, "confidential": 2, "restricted": 3}
 SENSITIVITIES = tuple(SENSITIVITY_ORDER)
@@ -37,6 +38,14 @@ class EvidenceGovernancePolicy:
             raise ValueError(
                 f"require_digest_for contains unsupported sensitivities: {', '.join(unknown)}"
             )
+
+
+@dataclass(frozen=True, slots=True)
+class PrivacyGovernanceRuntimeConfig:
+    """Effective privacy and evidence-governance policies for one runtime boundary."""
+
+    privacy_policy: PrivacyPolicy
+    evidence_policy: EvidenceGovernancePolicy
 
 
 @dataclass(frozen=True, slots=True)

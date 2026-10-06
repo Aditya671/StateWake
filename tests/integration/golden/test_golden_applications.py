@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from docs.examples.golden.runtime import (
+from examples.golden.runtime import (
     run_enterprise_ai,
     run_municipal,
     run_payment,

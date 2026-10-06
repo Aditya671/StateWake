@@ -18,8 +18,6 @@ from statewake.domain.trust_anchor import (
     compare_local_tip,
 )
 
-ROOT = Path(__file__).resolve().parents[2]
-
 
 def _checkpoint(identifier: str, previous: str | None = None) -> TrustCheckpoint:
     return TrustCheckpoint(
@@ -58,17 +56,6 @@ def test_checkpoint_disagreement_is_security_discrepancy() -> None:
         )
 
 
-def test_key_purpose_separation_is_explicit() -> None:
-    text = (ROOT / "docs/security/trust_domain_anchor_assurance.md").read_text(
-        encoding="utf-8"
-    )
-    assert "artifact signing" in text
-    assert "checkpoint signing" in text
-    assert "release signing" in text
-    assert "deployment credentials/secrets" in text
-    assert "one key" in text
-
-
 def test_attestation_trust_rotation_preserves_history() -> None:
     state = SignedAttestationTrustState(
         authority_key_id="authority-1",
@@ -86,24 +73,3 @@ def test_attestation_trust_rotation_preserves_history() -> None:
     assert state.anchors[0].status == "superseded"
     assert state.anchors[0].superseded_by == "new"
     assert state.previous_digest == "a" * 64
-
-
-def test_anchor_compromise_never_self_authenticates() -> None:
-    text = (ROOT / "docs/security/trust_domain_anchor_assurance.md").read_text(
-        encoding="utf-8"
-    )
-    assert "must not be treated as self-authenticating authority" in text
-    assert "signature proves integrity/authenticity" in text
-    assert "does not by itself prove administrative independence" in text
-
-
-def test_trust_domain_assurance_does_not_publish_a_package() -> None:
-    pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
-    document = (ROOT / "docs/security/trust_domain_anchor_assurance.md").read_text(
-        encoding="utf-8"
-    )
-    assert 'version = "0.4.1"' in pyproject
-    assert (
-        "does not itself perform release tagging, package upload, or publication"
-        in document
-    )

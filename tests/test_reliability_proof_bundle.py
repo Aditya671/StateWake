@@ -13,7 +13,7 @@ from hashlib import sha256
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
-from config.project_paths import PROJECT_ROOT, SRC_PATH
+from scripts.common.project_paths import PROJECT_ROOT, SRC_PATH
 from statewake.adapters.reliability_attestation import (
     JsonlReliabilityOutcomeAttestationStore,
 )

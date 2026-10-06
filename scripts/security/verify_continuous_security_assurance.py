@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import subprocess
 import sys
 from collections.abc import Iterable
@@ -35,6 +36,11 @@ FAMILY_TO_INVARIANTS: Final[dict[str, tuple[str, ...]]] = {
     "crypto-trust": ("cryptographic-boundary", "trust-anchor"),
     "deployment-boundary": ("authorization-boundary", "security-audit"),
     "archive-proof": ("portable-proof-integrity",),
+    "release-publication": (
+        "release-publication-authorization-integrity",
+        "registry-publication-reconciliation-integrity",
+        "registry-publication-lifecycle-integrity",
+    ),
     "persistence-recovery": (
         "persistence-integrity",
         "recovery-security-assumptions",
@@ -91,14 +97,51 @@ def _digest_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def snapshot(root: Path, *, exclude: Iterable[str] = ()) -> dict[str, str]:
+def _paths_identify_same_file(left: Path, right: Path) -> bool:
+    """Return whether two path spellings identify the same filesystem entry.
+
+    Windows CI can surface the same temporary directory through both the long
+    user profile spelling (for example ``runneradmin``) and its 8.3 alias
+    (for example ``RUNNER~1``).  ``Path.relative_to`` is string-based and will
+    reject those equivalent spellings, so exclusion of a known file must use
+    file identity rather than path-prefix text.
+    """
+    try:
+        return left.samefile(right)
+    except OSError:
+        pass
+    try:
+        return left.resolve(strict=False) == right.resolve(strict=False)
+    except OSError:
+        pass
+    return os.path.normcase(os.path.abspath(left)) == os.path.normcase(
+        os.path.abspath(right)
+    )
+
+
+def _is_excluded_path(path: Path, excluded_paths: Iterable[Path]) -> bool:
+    """Return whether a repository path is explicitly excluded by identity."""
+    return any(_paths_identify_same_file(path, excluded) for excluded in excluded_paths)
+
+
+def snapshot(
+    root: Path,
+    *,
+    exclude: Iterable[str] = (),
+    exclude_paths: Iterable[Path] = (),
+) -> dict[str, str]:
     """Return a relative-path-to-SHA-256 snapshot for a repository."""
     excluded = set(exclude)
-    return {
-        path.relative_to(root).as_posix(): _digest_file(path)
-        for path in _included_files(root)
-        if path.relative_to(root).as_posix() not in excluded
-    }
+    excluded_files = tuple(exclude_paths)
+    records: dict[str, str] = {}
+    for path in _included_files(root):
+        if _is_excluded_path(path, excluded_files):
+            continue
+        relative = path.relative_to(root).as_posix()
+        if relative in excluded:
+            continue
+        records[relative] = _digest_file(path)
+    return records
 
 
 def snapshot_fingerprint(snapshot_data: dict[str, str]) -> str:
@@ -166,12 +209,35 @@ def classify_change(path: str) -> Change:
         token in normalized for token in ("archive", "proof_bundle", "release_proof")
     ):
         families.add("archive-proof")
+    if (
+        normalized
+        in {
+            "src/statewake/release_trust/publication.py",
+            "src/statewake/release_trust/registry.py",
+        }
+        or normalized.startswith("scripts/release/")
+        and "publication" in normalized
+        or normalized == ".github/workflows/python-publish.yml"
+        or normalized.startswith("tests/unit/release_trust/test_release_publication")
+        or normalized.startswith("tests/unit/release_trust/test_registry_publication")
+        or normalized.startswith("tests/release/test_publication_execution_boundary")
+        or normalized.startswith(
+            "tests/release/test_registry_publication_reconciliation"
+        )
+        or normalized.startswith("tests/release/test_registry_publication_lifecycle")
+    ):
+        families.add("release-publication")
     if any(
         token in normalized
         for token in ("persistence", "recovery", "storage", "operations")
     ):
         families.add("persistence-recovery")
-    if normalized in {"pyproject.toml", "uv.lock"} or normalized.startswith("config/"):
+    if normalized in {
+        "pyproject.toml",
+        "uv.lock",
+        "scripts/common/project_metadata.py",
+        "scripts/common/project_paths.py",
+    }:
         families.add("dependencies-configuration")
     if normalized.startswith("src/") and not families:
         families.add("generic-source")
@@ -223,12 +289,12 @@ def assess(
 ) -> AssuranceResult:
     """Assess whether the current candidate is still security-assured."""
     baseline = read_snapshot_manifest(baseline_path)
-    current = snapshot(root, exclude={baseline_path.relative_to(root).as_posix()})
+    current = snapshot(root, exclude_paths={baseline_path})
     changed = changed_paths(baseline, current)
     classifications = [classify_change(path) for path in changed]
     impacted = tuple(
         sorted(
-            invariant for change in classifications for invariant in change.invariants
+            {invariant for change in classifications for invariant in change.invariants}
         )
     )
     baseline_fingerprint = snapshot_fingerprint(baseline)
@@ -271,11 +337,39 @@ def main() -> int:
         default=Path("docs/security/security_assurance_baseline_manifest.txt"),
     )
     parser.add_argument("--no-reverify", action="store_true")
+    parser.add_argument(
+        "--promote-on-success",
+        action="store_true",
+        help="promote the current security snapshot only after successful re-verification",
+    )
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     root = args.root.resolve()
     baseline = args.baseline if args.baseline.is_absolute() else root / args.baseline
     result = assess(root, baseline, reverify=not args.no_reverify)
+    if args.promote_on_success and result.changed_files:
+        if args.no_reverify:
+            raise ValueError(
+                "cannot promote a changed security snapshot with --no-reverify"
+            )
+        if not result.reverified:
+            verified, returncode = run_security_assurance_reverification(root)
+            if not verified:
+                raise RuntimeError(
+                    "security assurance re-verification failed before baseline promotion "
+                    f"with exit code {returncode}"
+                )
+        if result.state != "VERIFIED":
+            raise RuntimeError(
+                "cannot promote a security snapshot that is not VERIFIED"
+            )
+        current = snapshot(root, exclude_paths={baseline})
+        write_snapshot_manifest(baseline, current)
+        result = assess(root, baseline, reverify=False)
+        if result.changed_files or result.state != "VERIFIED":
+            raise RuntimeError(
+                "promoted security snapshot did not converge to zero drift"
+            )
     payload = json.dumps(asdict(result), indent=2, sort_keys=True) + "\n"
     if args.output:
         output = args.output if args.output.is_absolute() else root / args.output

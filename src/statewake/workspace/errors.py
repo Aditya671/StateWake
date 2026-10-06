@@ -17,9 +17,14 @@ class WorkspaceRecordConflictError(WorkspaceRepositoryError):
     """Raised when the workspace index conflicts with an existing receipt identity."""
 
 
+class ReadOnlyWorkspaceError(WorkspaceRepositoryError):
+    """Raised when a mutation is attempted through a read-only workspace handle."""
+
+
 __all__ = [
     "CorruptWorkspaceDatabaseError",
     "UnsupportedWorkspaceSchemaError",
+    "ReadOnlyWorkspaceError",
     "WorkspaceRecordConflictError",
     "WorkspaceRepositoryError",
 ]

@@ -58,6 +58,16 @@ decision. The field `approval_status` is separate and defaults to
 still requiring a human owner to approve release, operational use, or business
 action.
 
+For release-proof workflows, an approval recorded later through the canonical
+Review API never mutates the original report. Reconciliation re-runs the machine
+verification against the same candidate and requires the new machine report to
+match the approved report basis on every canonical field except generation time.
+Only then may a new report carry `approval_status=approved`. The new report
+retains the original report digest plus canonical approval receipt/artifact
+digests as provenance and carries the exact recorded approval action/scope.
+Approval evidence remains bounded to that action/scope and is not publication
+execution or an independent cryptographic proof of the human actor identity.
+
 ## Renderers
 
 The reusable rendering surface is available from `statewake.reports`:

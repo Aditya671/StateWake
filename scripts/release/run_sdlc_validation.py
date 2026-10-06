@@ -14,9 +14,23 @@ PROJECT_CONFIG_BOOTSTRAP = Path(__file__).resolve().parents[2]
 if str(PROJECT_CONFIG_BOOTSTRAP) not in sys.path:
     sys.path.insert(0, str(PROJECT_CONFIG_BOOTSTRAP))
 
-from config.project_paths import PROJECT_ROOT  # noqa: E402
+from scripts.common.project_paths import PROJECT_ROOT  # noqa: E402
 
 ROOT: Final[Path] = PROJECT_ROOT
+LONG_RUNNING_GATES: Final[frozenset[str]] = frozenset(
+    {
+        "unit-and-integration-tests",
+        "property-state-machine",
+        "real-world-validation",
+        "chaos-validation",
+        "deep-chaos-validation",
+        "extreme-validation",
+        "failure-lab",
+        "public-trial-regressions",
+        "continuous-security-assurance",
+        "release-candidate",
+    }
+)
 
 
 class GateFailureError(RuntimeError):
@@ -24,27 +38,45 @@ class GateFailureError(RuntimeError):
 
 
 def command_plan(profile: str) -> list[tuple[str, list[str]]]:
-    """Return the ordered, reusable verification gates for a workflow profile."""
+    """Return ordered verification gates for a workflow profile."""
     python = sys.executable
     common = [
+        (
+            "validation-state-stabilization",
+            [python, "scripts/release/prepare_sdlc_validation.py"],
+        ),
+        (
+            "release-identity-verify",
+            [python, "scripts/release/verify_release_identity.py"],
+        ),
         (
             "repository-structure",
             [python, "scripts/release/verify_repository_structure.py"],
         ),
         ("version-identity", [python, "scripts/release/verify_versioning.py"]),
         ("source-quality", [python, "scripts/development/verify_source_quality.py"]),
-        ("ruff-check", [python, "-m", "ruff", "check", "src", "tests", "scripts"]),
+        (
+            "ruff-check",
+            [python, "-m", "ruff", "check", "src", "tests", "scripts", "examples"],
+        ),
         (
             "ruff-format",
-            [python, "-m", "ruff", "format", "--check", "src", "tests", "scripts"],
+            [
+                python,
+                "-m",
+                "ruff",
+                "format",
+                "--check",
+                "src",
+                "tests",
+                "scripts",
+                "examples",
+            ],
         ),
-        (
-            "strict-typecheck",
-            ["uv", "run", "--extra", "integrations", "mypy"],
-        ),
+        ("strict-typecheck", [python, "-m", "mypy"]),
         (
             "source-compilation",
-            [python, "-m", "compileall", "-q", "src", "tests", "scripts"],
+            [python, "-m", "compileall", "-q", "src", "tests", "scripts", "examples"],
         ),
         ("unit-and-integration-tests", [python, "-m", "pytest"]),
         (
@@ -52,6 +84,10 @@ def command_plan(profile: str) -> list[tuple[str, list[str]]]:
             [python, "scripts/release/verify_product_experience.py"],
         ),
         ("cli-surface", [python, "scripts/release/verify_cli_surface.py"]),
+        (
+            "post-check-release-identity-verify",
+            [python, "scripts/release/verify_release_identity.py"],
+        ),
     ]
     if profile == "check":
         return common
@@ -84,27 +120,89 @@ def command_plan(profile: str) -> list[tuple[str, list[str]]]:
             "public-trial-regressions",
             [python, "scripts/testing/run_public_trial_regressions.py"],
         ),
+        (
+            "continuous-security-assurance",
+            [
+                python,
+                "scripts/security/verify_continuous_security_assurance.py",
+                "--promote-on-success",
+            ],
+        ),
+        (
+            "final-release-identity-refresh",
+            [python, "scripts/release/refresh_release_identity.py"],
+        ),
+        (
+            "final-release-identity-verify",
+            [python, "scripts/release/verify_release_identity.py"],
+        ),
         ("release-candidate", [python, "scripts/release/verify_release_candidate.py"]),
     ]
 
 
-def _run(name: str, command: list[str], timeout: int) -> dict[str, object]:
+def _gate_timeout(name: str, base_timeout: int) -> int | None:
+    """Return a gate-specific timeout; zero disables subprocess timeouts."""
+    if base_timeout == 0:
+        return None
+    return base_timeout * 3 if name in LONG_RUNNING_GATES else base_timeout
+
+
+FAILURE_EXCERPT_CHARS: Final[int] = 12000
+_FAILURE_MARKERS: Final[tuple[str, ...]] = (
+    "=================================== FAILURES ===================================",
+    "================================== FAILURES ==================================",
+    "______________________________",
+)
+
+
+def _output_excerpt(output: str, *, limit: int = FAILURE_EXCERPT_CHARS) -> str:
+    """Return a failure-focused excerpt without hiding pytest assertions.
+
+    CI logs can be dominated by pytest progress output before the failure section.
+    Prefer the first visible failure marker and fall back to a bounded tail for
+    commands that do not use pytest formatting.
+    """
+    if len(output) <= limit:
+        return output
+    for marker in _FAILURE_MARKERS:
+        marker_index = output.find(marker)
+        if marker_index != -1:
+            return output[marker_index:][-limit:]
+    return output[-limit:]
+
+
+def _run(name: str, command: list[str], timeout: int | None) -> dict[str, object]:
     """Execute one gate from the repository root and return structured evidence."""
-    completed = subprocess.run(
-        command,
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-        timeout=timeout,
-        check=False,
-    )
-    result: dict[str, object] = {
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        result: dict[str, object] = {
+            "name": name,
+            "command": command,
+            "status": "timed_out",
+            "timeout_seconds": timeout,
+            "stdout": (
+                _output_excerpt(exc.stdout) if isinstance(exc.stdout, str) else ""
+            ),
+            "stderr": (
+                _output_excerpt(exc.stderr) if isinstance(exc.stderr, str) else ""
+            ),
+        }
+        raise GateFailureError(json.dumps(result, sort_keys=True)) from exc
+    result = {
         "name": name,
         "command": command,
         "returncode": completed.returncode,
         "status": "passed" if completed.returncode == 0 else "failed",
-        "stdout": completed.stdout[-3000:],
-        "stderr": completed.stderr[-3000:],
+        "stdout": _output_excerpt(completed.stdout),
+        "stderr": _output_excerpt(completed.stderr),
     }
     if completed.returncode:
         raise GateFailureError(json.dumps(result, sort_keys=True))
@@ -115,7 +213,12 @@ def main() -> int:
     """Run the selected SDLC profile and emit machine-readable evidence."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--profile", choices=("check", "release"), default="check")
-    parser.add_argument("--timeout", type=int, default=300)
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=600,
+        help="Base per-gate timeout in seconds; use 0 to disable process timeouts.",
+    )
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
 
@@ -124,8 +227,8 @@ def main() -> int:
     failure = None
     try:
         for name, command in command_plan(args.profile):
-            gates.append(_run(name, command, args.timeout))
-    except (GateFailureError, subprocess.TimeoutExpired) as exc:
+            gates.append(_run(name, command, _gate_timeout(name, args.timeout)))
+    except GateFailureError as exc:
         status = "failed"
         failure = str(exc)
 

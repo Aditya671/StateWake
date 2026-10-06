@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -85,6 +86,91 @@ class SecurityAuditRecord:
         )
 
 
+@dataclass(frozen=True, slots=True)
+class SecurityAuditSnapshot:
+    """Verified lock-free snapshot of one configured security audit journal."""
+
+    records: tuple[SecurityAuditRecord, ...]
+    exists: bool
+    byte_size: int
+
+
+def _parse_security_audit_lines(
+    lines: Iterable[str],
+    *,
+    max_records: int | None = None,
+) -> tuple[SecurityAuditRecord, ...]:
+    """Parse and verify one complete security-audit chain from text lines."""
+    records: list[SecurityAuditRecord] = []
+    for line_number, line in enumerate(lines, start=1):
+        if not line.strip():
+            continue
+        if max_records is not None and len(records) >= max_records:
+            raise OverflowError("security audit record limit exceeded")
+        try:
+            payload = json.loads(line)
+            if not isinstance(payload, dict):
+                raise ValueError("security audit record must be an object")
+            record = SecurityAuditRecord.from_dict(payload)
+            record.verify(expected_previous=records[-1].digest if records else None)
+        except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+            raise ValueError(
+                f"invalid security audit record at line {line_number}: {exc}"
+            ) from exc
+        if record.sequence != len(records):
+            raise ValueError("security audit sequence is not contiguous")
+        records.append(record)
+    return tuple(records)
+
+
+def read_security_audit_snapshot(
+    path: Path,
+    *,
+    max_bytes: int,
+    max_records: int,
+) -> SecurityAuditSnapshot:
+    """Read one verified audit snapshot without taking the writer lock."""
+    if max_bytes <= 0 or max_records <= 0:
+        raise ValueError("security audit read limits must be positive")
+    candidate = path.expanduser()
+    if candidate.is_symlink() or any(
+        parent.is_symlink() for parent in candidate.parents
+    ):
+        raise ValueError("security audit path cannot traverse a symlink")
+    if not candidate.exists():
+        return SecurityAuditSnapshot(records=(), exists=False, byte_size=0)
+    # Descriptor I/O must be binary on Windows so persisted CRLF/LF bytes are
+    # measured exactly rather than translated by the CRT.
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0)
+    fd = os.open(candidate, flags)
+    try:
+        opened_size = os.fstat(fd).st_size
+        if opened_size > max_bytes:
+            raise OverflowError("security audit byte limit exceeded")
+        chunks: list[bytes] = []
+        total = 0
+        while True:
+            chunk = os.read(fd, min(65_536, max_bytes + 1 - total))
+            if not chunk:
+                break
+            chunks.append(chunk)
+            total += len(chunk)
+            if total > max_bytes:
+                raise OverflowError("security audit byte limit exceeded")
+        final_size = os.fstat(fd).st_size
+        if final_size != opened_size or total != final_size:
+            raise ValueError("security audit source changed during bounded read")
+        raw = b"".join(chunks)
+    finally:
+        os.close(fd)
+    try:
+        text = raw.decode("utf-8", errors="strict")
+    except UnicodeDecodeError as exc:
+        raise ValueError("security audit source is not valid UTF-8") from exc
+    records = _parse_security_audit_lines(text.splitlines(), max_records=max_records)
+    return SecurityAuditSnapshot(records=records, exists=True, byte_size=total)
+
+
 class JsonlSecurityAuditStore:
     """Persist deployment security events in an independent append-only file."""
 
@@ -112,7 +198,7 @@ class JsonlSecurityAuditStore:
             )
             record = _with_digest(record)
             self.path.parent.mkdir(parents=True, exist_ok=True)
-            flags = os.O_WRONLY | os.O_CREAT | os.O_APPEND
+            flags = os.O_WRONLY | os.O_CREAT | os.O_APPEND | getattr(os, "O_BINARY", 0)
             no_follow = getattr(os, "O_NOFOLLOW", 0)
             fd = os.open(self.path, flags | no_follow, 0o600)
             try:
@@ -141,27 +227,8 @@ class JsonlSecurityAuditStore:
         """Read and verify records while holding the store lock."""
         if not self.path.exists():
             return []
-        records: list[SecurityAuditRecord] = []
         with self.path.open(encoding="utf-8") as handle:
-            for line_number, line in enumerate(handle, start=1):
-                if not line.strip():
-                    continue
-                try:
-                    payload = json.loads(line)
-                    if not isinstance(payload, dict):
-                        raise ValueError("security audit record must be an object")
-                    record = SecurityAuditRecord.from_dict(payload)
-                    record.verify(
-                        expected_previous=records[-1].digest if records else None
-                    )
-                except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
-                    raise ValueError(
-                        f"invalid security audit record at line {line_number}: {exc}"
-                    ) from exc
-                if record.sequence != len(records):
-                    raise ValueError("security audit sequence is not contiguous")
-                records.append(record)
-        return records
+            return list(_parse_security_audit_lines(handle))
 
     class _Lock:
         """Represent the process-shared lock for the audit file."""
@@ -261,7 +328,14 @@ def _require_operation(value: Any) -> SecurityOperation | None:
     """Validate the persisted StateWake operation identifier."""
     if value is None:
         return None
-    allowed = ("verify:evidence", "verify:proof")
+    allowed = (
+        "verify:evidence",
+        "verify:proof",
+        "review:read",
+        "review:write",
+        "approval:read",
+        "approval:write",
+    )
     if value not in allowed:
         raise ValueError("unsupported security audit operation")
     return cast(SecurityOperation, value)

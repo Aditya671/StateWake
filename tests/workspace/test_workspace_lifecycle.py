@@ -72,6 +72,7 @@ def test_expired_record_deletion_uses_existing_artifact_store_and_keeps_tombston
         assert deletion is not None
         assert deletion.object_id == record.record_id
         assert deletion.digest == record.artifact_digest
+        assert deletion.policy_id == policy.policy_id
         assert not hasattr(deletion, "content")
 
 
@@ -162,3 +163,17 @@ def test_expiry_state_and_tombstone_survive_restart(tmp_path: Path) -> None:
         result = reopened.delete_expired(record.record_id, now=BASE + timedelta(days=2))
         assert result.deletion is not None
         assert reopened.repository.get_deletion(record.record_id) is not None
+
+
+def test_apply_retention_does_not_write_debug_output(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Retention application must not leak lifecycle details to process stdout."""
+    with StateWakeWorkspace.open(tmp_path / "workspace") as workspace:
+        record = _workspace_record(workspace)
+        policy = DataLifecyclePolicy(
+            policy_id="retain-no-stdout", purpose="test", max_retention_days=1
+        )
+        workspace.apply_retention(record.record_id, policy, now=BASE)
+    captured = capsys.readouterr()
+    assert captured.out == ""

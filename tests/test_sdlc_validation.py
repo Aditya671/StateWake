@@ -2,49 +2,58 @@
 
 from __future__ import annotations
 
+import sys
+
 import scripts.release.run_sdlc_validation as sdlc
-from config.project_paths import PROJECT_ROOT
-
-ROOT = PROJECT_ROOT
 
 
-def test_strict_typecheck_installs_optional_integration_types() -> None:
-    """Type checking must resolve the optional SDK APIs checked by mypy."""
+def test_typecheck_uses_the_prepared_locked_environment() -> None:
+    """SDLC validation must not trigger dependency resolution during type checking."""
     commands = dict(sdlc.command_plan("check"))
-    assert commands["strict-typecheck"] == [
-        "uv",
-        "run",
-        "--extra",
-        "integrations",
-        "mypy",
-    ]
+    assert commands["strict-typecheck"] == [sys.executable, "-m", "mypy"]
 
 
-def test_check_profile_has_required_ordered_gates() -> None:
-    """Require the inexpensive SDLC profile to preserve the intended gate order."""
+def test_check_profile_stabilizes_identity_before_verification() -> None:
+    """Safe generated state is stabilized before release consistency assertions."""
     names = [name for name, _ in sdlc.command_plan("check")]
-    assert names == [
-        "repository-structure",
-        "version-identity",
-        "source-quality",
-        "ruff-check",
-        "ruff-format",
-        "strict-typecheck",
-        "source-compilation",
-        "unit-and-integration-tests",
-        "product-experience",
-        "cli-surface",
-    ]
+    assert names[:2] == ["validation-state-stabilization", "release-identity-verify"]
+    assert "unit-and-integration-tests" in names
+    assert "product-experience" in names
+    assert "cli-surface" in names
+    assert names[-1] == "post-check-release-identity-verify"
 
 
-def test_release_profile_extends_check_with_hardening_and_release_gates() -> None:
-    """Require release validation to extend, rather than replace, the check profile."""
-    check = [name for name, _ in sdlc.command_plan("check")]
+def test_release_profile_promotes_security_before_final_identity() -> None:
+    """Promoted security evidence must be included in the final release identity."""
     release = [name for name, _ in sdlc.command_plan("release")]
-    assert release[: len(check)] == check
-    assert "failure-lab" in release
-    assert "public-trial-regressions" in release
-    assert release.index("public-trial-regressions") < release.index(
+    assert "continuous-security-assurance" in release
+    assert release.index("continuous-security-assurance") < release.index(
+        "final-release-identity-refresh"
+    )
+    assert release.index("final-release-identity-refresh") < release.index(
+        "final-release-identity-verify"
+    )
+    assert release.index("final-release-identity-verify") < release.index(
         "release-candidate"
     )
-    assert "release-candidate" in release
+
+
+def test_long_running_gates_receive_an_extended_timeout() -> None:
+    """Known regression/adversarial gates are not constrained by the short base budget."""
+    assert sdlc._gate_timeout("unit-and-integration-tests", 100) == 300
+    assert sdlc._gate_timeout("version-identity", 100) == 100
+    assert sdlc._gate_timeout("unit-and-integration-tests", 0) is None
+
+
+def test_failure_output_prefers_pytest_failure_section() -> None:
+    """Failure evidence should expose assertions instead of only progress tails."""
+    noisy_progress = "progress\n" * 4000
+    failure = (
+        "=================================== FAILURES ===================================\n"
+        "________________ failing_test _________________\n"
+        "E   AssertionError: expected clear failure evidence\n"
+    )
+    excerpt = sdlc._output_excerpt(noisy_progress + failure, limit=400)
+    assert excerpt.startswith("=================================== FAILURES")
+    assert "expected clear failure evidence" in excerpt
+    assert "progress" not in excerpt

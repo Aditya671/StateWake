@@ -2,16 +2,24 @@
 
 ## Prerequisites
 
-- Python 3.11–3.13 (`>=3.11,<3.14`); Python 3.14 is not a v0.4.1 supported runtime
+- Python 3.11–3.13 (`>=3.11,<3.14`)
 - uv
 - Git
 
-The project uses a `src/` package layout and a dependency-light runtime core. Interpreter support follows `docs/user-guide/python-support.md`; do not widen `requires-python` from an import-only smoke test. uv manages the project and lockfile. OpenTelemetry API support is a declared adapter-layer dependency; the domain core remains framework-neutral. The v0.4.1 workspace adapters use standard runtime dependencies for PyArrow/Parquet, DuckDB analytical access, openpyxl/XLSX export, and SQLAlchemy-backed repository access. Native framework SDK integrations remain optional extras.
+StateWake uses a `src/` package layout. Runtime dependencies and optional native-SDK integration extras are declared in `pyproject.toml`; the exact reproducible dependency graph is committed in `uv.lock`.
 
 ## Setup
 
+Install the locked development environment with all maintained integration extras:
+
 ```bash
-uv sync
+uv sync --locked --group dev --extra integrations
+```
+
+For work that does not exercise optional native SDK integrations, the base development environment is sufficient:
+
+```bash
+uv sync --locked --group dev
 ```
 
 ## Run
@@ -19,16 +27,15 @@ uv sync
 ```bash
 uv run statewake --help
 uv run statewake version
-uv run statewake --help
 ```
 
 ## Tests
 
-The normal project environment installs the declared runtime dependencies, including the OpenTelemetry API and cryptographic verification support. To exercise every implemented workspace adapter locally, install the `workspace` extra as well.
-
 ```bash
-uv run python -m unittest discover -s tests -p 'test_*.py'
+uv run pytest
 ```
+
+Focused suites may be run by path while developing, but the release gate uses the repository's canonical SDLC/release commands rather than a reduced substitute.
 
 ## OpenTelemetry adapter
 
@@ -37,14 +44,20 @@ OpenTelemetry API support is installed with StateWake. The host application rema
 ## Build
 
 ```bash
-uv build
+uv build --no-sources
 ```
 
 ## Quality tooling
 
-Ruff and mypy are repository quality gates. Their configuration is stored in
-`pyproject.toml`; mypy checks active Python code under `src/`, `tests/`,
-`scripts/`, and `docs/`, with fixture-friendly overrides for tests.
+Ruff and mypy are repository quality gates. Their configuration is stored in `pyproject.toml`; executable Python surfaces under `src/`, `tests/`, `scripts/`, and `examples/` are covered by the maintained checks.
+
+```bash
+make check
+make prepare-validation
+make sdlc-check
+```
+
+Before a release candidate is evaluated, use the release profile and package verifiers documented under `docs/governance/`.
 
 ## Guiding rule
 

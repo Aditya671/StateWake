@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Verify GitHub repository governance controls required before publication.
 
 This verifier treats GitHub repository rulesets as the canonical governance
@@ -16,15 +15,23 @@ import json
 import os
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 from collections.abc import Mapping, Sequence
+from pathlib import Path
 from typing import Any, TypeGuard
 
-OWNER = "Aditya671"
-REPO = "StateWake"
+PROJECT_CONFIG_BOOTSTRAP = Path(__file__).resolve().parents[2]
+if str(PROJECT_CONFIG_BOOTSTRAP) not in sys.path:
+    sys.path.insert(0, str(PROJECT_CONFIG_BOOTSTRAP))
+
+from scripts.common.project_metadata import load_project_metadata  # noqa: E402
+from scripts.common.project_paths import PROJECT_ROOT  # noqa: E402
+
+METADATA = load_project_metadata(PROJECT_ROOT)
+OWNER, REPO = METADATA.github_repository
 API = f"https://api.github.com/repos/{OWNER}/{REPO}"
 RELEASE_TAG_PATTERN = "refs/tags/v*"
-MAIN_BRANCH_PATTERN = "refs/heads/main"
 
 
 def get(path: str) -> tuple[int, Any]:
@@ -119,27 +126,35 @@ def ruleset_has_required_status_checks(ruleset: Mapping[str, Any]) -> bool:
     return False
 
 
-def verify_main_ruleset(active: list[dict[str, Any]], failures: list[str]) -> bool:
-    """Verify the active ruleset protecting the main branch."""
+def verify_default_branch_ruleset(
+    active: list[dict[str, Any]],
+    failures: list[str],
+    *,
+    branch: str,
+) -> bool:
+    """Verify the active ruleset protecting the repository default branch."""
+    branch_pattern = f"refs/heads/{branch}"
     summaries = [r for r in active if r.get("target") == "branch"]
     for summary in summaries:
         try:
             _, detail = get(f"/rulesets/{summary['id']}")
         except (RuntimeError, KeyError) as exc:
-            failures.append(f"cannot verify main branch ruleset: {exc}")
+            failures.append(f"cannot verify {branch} branch ruleset: {exc}")
             continue
         if not isinstance(detail, Mapping) or not ruleset_targets(
-            detail, MAIN_BRANCH_PATTERN
+            detail, branch_pattern
         ):
             continue
         if not ruleset_has_rule(detail, "pull_request"):
-            failures.append("main ruleset does not require pull-request review")
+            failures.append(f"{branch} ruleset does not require pull-request review")
         if not ruleset_has_required_status_checks(detail):
-            failures.append("main ruleset does not configure required status checks")
+            failures.append(
+                f"{branch} ruleset does not configure required status checks"
+            )
         if not ruleset_has_rule(detail, "required_linear_history"):
-            failures.append("main ruleset does not require linear history")
+            failures.append(f"{branch} ruleset does not require linear history")
         if not ruleset_has_rule(detail, "deletion"):
-            failures.append("main ruleset does not protect against deletion")
+            failures.append(f"{branch} ruleset does not protect against deletion")
         return True
     return False
 
@@ -167,30 +182,33 @@ def verify_tag_ruleset(active: list[dict[str, Any]], failures: list[str]) -> boo
     return False
 
 
-def verify_legacy_main_protection(failures: list[str]) -> bool:
-    """Verify legacy branch protection when no main ruleset is applicable."""
+def verify_legacy_default_branch_protection(
+    failures: list[str], *, branch: str
+) -> bool:
+    """Verify legacy branch protection when no default-branch ruleset applies."""
+    encoded_branch = urllib.parse.quote(branch, safe="")
     try:
-        _, protection = get("/branches/main/protection")
+        _, protection = get(f"/branches/{encoded_branch}/protection")
     except RuntimeError as exc:
         if "GitHub API 404" in str(exc) and "Branch not protected" in str(exc):
             return False
-        failures.append(f"cannot verify main branch protection: {exc}")
+        failures.append(f"cannot verify {branch} branch protection: {exc}")
         return False
     if not isinstance(protection, Mapping):
-        failures.append("main branch protection response is invalid")
+        failures.append(f"{branch} branch protection response is invalid")
         return False
     required = protection.get("required_status_checks")
     if not isinstance(required, Mapping) or not (
         required.get("contexts") or required.get("checks")
     ):
-        failures.append("main has no required status checks")
+        failures.append(f"{branch} has no required status checks")
     enforce_admins = protection.get("enforce_admins")
     if not isinstance(enforce_admins, Mapping) or not enforce_admins.get(
         "enabled", False
     ):
-        failures.append("main does not enforce protection for administrators")
+        failures.append(f"{branch} does not enforce protection for administrators")
     if protection.get("required_pull_request_reviews") is None:
-        failures.append("main does not require pull-request review")
+        failures.append(f"{branch} does not require pull-request review")
     return True
 
 
@@ -199,8 +217,16 @@ def main() -> int:
     failures: list[str] = []
 
     _, repo = get("")
-    if not isinstance(repo, Mapping) or repo.get("default_branch") != "main":
-        failures.append("default branch is not main")
+    if not isinstance(repo, Mapping):
+        failures.append("repository metadata response is invalid")
+        default_branch = ""
+    else:
+        default_branch_value = repo.get("default_branch")
+        default_branch = (
+            default_branch_value if isinstance(default_branch_value, str) else ""
+        )
+        if not default_branch:
+            failures.append("repository default branch is missing")
 
     try:
         _, ruleset_response = get("/rulesets")
@@ -208,14 +234,19 @@ def main() -> int:
         ruleset_response = None
         failures.append(f"cannot verify repository rulesets: {exc}")
 
-    if isinstance(ruleset_response, list):
+    if isinstance(ruleset_response, list) and default_branch:
         active = active_rulesets(ruleset_response)
-        main_protected = verify_main_ruleset(active, failures)
-        if not main_protected:
-            main_protected = verify_legacy_main_protection(failures)
-        if not main_protected:
+        branch_protected = verify_default_branch_ruleset(
+            active, failures, branch=default_branch
+        )
+        if not branch_protected:
+            branch_protected = verify_legacy_default_branch_protection(
+                failures, branch=default_branch
+            )
+        if not branch_protected:
             failures.append(
-                "no active repository ruleset or legacy branch protection protects main"
+                "no active repository ruleset or legacy branch protection protects "
+                f"the default branch {default_branch!r}"
             )
 
         tag_protected = verify_tag_ruleset(active, failures)
@@ -238,7 +269,7 @@ def main() -> int:
         return 1
 
     print("REPOSITORY GOVERNANCE: PASS")
-    print("- main branch governance verified")
+    print(f"- default branch governance verified ({default_branch})")
     print("- release-tag protection verified")
     print("- private vulnerability reporting verified")
     return 0

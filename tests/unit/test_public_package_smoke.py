@@ -5,12 +5,13 @@ import subprocess
 import sys
 
 import statewake
-from config.project_paths import SRC_PATH
+from scripts.common.project_metadata import load_project_metadata
+from scripts.common.project_paths import PROJECT_ROOT, SRC_PATH
 
 
 def test_public_package_version() -> None:
     """Verify the public package imports and exposes its current version."""
-    assert statewake.__version__ == "0.4.1"
+    assert statewake.__version__ == load_project_metadata(PROJECT_ROOT).version
 
 
 def test_cli_version_from_source_tree() -> None:

@@ -6,11 +6,20 @@ import json
 import os
 import uuid
 from datetime import datetime
+from hashlib import sha256
 from pathlib import Path
 from typing import NotRequired, Protocol, Required, TypedDict, Unpack
 
 from ..adapters.content_store import ContentAddressedArtifactStore
+from ..domain.evidence import EvidenceManifest
 from ..domain.evidence_receipt import ExternalEvidenceReceipt
+from ..domain.governance import (
+    SENSITIVITY_ORDER,
+    PrivacyGovernanceRuntimeConfig,
+    evaluate_evidence_governance,
+)
+from ..domain.privacy import Redactor
+from ..domain.reliability_evidence import EvidenceReference
 
 
 class _EvidenceIngestionCommonKwargs(TypedDict, total=False):
@@ -20,6 +29,8 @@ class _EvidenceIngestionCommonKwargs(TypedDict, total=False):
     source_event_id: NotRequired[str | None]
     run_id: NotRequired[str | None]
     metadata: NotRequired[dict[str, str]]
+    provenance_ref: NotRequired[EvidenceReference | None]
+    sensitivity: NotRequired[str]
 
 
 class EvidenceIngestionBytesKwargs(_EvidenceIngestionCommonKwargs, total=False):
@@ -140,21 +151,63 @@ class LocalEvidenceIngestionAdapter:
         self,
         artifact_store: ContentAddressedArtifactStore,
         receipt_store: EvidenceReceiptStore,
+        *,
+        privacy_governance: PrivacyGovernanceRuntimeConfig | None = None,
     ) -> None:
         """Initialize this component with its configured state."""
         self.artifact_store = artifact_store
         self.receipt_store = receipt_store
+        self.privacy_governance = privacy_governance
 
     def ingest_bytes(
         self, content: bytes, **kwargs: Unpack[EvidenceIngestionBytesKwargs]
     ) -> ExternalEvidenceReceipt:
-        """Ingest bytes through the canonical content-addressed evidence boundary."""
-        digest = self.artifact_store.put(content)
+        """Ingest bytes after privacy redaction and pre-write governance admission."""
+        sensitivity = kwargs.get("sensitivity", "internal")
+        if sensitivity not in SENSITIVITY_ORDER:
+            raise ValueError(
+                "sensitivity must be one of public, internal, confidential, restricted."
+            )
+        metadata = dict(kwargs.get("metadata", {}))
+        if self.privacy_governance is not None:
+            result = Redactor(self.privacy_governance.privacy_policy).redact_metadata(
+                metadata
+            )
+            metadata = {str(key): str(value) for key, value in result.value.items()}
+
+        digest = sha256(content).hexdigest()
         receipt = ExternalEvidenceReceipt(
+            producer_type=kwargs["producer_type"],
+            producer_id=kwargs["producer_id"],
             artifact_digest=digest,
             artifact_size=len(content),
-            **kwargs,
+            captured_at=kwargs["captured_at"],
+            source_ref=kwargs["source_ref"],
+            source_event_id=kwargs.get("source_event_id"),
+            producer_version=kwargs.get("producer_version"),
+            run_id=kwargs.get("run_id"),
+            provenance_ref=kwargs.get("provenance_ref"),
+            metadata=metadata,
         )
+        if self.privacy_governance is not None:
+            item = receipt.to_evidence_item(sensitivity=sensitivity)
+            manifest = EvidenceManifest(
+                manifest_id=receipt.receipt_id,
+                run_id=receipt.run_id or receipt.receipt_id,
+                items=(item,),
+            )
+            decision = evaluate_evidence_governance(
+                manifest, self.privacy_governance.evidence_policy
+            )
+            if not decision.storage_allowed:
+                raise ValueError(
+                    "evidence storage rejected by governance policy: "
+                    + "; ".join(decision.storage_reasons)
+                )
+
+        stored_digest = self.artifact_store.put(content)
+        if stored_digest != digest:
+            raise ValueError("content-addressed store returned an unexpected digest")
         self._assert_existing_artifact(receipt)
         self.receipt_store.put(receipt)
         return receipt
@@ -179,6 +232,7 @@ class LocalEvidenceIngestionAdapter:
             source_event_id=kwargs.get("source_event_id"),
             run_id=kwargs.get("run_id"),
             metadata=metadata,
+            sensitivity=kwargs.get("sensitivity", "internal"),
         )
 
     def verify(self, receipt: ExternalEvidenceReceipt) -> None:

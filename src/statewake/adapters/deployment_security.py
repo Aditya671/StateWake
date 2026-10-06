@@ -14,7 +14,40 @@ from dataclasses import dataclass
 from typing import Literal, Protocol
 from wsgiref.types import StartResponse, WSGIApplication, WSGIEnvironment
 
-SecurityOperation = Literal["verify:evidence", "verify:proof"]
+SecurityOperation = Literal[
+    "verify:evidence",
+    "verify:proof",
+    "review:read",
+    "review:write",
+    "approval:read",
+    "approval:write",
+    "approval:revoke",
+    "approval:supersede",
+]
+SECURITY_OPERATIONS: tuple[SecurityOperation, ...] = (
+    "verify:evidence",
+    "verify:proof",
+    "review:read",
+    "review:write",
+    "approval:read",
+    "approval:write",
+    "approval:revoke",
+    "approval:supersede",
+)
+SECURITY_EVENT_TYPES = (
+    "authentication_failed",
+    "authorization_denied",
+    "request_rejected",
+    "request_admitted",
+)
+SECURITY_REASON_CODES = (
+    "https_required",
+    "authentication_failed",
+    "authorization_denied",
+    "request_admission_rejected",
+    "authorized",
+)
+DEFAULT_PUBLIC_PATHS = ("/health", "/v1/version")
 Principal = object
 
 
@@ -82,7 +115,7 @@ class DeploymentSecurityConfig:
     admit_request: RequestAdmissionProvider | None = None
     security_event_sink: SecurityEventSink | None = None
     require_https: bool = True
-    public_paths: tuple[str, ...] = ("/health", "/v1/version")
+    public_paths: tuple[str, ...] = DEFAULT_PUBLIC_PATHS
 
     def __post_init__(self) -> None:
         """Validate that the deployment boundary cannot disable HTTPS accidentally."""
@@ -98,13 +131,50 @@ class DeploymentSecurityConfig:
             raise TypeError("security_event_sink must be callable when provided")
 
 
-def _operation_for_path(path: str) -> SecurityOperation | None:
-    """Return the security operation represented by one verification route."""
-    operations: dict[str, SecurityOperation] = {
-        "/v1/evidence/verify": "verify:evidence",
-        "/v1/proof/verify": "verify:proof",
-    }
-    return operations.get(path)
+def _operation_for_request(method: str, path: str) -> SecurityOperation | None:
+    """Return the security operation represented by one supported request."""
+    if method == "POST" and path == "/v1/evidence/verify":
+        return "verify:evidence"
+    if method == "POST" and path == "/v1/proof/verify":
+        return "verify:proof"
+    parts = [part for part in path.split("/") if part]
+    if (
+        len(parts) == 5
+        and parts[:3] == ["api", "v1", "claims"]
+        and len(parts[3]) == 64
+        and all(char in "0123456789abcdef" for char in parts[3])
+        and parts[4] == "reviews"
+    ):
+        if method == "GET":
+            return "review:read"
+        if method == "POST":
+            return "review:write"
+    if (
+        len(parts) == 5
+        and parts[:3] == ["api", "v1", "claims"]
+        and len(parts[3]) == 64
+        and all(char in "0123456789abcdef" for char in parts[3])
+        and parts[4] == "approvals"
+    ):
+        if method == "GET":
+            return "approval:read"
+        if method == "POST":
+            return "approval:write"
+    if (
+        len(parts) == 7
+        and parts[:3] == ["api", "v1", "claims"]
+        and len(parts[3]) == 64
+        and all(char in "0123456789abcdef" for char in parts[3])
+        and parts[4] == "approvals"
+        and len(parts[5]) == 64
+        and all(char in "0123456789abcdef" for char in parts[5])
+        and parts[6] in {"revoke", "supersede"}
+        and method == "POST"
+    ):
+        return "approval:revoke" if parts[6] == "revoke" else "approval:supersede"
+    if method == "GET" and path == "/api/v1/review-capabilities":
+        return "review:read"
+    return None
 
 
 def _json_error(
@@ -153,7 +223,7 @@ def create_secured_application(
         """Apply deployment security policy before invoking the wrapped application."""
         method = environ.get("REQUEST_METHOD", "GET").upper()
         path = environ.get("PATH_INFO", "/")
-        operation = _operation_for_path(path)
+        operation = _operation_for_request(method, path)
 
         if path in config.public_paths:
             return application(environ, start_response)
@@ -249,6 +319,8 @@ def create_secured_application(
                 reason="authorized",
             ),
         )
+        environ["statewake.authenticated_principal"] = principal
+        environ["statewake.security_operation"] = operation
         return application(environ, start_response)
 
     return secured_application

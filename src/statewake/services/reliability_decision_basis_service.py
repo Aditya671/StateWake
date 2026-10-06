@@ -59,15 +59,13 @@ def build_reliability_decision_basis(
         chain.run.digest,
         chain.state.digest,
         *(item.digest for item in chain.evidence),
-        chain.provenance.digest,
-        chain.integrity.digest,
     )
+    if chain.comparison_ref is not None:
+        inputs += (chain.comparison_ref.digest,)
     if chain.reconciliation_ref is not None:
         inputs += (chain.reconciliation_ref.digest,)
     if chain.recovery_ref is not None:
         inputs += (chain.recovery_ref.digest,)
-    if chain.attestation_ref is not None:
-        inputs += (chain.attestation_ref.digest,)
     return ReliabilityDecisionBasis(
         format_version="1",
         basis_type="rule",
@@ -172,6 +170,8 @@ def verify_reliability_decision_basis(
         chain.provenance.digest,
         chain.integrity.digest,
     }
+    if chain.comparison_ref is not None:
+        allowed_inputs.add(chain.comparison_ref.digest)
     if chain.reconciliation_ref is not None:
         allowed_inputs.add(chain.reconciliation_ref.digest)
     if chain.recovery_ref is not None:

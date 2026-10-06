@@ -3,20 +3,44 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable, Mapping
 from datetime import UTC, datetime
 from hashlib import sha256
 from pathlib import Path
 
-from ..adapters.reliability_attestation import JsonlReliabilityOutcomeAttestationStore
-from ..domain.attestation_trust import SignedAttestationTrustState
+from ..adapters.key_management import ExternalSigningAdapter
+from ..adapters.reliability_attestation import (
+    JsonlReliabilityOutcomeAttestationStore,
+    SignedReliabilityOutcomeBinding,
+)
+from ..domain.attestation_trust import (
+    Ed25519AttestationTrustStateVerifier,
+    SignedAttestationTrustState,
+    attestation_signing_key_status,
+)
+from ..domain.key_management import SigningKeyReference
 from ..domain.reliability_attestation import (
     ReliabilityOutcomeAttestation,
     SignedReliabilityOutcomeEnvelope,
+)
+from ..domain.reliability_attestation_trust_context import (
+    ReliabilityAttestationTrustContext,
 )
 from ..domain.reliability_evidence import ReliabilityEvidenceChain
 from ..domain.reliability_state import ReliabilityStateTransition
 from ..services.persistence import atomic_write_text
 from ..utils.signatures import verify_ed25519_signature
+
+
+def _canonical(payload: dict[str, object]) -> bytes:
+    """Return canonical JSON bytes used by signed-attestation bindings."""
+    return json.dumps(
+        payload,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+        allow_nan=False,
+    ).encode("utf-8")
 
 
 def _stable_id(
@@ -39,16 +63,16 @@ def _stable_id(
     ).hexdigest()
 
 
-def attest_reliability_outcome(
+def _build_reliability_outcome_attestation(
     chain: ReliabilityEvidenceChain,
     transition: ReliabilityStateTransition,
     *,
     actor: str,
     store: JsonlReliabilityOutcomeAttestationStore,
-    occurred_at: datetime | None = None,
-    signing_key_id: str | None = None,
+    occurred_at: datetime | None,
+    signing_key_id: str | None,
 ) -> ReliabilityOutcomeAttestation:
-    """Create and persist a reliability outcome attestation."""
+    """Build an attestation against the current canonical chain tip without writing it."""
     if transition.evidence_chain_id != chain.chain_id:
         raise ValueError(
             "reliability state transition is not bound to the supplied evidence chain."
@@ -62,7 +86,7 @@ def attest_reliability_outcome(
     when = (occurred_at or datetime.now(UTC)).astimezone(UTC).isoformat()
     records = store.read()
     previous = records[-1].digest if records else ""
-    attestation = ReliabilityOutcomeAttestation(
+    return ReliabilityOutcomeAttestation(
         attestation_id=_stable_id(transition.subject_id, chain, transition, when),
         subject_id=transition.subject_id,
         occurred_at=when,
@@ -78,6 +102,26 @@ def attest_reliability_outcome(
         decision_rationale=transition.rationale or chain.decision_rationale,
         signing_key_id=signing_key_id,
         previous_digest=previous,
+    )
+
+
+def attest_reliability_outcome(
+    chain: ReliabilityEvidenceChain,
+    transition: ReliabilityStateTransition,
+    *,
+    actor: str,
+    store: JsonlReliabilityOutcomeAttestationStore,
+    occurred_at: datetime | None = None,
+    signing_key_id: str | None = None,
+) -> ReliabilityOutcomeAttestation:
+    """Create and persist a reliability outcome attestation."""
+    attestation = _build_reliability_outcome_attestation(
+        chain,
+        transition,
+        actor=actor,
+        store=store,
+        occurred_at=occurred_at,
+        signing_key_id=signing_key_id,
     )
     return store.append(attestation)
 
@@ -146,11 +190,7 @@ def create_signed_reliability_outcome_envelope(
         algorithm="Ed25519",
         key_id=key_id,
         attestation=payload,
-        payload_digest=sha256(
-            json.dumps(
-                payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False
-            ).encode("utf-8")
-        ).hexdigest(),
+        payload_digest=sha256(_canonical(payload)).hexdigest(),
         signature=urlsafe_b64encode(signature).rstrip(b"=").decode("ascii"),
     )
 
@@ -163,8 +203,6 @@ def verify_signed_reliability_outcome_envelope(
 ) -> ReliabilityOutcomeAttestation:
     """Verify the signature and bindings of a signed reliability outcome envelope."""
     from base64 import urlsafe_b64decode
-
-    from ..domain.attestation_trust import attestation_signing_key_status
 
     keys = dict(trusted_public_keys)
     if trust_state is not None:
@@ -188,4 +226,252 @@ def verify_signed_reliability_outcome_envelope(
         raise ValueError(
             "reliability outcome attestation signature verification failed."
         ) from exc
-    return ReliabilityOutcomeAttestation.from_dict(envelope.attestation)
+    attestation = ReliabilityOutcomeAttestation.from_dict(envelope.attestation)
+    if attestation.signing_key_id != envelope.key_id:
+        raise ValueError(
+            "signed reliability envelope key does not match attestation signing_key_id."
+        )
+    return attestation
+
+
+def build_reliability_attestation_trust_context(
+    envelope: SignedReliabilityOutcomeEnvelope,
+    *,
+    trust_state: SignedAttestationTrustState,
+    authority_store: Mapping[str, bytes],
+    envelope_artifact_id: str | None = None,
+    trust_state_artifact_id: str | None = None,
+    authority_store_artifact_id: str | None = None,
+) -> ReliabilityAttestationTrustContext:
+    """Authenticate and bind one signed attestation to the exact trust state used."""
+    authorities = dict(authority_store)
+    Ed25519AttestationTrustStateVerifier(authorities).verify(trust_state)
+    attestation = verify_signed_reliability_outcome_envelope(
+        envelope,
+        trusted_public_keys={
+            anchor.key_id: anchor.public_key for anchor in trust_state.anchors
+        },
+        trust_state=trust_state,
+    )
+    anchor = attestation_signing_key_status(trust_state, envelope.key_id)
+    try:
+        authority_key = authorities[trust_state.authority_key_id]
+    except KeyError as exc:
+        raise ValueError(
+            "attestation trust-state authority key is absent from the authority store"
+        ) from exc
+    state_digest = trust_state.digest()
+    return ReliabilityAttestationTrustContext(
+        format_version="1",
+        envelope_artifact_id=(
+            envelope_artifact_id or f"attestation-envelope:{attestation.attestation_id}"
+        ),
+        envelope_digest=sha256(_canonical(envelope.to_dict())).hexdigest(),
+        attestation_id=attestation.attestation_id,
+        attestation_digest=attestation.digest,
+        signing_key_id=envelope.key_id,
+        signing_key_digest=sha256(anchor.public_key).hexdigest(),
+        trust_state_artifact_id=(
+            trust_state_artifact_id
+            or f"attestation-trust-state:{trust_state.version}:{state_digest}"
+        ),
+        trust_state_digest=state_digest,
+        trust_state_version=trust_state.version,
+        authority_store_artifact_id=(
+            authority_store_artifact_id
+            or f"attestation-authority:{trust_state.authority_key_id}"
+        ),
+        authority_key_id=trust_state.authority_key_id,
+        authority_key_digest=sha256(authority_key).hexdigest(),
+    )
+
+
+def verify_reliability_attestation_trust_context(
+    binding: SignedReliabilityOutcomeBinding,
+    *,
+    trust_state: SignedAttestationTrustState,
+    authority_store: Mapping[str, bytes],
+) -> ReliabilityOutcomeAttestation:
+    """Verify a persisted signed binding against its exact authenticated trust state."""
+    context = binding.trust_context
+    if trust_state.version != context.trust_state_version:
+        raise ValueError("signed attestation trust-state version mismatch")
+    if trust_state.digest() != context.trust_state_digest:
+        raise ValueError("signed attestation trust-state digest mismatch")
+    if trust_state.authority_key_id != context.authority_key_id:
+        raise ValueError("signed attestation authority identity mismatch")
+    authorities = dict(authority_store)
+    try:
+        authority_key = authorities[context.authority_key_id]
+    except KeyError as exc:
+        raise ValueError(
+            "signed attestation authority key is absent from the authority store"
+        ) from exc
+    if sha256(authority_key).hexdigest() != context.authority_key_digest:
+        raise ValueError("signed attestation authority key digest mismatch")
+    Ed25519AttestationTrustStateVerifier(authorities).verify(trust_state)
+    anchor = attestation_signing_key_status(trust_state, context.signing_key_id)
+    if sha256(anchor.public_key).hexdigest() != context.signing_key_digest:
+        raise ValueError("signed attestation signing key digest mismatch")
+    return verify_signed_reliability_outcome_envelope(
+        binding.envelope,
+        trusted_public_keys={
+            item.key_id: item.public_key for item in trust_state.anchors
+        },
+        trust_state=trust_state,
+    )
+
+
+def resolve_reliability_attestation_trust_state(
+    binding: SignedReliabilityOutcomeBinding,
+    *,
+    trust_states: Iterable[SignedAttestationTrustState],
+) -> SignedAttestationTrustState:
+    """Resolve the exact version/digest trust state recorded by one signed binding."""
+    context = binding.trust_context
+    expected = (context.trust_state_version, context.trust_state_digest)
+    resolved: SignedAttestationTrustState | None = None
+    for state in trust_states:
+        identity = (state.version, state.digest())
+        if identity != expected:
+            continue
+        if resolved is not None and resolved.to_dict() != state.to_dict():
+            raise ValueError(
+                "conflicting attestation trust states share the signed binding identity"
+            )
+        resolved = state
+    if resolved is None:
+        raise ValueError(
+            "signed attestation trust state is unavailable for recorded version/digest"
+        )
+    return resolved
+
+
+def verify_persisted_signed_reliability_outcome(
+    attestation: ReliabilityOutcomeAttestation,
+    *,
+    store: JsonlReliabilityOutcomeAttestationStore,
+    trust_states: Iterable[SignedAttestationTrustState],
+    authority_store: Mapping[str, bytes],
+) -> SignedReliabilityOutcomeBinding:
+    """Verify one canonical signed binding using its exact authenticated trust state."""
+    matches = tuple(
+        binding
+        for binding in store.read_signed_bindings()
+        if binding.attestation.attestation_id == attestation.attestation_id
+    )
+    if not matches:
+        raise ValueError(
+            f"canonical signed attestation binding not found: {attestation.attestation_id}"
+        )
+    if len(matches) != 1:
+        raise ValueError(
+            f"multiple signed attestation bindings found: {attestation.attestation_id}"
+        )
+    binding = matches[0]
+    if binding.attestation != attestation:
+        raise ValueError(
+            "canonical signed attestation binding does not match the supplied attestation"
+        )
+    exact_state = resolve_reliability_attestation_trust_state(
+        binding,
+        trust_states=trust_states,
+    )
+    verified = verify_reliability_attestation_trust_context(
+        binding,
+        trust_state=exact_state,
+        authority_store=authority_store,
+    )
+    if verified != attestation:
+        raise ValueError("verified signed attestation identity/content mismatch")
+    return binding
+
+
+def record_signed_reliability_outcome(
+    envelope: SignedReliabilityOutcomeEnvelope,
+    *,
+    trust_state: SignedAttestationTrustState,
+    authority_store: Mapping[str, bytes],
+    store: JsonlReliabilityOutcomeAttestationStore,
+) -> SignedReliabilityOutcomeBinding:
+    """Authenticate and persist a signed envelope plus its exact trust-state binding."""
+    context = build_reliability_attestation_trust_context(
+        envelope,
+        trust_state=trust_state,
+        authority_store=authority_store,
+    )
+    binding = SignedReliabilityOutcomeBinding(envelope, context)
+    return store.append_signed(binding)
+
+
+def sign_and_record_reliability_outcome(
+    attestation: ReliabilityOutcomeAttestation,
+    *,
+    signing_adapter: ExternalSigningAdapter,
+    signing_key: SigningKeyReference,
+    trust_state: SignedAttestationTrustState,
+    authority_store: Mapping[str, bytes],
+    store: JsonlReliabilityOutcomeAttestationStore,
+) -> SignedReliabilityOutcomeBinding:
+    """Sign through an external key provider and persist the authenticated binding."""
+    if attestation.signing_key_id != signing_key.key_id:
+        raise ValueError(
+            "attestation signing_key_id does not match the external signing key reference"
+        )
+    # Authenticate the exact trust-state snapshot before requesting any external
+    # signature. This prevents a host signer from being invoked under an
+    # unauthenticated or attacker-substituted signing policy.
+    Ed25519AttestationTrustStateVerifier(dict(authority_store)).verify(trust_state)
+    anchor = attestation_signing_key_status(trust_state, signing_key.key_id)
+    anchor_digest = sha256(anchor.public_key).hexdigest()
+    if (
+        signing_key.public_key_digest is not None
+        and signing_key.public_key_digest != anchor_digest
+    ):
+        raise ValueError(
+            "external signing key digest does not match trust-state anchor"
+        )
+    placeholder = create_signed_reliability_outcome_envelope(
+        attestation, key_id=signing_key.key_id, signature=b"placeholder"
+    )
+    signature = signing_adapter.sign(signing_key, placeholder.payload_bytes())
+    envelope = create_signed_reliability_outcome_envelope(
+        attestation, key_id=signing_key.key_id, signature=signature
+    )
+    return record_signed_reliability_outcome(
+        envelope,
+        trust_state=trust_state,
+        authority_store=authority_store,
+        store=store,
+    )
+
+
+def attest_signed_reliability_outcome(
+    chain: ReliabilityEvidenceChain,
+    transition: ReliabilityStateTransition,
+    *,
+    actor: str,
+    store: JsonlReliabilityOutcomeAttestationStore,
+    signing_adapter: ExternalSigningAdapter,
+    signing_key: SigningKeyReference,
+    trust_state: SignedAttestationTrustState,
+    authority_store: Mapping[str, bytes],
+    occurred_at: datetime | None = None,
+) -> SignedReliabilityOutcomeBinding:
+    """Create, externally sign, authenticate, and canonically persist one attestation."""
+    attestation = _build_reliability_outcome_attestation(
+        chain,
+        transition,
+        actor=actor,
+        store=store,
+        occurred_at=occurred_at,
+        signing_key_id=signing_key.key_id,
+    )
+    return sign_and_record_reliability_outcome(
+        attestation,
+        signing_adapter=signing_adapter,
+        signing_key=signing_key,
+        trust_state=trust_state,
+        authority_store=authority_store,
+        store=store,
+    )

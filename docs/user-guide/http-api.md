@@ -9,8 +9,10 @@ It is an integration edge, not a hosted SaaS control plane.
 The verification adapter is HTTPS-by-default and requires configured artifact roots. For a local development process using plain HTTP, explicitly opt in:
 
 ```bash
-STATEWAKE_VERIFICATION_ARTIFACT_ROOTS=./evidence STATEWAKE_ALLOW_INSECURE_HTTP=1 python -m statewake.server
+STATEWAKE_VERIFICATION_ARTIFACT_ROOTS=./evidence STATEWAKE_ALLOW_INSECURE_HTTP=1 STATEWAKE_VERIFICATION_RUNTIME_SNAPSHOT=./runtime-containment.json python -m statewake.server
 ```
+
+`STATEWAKE_VERIFICATION_RUNTIME_SNAPSHOT` is optional. When configured, the verification service atomically records a privacy-safe snapshot of its effective `VerificationServiceConfig` and `RuntimeContainmentLimits`. Artifact-root paths are never serialized. The snapshot is intended for the read-only Security Assurance UI and is configuration evidence captured when the application is constructed; it is not a liveness probe or proof of host/container isolation.
 
 Default address: `http://127.0.0.1:8787`.
 

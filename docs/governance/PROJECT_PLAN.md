@@ -6,13 +6,15 @@ Maintain a coherent, verifiable reliability infrastructure layer for AI systems 
 
 ## Current baseline
 
-**StateWake v0.4.1** is the current source candidate; v0.4.0 is the last recorded public release.
+**StateWake v0.5.0** is the current source version in preparation. **v0.4.1** remains the current published Production/Stable public release until v0.5.0 completes its release and publication gates.
 
 The completed release sequence is:
 
 1. **v0.1.1** — Production/Stable packaging promotion.
 2. **v0.2.0** — cybersecurity completion through V3 Tier 15.
 3. **v0.4.0** — Persistence & Dataset Architecture completion through Tier 15.
+4. **v0.4.1** — current published Production/Stable reliability and integration update.
+5. **v0.5.0** — current source line for the post-v0.4.1 approval/publication lifecycle, registry reconciliation, native-host qualification, and production cleanup; not yet published.
 
 ## Maintenance priorities
 

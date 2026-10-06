@@ -4,7 +4,7 @@ import re
 
 
 def test_threat_model_has_required_sections_and_executable_references() -> None:
-    from config.project_paths import PROJECT_ROOT
+    from scripts.common.project_paths import PROJECT_ROOT
 
     root = PROJECT_ROOT
     model = (root / "docs" / "security" / "THREAT_MODEL.md").read_text(encoding="utf-8")
@@ -43,7 +43,7 @@ def test_threat_model_has_required_sections_and_executable_references() -> None:
 
 
 def test_security_adr_is_current_and_points_to_threat_model() -> None:
-    from config.project_paths import PROJECT_ROOT
+    from scripts.common.project_paths import PROJECT_ROOT
 
     root = PROJECT_ROOT
     adr = (root / "docs" / "adr" / "0004-security-architecture.md").read_text(

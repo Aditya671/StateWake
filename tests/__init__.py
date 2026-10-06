@@ -1,10 +1,10 @@
-"""Test package bootstrap for direct unittest discovery."""
+"""Test package bootstrap for source-checkout imports."""
 
 from __future__ import annotations
 
 import sys
 
-from config.project_paths import SRC_PATH
+from scripts.common.project_paths import SRC_PATH
 
 SRC = SRC_PATH
 if str(SRC) not in sys.path:

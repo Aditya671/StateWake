@@ -73,6 +73,7 @@ class ContractCaptureResult:
                 "evidence_id": self.evidence.evidence_id,
                 "evidence_digest": self.digest,
             },
+            sensitivity=self.evidence.sensitivity,
         )
 
 

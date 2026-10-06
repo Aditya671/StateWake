@@ -7,7 +7,7 @@ import json
 from typing import Required, TypedDict, get_type_hints
 
 import statewake
-from config.project_paths import PROJECT_ROOT
+from scripts.common.project_paths import PROJECT_ROOT
 from statewake.cli.main import supported_commands
 
 ROOT = PROJECT_ROOT

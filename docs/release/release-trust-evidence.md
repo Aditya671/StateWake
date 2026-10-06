@@ -5,7 +5,7 @@ Phase 6 separates two trust layers:
 1. StateWake package/release trust: how the `statewake-ai` artifact was built, checked, described, and approved or limited.
 2. StateWake-managed AI-system claim trust: the evidence chains and claim profiles StateWake records for external AI workflows.
 
-The `statewake.release_trust` package models the first layer only. It does not replace SLSA, Sigstore, SBOM generators, vulnerability scanners, CI/CD, or human release authorization. It records digest-bound references to those external artifacts so StateWake can reason about whether a release claim has enough evidence.
+The `statewake.release_trust` package models the first layer and now also contains the bounded publication-authorization handoff. It does not replace SLSA, Sigstore, SBOM generators, vulnerability scanners, CI/CD, GitHub environment protection, or the package registry. It records digest-bound references to those external artifacts so StateWake can reason about whether a release claim has enough evidence and whether an exact candidate is currently authorized for external publication.
 
 ## Bundle contents
 
@@ -25,7 +25,7 @@ Unsigned development releases must record a limitation. A missing or unavailable
 
 ## Human approval boundary
 
-The bundle may show that evidence is complete, but publication approval remains separate. An approved human decision requires a digest-bound basis. A pending decision can still produce a release-trust bundle for review, but it must not be treated as release authorization.
+The bundle may show that evidence is complete, but publication approval remains separate. `ReleasePublicationBasis` binds a publication decision to an exact registry target, source identity, verification-evidence digest, and distribution digests. The canonical approval lifecycle reuses `HumanApprovalContract` evidence; revocation and supersession append evidence instead of mutating history. `issue_publication_execution_permit()` re-hashes the exact distributions and accepts only currently active authority before handing control to the external protected publisher. The permit is authorization to attempt publication, not evidence that the registry published the release.
 
 ## Claim profile bridge
 

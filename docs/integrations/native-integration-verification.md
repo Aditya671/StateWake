@@ -13,7 +13,7 @@ The package maturity classifier was `Development Status :: 5 - Production/Stable
 | `uv run ruff check .` | PASS |
 | `uv run ruff format --check .` | PASS |
 
-These results superseded the earlier local-tool and SDK `UNRUN-ENV` entries for that v0.4.0 snapshot. They do not qualify the current v0.4.1 source. Repository-host controls and publication approval remain separate release-process decisions.
+These results superseded the earlier local-tool and SDK `UNRUN-ENV` entries for that v0.4.0 snapshot. They do not qualify the published v0.4.1 release; v0.4.1 must be judged from its own release evidence. Repository-host controls and future publication approval remain separate release-process decisions.
 
 ## Historical snapshot: original attached archive
 
@@ -145,3 +145,25 @@ normalizers and contracts were preserved.
 - Ruff and mypy: **UNRUN-ENV**: tools unavailable in this environment.
 
 **Status recorded for the 2026-09-23 snapshot:** its lock refresh and full release gates were still pending. No Pyright gate was part of the v0.4.0 source configuration.
+
+## 2026-10-05 independent-oracle native-host qualification
+
+A Python 3.13.5 offline environment built from the supplied StateWake wheelhouse
+qualified the advertised native integration ranges with the current coordinator and
+then exercised each installed SDK through the independent-oracle host harness.
+
+| Integration | Installed version | Native matrix | Host exercise | Durable restart | Synthetic secret leakage |
+| --- | --- | --- | --- | --- | ---: |
+| OpenAI Agents | 0.22.3 | PASS | PASS | PASS | 0 |
+| LangChain Core | 1.6.4 | PASS | PASS | PASS | 0 |
+| LangGraph | 1.2.12 | PASS | PASS | PASS | 0 |
+| LlamaIndex Core | 0.14.25 | PASS | PASS | PASS | 0 |
+| OpenTelemetry SDK | 1.44.0 | PASS | PASS | PASS | 0 |
+
+The local qualification is intentionally credential-free: OpenAI Agents uses real
+trace/generation/function span lifecycles without a model call; LangChain uses a real
+`BaseRetriever.invoke`; LangGraph uses a real `StateGraph` with `MemorySaver`;
+LlamaIndex dispatches real retrieval instrumentation events; OpenTelemetry uses a
+real `TracerProvider` and completed GenAI span. Host truth and StateWake observations
+are written to separate ledgers. This evidence does not qualify external public host
+repositories and does not authorize release publication.
