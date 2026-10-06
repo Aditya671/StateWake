@@ -51,6 +51,7 @@ This entry records source changes present after the published v0.4.1 release. Th
 - Corrected repository verification so local/generated dependency trees such as `.venv`, `node_modules`, `.next`, and build/cache directories are pruned before structural placeholder checks and release-input enumeration; installed dependency marker files can no longer cause false repository-structure failures.
 - Corrected Windows static-type portability for attestation trust-history permission hardening by using a `sys.platform` guard around the POSIX-only `os.fchmod` call while preserving descriptor-based mode hardening on POSIX.
 - Corrected Windows reliability-attestation byte accounting by forcing descriptor I/O into binary mode, dynamically counting the exact physical bytes scanned, rejecting concurrent size changes, and constructing LF/CRLF regression fixtures from explicit bytes so newline translation cannot alter expected sizes.
+- Consolidated Linux and Windows CI quality validation into one OS/Python matrix job with one SDLC command contract, and expanded SDLC failure excerpts so pytest assertion details are preserved when a long gate fails.
 
 ## [v0.4.1] - Reliability and integration updates
 

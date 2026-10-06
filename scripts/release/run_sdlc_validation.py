@@ -147,6 +147,30 @@ def _gate_timeout(name: str, base_timeout: int) -> int | None:
     return base_timeout * 3 if name in LONG_RUNNING_GATES else base_timeout
 
 
+FAILURE_EXCERPT_CHARS: Final[int] = 12000
+_FAILURE_MARKERS: Final[tuple[str, ...]] = (
+    "=================================== FAILURES ===================================",
+    "================================== FAILURES ==================================",
+    "______________________________",
+)
+
+
+def _output_excerpt(output: str, *, limit: int = FAILURE_EXCERPT_CHARS) -> str:
+    """Return a failure-focused excerpt without hiding pytest assertions.
+
+    CI logs can be dominated by pytest progress output before the failure section.
+    Prefer the first visible failure marker and fall back to a bounded tail for
+    commands that do not use pytest formatting.
+    """
+    if len(output) <= limit:
+        return output
+    for marker in _FAILURE_MARKERS:
+        marker_index = output.find(marker)
+        if marker_index != -1:
+            return output[marker_index:][-limit:]
+    return output[-limit:]
+
+
 def _run(name: str, command: list[str], timeout: int | None) -> dict[str, object]:
     """Execute one gate from the repository root and return structured evidence."""
     try:
@@ -164,8 +188,12 @@ def _run(name: str, command: list[str], timeout: int | None) -> dict[str, object
             "command": command,
             "status": "timed_out",
             "timeout_seconds": timeout,
-            "stdout": (exc.stdout or "")[-3000:] if isinstance(exc.stdout, str) else "",
-            "stderr": (exc.stderr or "")[-3000:] if isinstance(exc.stderr, str) else "",
+            "stdout": (
+                _output_excerpt(exc.stdout) if isinstance(exc.stdout, str) else ""
+            ),
+            "stderr": (
+                _output_excerpt(exc.stderr) if isinstance(exc.stderr, str) else ""
+            ),
         }
         raise GateFailureError(json.dumps(result, sort_keys=True)) from exc
     result = {
@@ -173,8 +201,8 @@ def _run(name: str, command: list[str], timeout: int | None) -> dict[str, object
         "command": command,
         "returncode": completed.returncode,
         "status": "passed" if completed.returncode == 0 else "failed",
-        "stdout": completed.stdout[-3000:],
-        "stderr": completed.stderr[-3000:],
+        "stdout": _output_excerpt(completed.stdout),
+        "stderr": _output_excerpt(completed.stderr),
     }
     if completed.returncode:
         raise GateFailureError(json.dumps(result, sort_keys=True))

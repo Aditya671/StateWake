@@ -10,30 +10,13 @@ permissions:
 
 jobs:
   quality-and-tests:
+    name: quality-and-tests (${{ matrix.os }}, py${{ matrix.python-version }})
     strategy:
+      fail-fast: false
       matrix:
+        os: [ubuntu-latest, windows-latest]
         python-version: ["3.11", "3.12", "3.13"]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-      - run: uv python install ${{ matrix.python-version }}
-      - run: uv lock --check
-      - run: uv sync --locked --python ${{ matrix.python-version }} --group dev --extra integrations
-      - name: Execute SDLC check profile
-        run: uv run --no-sync --python ${{ matrix.python-version }} python scripts/release/run_sdlc_validation.py --profile check
-      - run: uv run --no-sync --python ${{ matrix.python-version }} statewake version
-      - run: uv run --no-sync --python ${{ matrix.python-version }} python examples/first-evidence-chain.py
-      - run: uv build --no-sources
-      - run: uv run --no-sync --python ${{ matrix.python-version }} python scripts/release/verify_package_boundary.py dist
-
-  windows-quality-and-tests:
-    strategy:
-      matrix:
-        python-version: ["3.11", "3.12", "3.13"]
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
 
@@ -42,11 +25,17 @@ jobs:
           enable-cache: true
 
       - run: uv python install ${{ matrix.python-version }}
-      - run: uv lock --check
+      - run: uv lock --check --python ${{ matrix.python-version }}
       - run: uv sync --locked --python ${{ matrix.python-version }} --group dev --extra integrations
 
       - name: Execute SDLC check profile
         run: uv run --no-sync --python ${{ matrix.python-version }} python scripts/release/run_sdlc_validation.py --profile check
+
+      - name: Verify CLI version
+        run: uv run --no-sync --python ${{ matrix.python-version }} statewake version
+
+      - name: Run first evidence-chain example
+        run: uv run --no-sync --python ${{ matrix.python-version }} python examples/first-evidence-chain.py
 
       - name: Build package
         run: uv build --no-sources
@@ -54,5 +43,6 @@ jobs:
       - name: Verify package boundary
         run: uv run --no-sync --python ${{ matrix.python-version }} python scripts/release/verify_package_boundary.py dist
 
-      - name: Run failure lab
+      - name: Run failure lab on Windows
+        if: matrix.os == 'windows-latest'
         run: uv run --no-sync --python ${{ matrix.python-version }} python scripts/testing/failure_lab.py --ci

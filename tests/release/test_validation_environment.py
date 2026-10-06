@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.metadata
+import re
 from pathlib import Path
 from unittest.mock import patch
 
@@ -70,6 +71,19 @@ def test_publication_workflow_installs_full_validation_profile() -> None:
         validation_environment.ROOT / ".github/workflows/python-publish.yml"
     ).read_text(encoding="utf-8")
     assert "uv sync --locked --python 3.13 --group dev --extra integrations" in workflow
+
+
+def test_ci_uses_one_os_python_quality_matrix() -> None:
+    """Linux and Windows quality checks must share one authoritative job definition."""
+    workflow = (
+        validation_environment.ROOT / ".github/workflows/ci.yml"
+    ).read_text(encoding="utf-8")
+    assert re.search(r"^  quality-and-tests:", workflow, re.MULTILINE)
+    assert "windows-quality-and-tests:" not in workflow
+    assert "fail-fast: false" in workflow
+    assert "os: [ubuntu-latest, windows-latest]" in workflow
+    assert 'python-version: ["3.11", "3.12", "3.13"]' in workflow
+    assert "if: matrix.os == 'windows-latest'" in workflow
 
 
 def test_sdlc_workflows_preserve_the_prepared_environment() -> None:

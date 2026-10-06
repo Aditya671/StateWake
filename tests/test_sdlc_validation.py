@@ -43,3 +43,18 @@ def test_long_running_gates_receive_an_extended_timeout() -> None:
     assert sdlc._gate_timeout("unit-and-integration-tests", 100) == 300
     assert sdlc._gate_timeout("version-identity", 100) == 100
     assert sdlc._gate_timeout("unit-and-integration-tests", 0) is None
+
+
+def test_failure_output_prefers_pytest_failure_section() -> None:
+    """Failure evidence should expose assertions instead of only progress tails."""
+    noisy_progress = "progress\n" * 4000
+    failure = (
+        "=================================== FAILURES ===================================\n"
+        "________________ failing_test _________________\n"
+        "E   AssertionError: expected clear failure evidence\n"
+    )
+    excerpt = sdlc._output_excerpt(noisy_progress + failure, limit=400)
+    assert excerpt.startswith("=================================== FAILURES")
+    assert "expected clear failure evidence" in excerpt
+    assert "progress" not in excerpt
+

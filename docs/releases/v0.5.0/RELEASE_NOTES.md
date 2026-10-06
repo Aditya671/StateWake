@@ -27,6 +27,7 @@
 - POSIX `0600` assertions are enforced only where POSIX mode bits are meaningful; Windows deployment ACL enforcement remains host-owned.
 - SDLC validation begins with `prepare_sdlc_validation.py`, which refreshes release identity, verifies the Python lock and security-assurance state, and deliberately does not auto-promote the security baseline or rewrite dependency locks/source.
 - The current white-paper boundary is derived from the configured project version rather than a hard-coded v0.5.0/v0.4.0 pair.
+- CI quality validation now uses one shared OS/Python matrix across Ubuntu and Windows instead of separate drifting Linux and Windows job definitions, while SDLC failure records retain enough pytest output to diagnose the next failing assertion.
 
 ## Preserved boundaries
 
