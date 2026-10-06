@@ -133,7 +133,7 @@ jobs:
             --target "$target" \
             --dist publish-dist \
             --verification-evidence release-metadata/release-candidate-evidence.json \
-            --expected-source-revision "$GITHUB_SHA" \
+            --source-revision "$GITHUB_SHA" \
             --output release-metadata/publication-basis.json
 
       - name: Generate build provenance

@@ -101,3 +101,74 @@ def test_sdlc_workflows_preserve_the_prepared_environment() -> None:
     for relative, command in expected.items():
         workflow = (validation_environment.ROOT / relative).read_text(encoding="utf-8")
         assert command in workflow
+
+
+def test_publication_basis_workflow_uses_create_script_cli_contract() -> None:
+    """Publication-basis workflow flags must match the script argparse contract."""
+    workflow = (
+        validation_environment.ROOT / ".github/workflows/python-publish.yml"
+    ).read_text(encoding="utf-8")
+    assert "scripts/release/create_publication_basis.py" in workflow
+    assert '--source-revision "$GITHUB_SHA"' in workflow
+    create_invocation = workflow.split(
+        "scripts/release/create_publication_basis.py", 1
+    )[1].split("Generate build provenance", 1)[0]
+    assert "--expected-source-revision" not in create_invocation
+
+
+def test_publication_basis_script_keeps_backwards_compatible_revision_alias() -> None:
+    """Older callers should fail less often while workflows use the canonical flag."""
+    script = (
+        validation_environment.ROOT / "scripts/release/create_publication_basis.py"
+    ).read_text(encoding="utf-8")
+    assert '"--source-revision"' in script
+    assert '"--expected-source-revision"' in script
+    assert 'dest="source_revision"' in script
+
+
+def _script_declared_flags(relative_script: str) -> set[str]:
+    script = (validation_environment.ROOT / relative_script).read_text(encoding="utf-8")
+    flags: set[str] = set()
+    for double_quoted, single_quoted in re.findall(
+        r'"(--[a-z0-9-]+)"|\'(--[a-z0-9-]+)\'', script
+    ):
+        flags.add(double_quoted or single_quoted)
+    return flags
+
+
+def _workflow_script_invocations(workflow: str) -> list[tuple[str, set[str]]]:
+    lines = workflow.splitlines()
+    invocations: list[tuple[str, set[str]]] = []
+    script_pattern = re.compile(r"scripts/[A-Za-z0-9_./-]+\.py")
+    flag_pattern = re.compile(r"(?<![\w-])(--[a-z0-9-]+)")
+    for index, line in enumerate(lines):
+        match = script_pattern.search(line)
+        if not match:
+            continue
+        script = match.group(0)
+        flags = set(flag_pattern.findall(line[match.end() :]))
+        cursor = index + 1
+        while cursor < len(lines):
+            stripped = lines[cursor].strip()
+            if not stripped or not stripped.startswith("--"):
+                break
+            flags.update(flag_pattern.findall(stripped))
+            cursor += 1
+        invocations.append((script, flags))
+    return invocations
+
+
+def test_workflow_project_script_flags_match_declared_argparse_contracts() -> None:
+    """Workflow-maintained script calls must not drift from script CLI flags."""
+    checked: list[str] = []
+    for workflow_path in sorted(
+        (validation_environment.ROOT / ".github/workflows").glob("*.yml")
+    ):
+        workflow = workflow_path.read_text(encoding="utf-8")
+        for script, used_flags in _workflow_script_invocations(workflow):
+            declared = _script_declared_flags(script)
+            unknown = sorted(used_flags - declared)
+            message = f"{workflow_path.name}: {script} uses unknown flags {unknown}"
+            assert not unknown, message
+            checked.append(f"{workflow_path.name}:{script}")
+    assert checked
