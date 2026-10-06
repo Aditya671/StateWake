@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import time
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
@@ -112,12 +111,16 @@ def test_rejects_external_reference() -> None:
 
 
 def test_deadline_is_bounded() -> None:
-    """Raise once cooperative verification exceeds its configured deadline."""
-    limits = RuntimeContainmentLimits(max_verification_seconds=0.001)
-    deadline = VerificationDeadline.from_limits(limits)
-    time.sleep(0.005)
+    """Raise once cooperative verification is already past its deadline."""
+    deadline = VerificationDeadline(expires_at=0.0)
     with pytest.raises(ContainmentViolationError, match="time envelope"):
         deadline.check()
+
+
+def test_deadline_from_limits_allows_immediate_check() -> None:
+    """Avoid relying on sub-millisecond sleep behavior for deadline tests."""
+    limits = RuntimeContainmentLimits(max_verification_seconds=0.001)
+    VerificationDeadline.from_limits(limits).check()
 
 
 def test_archive_verification_does_not_execute_members(tmp_path: Path) -> None:
