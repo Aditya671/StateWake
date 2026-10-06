@@ -24,10 +24,10 @@ jobs:
       - run: uv sync --locked --python ${{ matrix.python-version }} --group dev --extra integrations
       - name: Execute SDLC check profile
         run: uv run --no-sync --python ${{ matrix.python-version }} python scripts/release/run_sdlc_validation.py --profile check
-      - run: uv run statewake version
-      - run: uv run python examples/first-evidence-chain.py
-      - run: uv build
-      - run: uv run python scripts/release/verify_package_boundary.py
+      - run: uv run --no-sync --python ${{ matrix.python-version }} statewake version
+      - run: uv run --no-sync --python ${{ matrix.python-version }} python examples/first-evidence-chain.py
+      - run: uv build --no-sources
+      - run: uv run --no-sync --python ${{ matrix.python-version }} python scripts/release/verify_package_boundary.py dist
 
   windows-quality-and-tests:
     strategy:
@@ -52,7 +52,7 @@ jobs:
         run: uv build --no-sources
 
       - name: Verify package boundary
-        run: uv run python scripts/release/verify_package_boundary.py dist
+        run: uv run --no-sync --python ${{ matrix.python-version }} python scripts/release/verify_package_boundary.py dist
 
       - name: Run failure lab
-        run: uv run python scripts/testing/failure_lab.py --ci
+        run: uv run --no-sync --python ${{ matrix.python-version }} python scripts/testing/failure_lab.py --ci

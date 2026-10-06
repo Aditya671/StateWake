@@ -9,17 +9,18 @@ from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from statewake import IntegrationContext, StateWakeClient
-
-PROJECT_CONFIG_BOOTSTRAP = Path(__file__).resolve().parents[3]
-if str(PROJECT_CONFIG_BOOTSTRAP) not in sys.path:
-    sys.path.insert(0, str(PROJECT_CONFIG_BOOTSTRAP))
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+SRC_PATH = PROJECT_ROOT / "src"
+for bootstrap_path in (PROJECT_ROOT, SRC_PATH):
+    if str(bootstrap_path) not in sys.path:
+        sys.path.insert(0, str(bootstrap_path))
 
 from scripts.testing.run_real_world_scenarios import (  # noqa: E402
     SCENARIOS,
     Scenario,
     run_scenario,
 )
+from statewake import IntegrationContext, StateWakeClient  # noqa: E402
 from statewake.sdk import (  # noqa: E402
     AgentEvidenceAdapter,
     AgentRunEvidence,

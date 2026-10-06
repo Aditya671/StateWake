@@ -13,12 +13,8 @@ from hashlib import sha256
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-PROJECT_CONFIG_BOOTSTRAP = Path(__file__).resolve().parents[2]
-if str(PROJECT_CONFIG_BOOTSTRAP) not in sys.path:
-    sys.path.insert(0, str(PROJECT_CONFIG_BOOTSTRAP))
-
-from scripts.common.project_paths import SRC_PATH  # noqa: E402
-
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+SRC_PATH = PROJECT_ROOT / "src"
 if str(SRC_PATH) not in sys.path:
     sys.path.insert(0, str(SRC_PATH))
 
