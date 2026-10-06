@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Independently verify a portable StateWake reliability proof package."""
 
 from __future__ import annotations

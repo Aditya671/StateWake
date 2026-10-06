@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
@@ -13,7 +14,12 @@ PROJECT_CONFIG_BOOTSTRAP = Path(__file__).resolve().parents[2]
 if str(PROJECT_CONFIG_BOOTSTRAP) not in sys.path:
     sys.path.insert(0, str(PROJECT_CONFIG_BOOTSTRAP))
 
-from config.project_paths import DOCS_PATH, PROJECT_ROOT, SRC_PATH  # noqa: E402
+from scripts.common.project_paths import (  # noqa: E402
+    DOCS_PATH,
+    EXAMPLES_PATH,
+    PROJECT_ROOT,
+    SRC_PATH,
+)
 
 if str(SRC_PATH) not in sys.path:
     sys.path.insert(0, str(SRC_PATH))
@@ -44,10 +50,10 @@ REQUIRED_DOCS = (
 )
 
 EXAMPLES = (
-    DOCS_PATH / "examples" / "first-evidence-chain.py",
-    DOCS_PATH / "examples" / "golden" / "payment_reliability.py",
-    DOCS_PATH / "examples" / "golden" / "enterprise_ai_reliability.py",
-    DOCS_PATH / "examples" / "golden" / "municipal_decision_reliability.py",
+    EXAMPLES_PATH / "first-evidence-chain.py",
+    EXAMPLES_PATH / "golden" / "payment_reliability.py",
+    EXAMPLES_PATH / "golden" / "enterprise_ai_reliability.py",
+    EXAMPLES_PATH / "golden" / "municipal_decision_reliability.py",
 )
 
 
@@ -81,7 +87,7 @@ def run_example(path: Path, *, golden: bool = False) -> tuple[float, str]:
     env = dict(__import__("os").environ)
     pythonpath = [str(REPO_ROOT), str(SRC_PATH)]
     if golden:
-        pythonpath.append(str(DOCS_PATH / "examples" / "golden"))
+        pythonpath.append(str(EXAMPLES_PATH / "golden"))
     existing = env.get("PYTHONPATH")
     if existing:
         pythonpath.append(existing)
@@ -112,23 +118,27 @@ def main() -> int:
 
     print(f"documentation: verified {len(REQUIRED_DOCS)} required product pages")
     for example in EXAMPLES:
-        elapsed, output = run_example(example, golden=example.parent.name == "golden")
-        if example.name == "first-evidence-chain.py":
-            required_markers: tuple[str, ...] = (
-                "verification: PASS",
-                "deliberate tampering: REJECTED",
+        golden = example.parent.name == "golden"
+        elapsed, output = run_example(example, golden=golden)
+        if golden:
+            stdout = output.split("stdout:\n", 1)[1].split("\nstderr:\n", 1)[0]
+            try:
+                result = json.loads(stdout)
+            except json.JSONDecodeError as exc:
+                print(f"ERROR: {example.name} did not emit one JSON result: {exc}")
+                return 1
+            required_true = (
+                "chain_verified",
+                "outcome_verified",
+                "proof_bundle_verified",
+                "tamper_rejected",
             )
-        else:
-            required_markers = (
-                '"chain_verified": true',
-                '"outcome_verified": true',
-                '"proof_bundle_verified": true',
-                '"tamper_rejected": true',
-            )
-        missing = [marker for marker in required_markers if marker not in output]
-        if missing:
-            print(f"ERROR: {example.name} missing markers: {missing}")
-            return 1
+            failed = [name for name in required_true if result.get(name) is not True]
+            if failed:
+                print(f"ERROR: {example.name} behavioral result failed: {failed}")
+                return 1
+        # first-evidence-chain.py performs its own assertions and exits non-zero if
+        # admission, verification, or tamper rejection fails; no prose matching is needed.
         print(f"example: {example.relative_to(REPO_ROOT)} PASS ({elapsed:.3f}s)")
     print("product experience: PASS")
     return 0

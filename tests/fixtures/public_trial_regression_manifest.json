@@ -21,7 +21,11 @@
       ],
       "requires_extra": "integrations-openai-agents",
       "qualification_requires_sdk": true,
-      "expected": "eligible response span produces exactly one model_invocation plus runtime evidence; incomplete/error input fails closed"
+      "expected": "eligible response span produces exactly one model_invocation plus runtime evidence; incomplete/error input fails closed",
+      "qualification_tests": [
+        "tests/unit/integrations/test_native_sdk_import_contracts.py::test_real_openai_agents_processor_interface",
+        "tests/unit/integrations/test_native_sdk_import_contracts.py::test_real_openai_agents_native_span_lifecycle"
+      ]
     },
     {
       "case_id": "LC-RAG-SYNTHETIC-001",
@@ -33,7 +37,11 @@
       ],
       "requires_extra": "integrations-langchain",
       "qualification_requires_sdk": true,
-      "expected": "nullable serialized retriever lifecycle pairs; retrieval evidence requires stable IDs and configured context"
+      "expected": "nullable serialized retriever lifecycle pairs; retrieval evidence requires stable IDs and configured context",
+      "qualification_tests": [
+        "tests/unit/integrations/test_native_sdk_import_contracts.py::test_real_langchain_callback_base",
+        "tests/unit/integrations/test_langchain_retriever_lifecycle.py::test_real_base_retriever_nullable_callback_if_installed"
+      ]
     },
     {
       "case_id": "LG-STARTER-CHECKPOINT-002",
@@ -47,7 +55,10 @@
       ],
       "requires_extra": "integrations-langgraph",
       "qualification_requires_sdk": true,
-      "expected": "checkpoint observation remains distinct from completed execution and parent/state identity is preserved"
+      "expected": "checkpoint observation remains distinct from completed execution and parent/state identity is preserved",
+      "qualification_tests": [
+        "tests/unit/integrations/test_native_sdk_import_contracts.py::test_real_langgraph_checkpoint_api"
+      ]
     },
     {
       "case_id": "LI-RAG-ROOT-DIAGNOSTIC-002",
@@ -58,12 +69,31 @@
         "tests/unit/integrations/test_native_sdk_capture.py::test_llamaindex_attachment_defaults_to_root_and_can_detach",
         "tests/unit/integrations/test_native_sdk_capture.py::test_llamaindex_naive_timestamp_uses_labeled_receipt_time",
         "tests/unit/integrations/test_native_sdk_capture.py::test_llamaindex_retrieval_correlates_query_digest_from_start",
-        "tests/unit/integrations/test_native_sdk_capture.py::test_llamaindex_duplicate_native_event_is_idempotent",
-        "tests/unit/integrations/test_native_sdk_import_contracts.py::test_real_llamaindex_event_handler_base"
+        "tests/unit/integrations/test_native_sdk_capture.py::test_llamaindex_duplicate_native_event_is_idempotent"
       ],
       "requires_extra": "integrations-llamaindex",
       "qualification_requires_sdk": true,
-      "expected": "default attachment observes relevant events; timestamp provenance is explicit; retrieval start/end correlates without fabricated time/query"
+      "expected": "default attachment observes relevant events; timestamp provenance is explicit; retrieval start/end correlates without fabricated time/query",
+      "qualification_tests": [
+        "tests/unit/integrations/test_native_sdk_import_contracts.py::test_real_llamaindex_event_handler_base",
+        "tests/unit/integrations/test_native_sdk_import_contracts.py::test_real_llamaindex_root_dispatcher_attachment"
+      ]
+    },
+    {
+      "case_id": "OTEL-GENAI-SPAN-001",
+      "anomaly": "NON_REGRESSION",
+      "repository": "open-telemetry/opentelemetry-python",
+      "commit": "53a5a40c9604583c501bcf13970a635f00e62df4",
+      "source_tests": [
+        "tests/unit/integrations/test_pending_audit_defects.py::test_opentelemetry_does_not_capture_unrelated_spans"
+      ],
+      "requires_extra": "integrations-opentelemetry",
+      "qualification_requires_sdk": true,
+      "expected": "real OpenTelemetry SDK spans use the StateWake SpanProcessor boundary; unrelated spans are ignored and completed GenAI spans preserve bounded runtime evidence without raw attributes",
+      "qualification_tests": [
+        "tests/unit/integrations/test_native_sdk_import_contracts.py::test_real_opentelemetry_span_processor_base",
+        "tests/unit/integrations/test_native_sdk_capture.py::test_real_opentelemetry_sdk_completed_span"
+      ]
     },
     {
       "case_id": "ST-CHATBOT-APPTEST-001",

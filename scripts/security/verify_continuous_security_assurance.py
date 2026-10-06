@@ -35,6 +35,11 @@ FAMILY_TO_INVARIANTS: Final[dict[str, tuple[str, ...]]] = {
     "crypto-trust": ("cryptographic-boundary", "trust-anchor"),
     "deployment-boundary": ("authorization-boundary", "security-audit"),
     "archive-proof": ("portable-proof-integrity",),
+    "release-publication": (
+        "release-publication-authorization-integrity",
+        "registry-publication-reconciliation-integrity",
+        "registry-publication-lifecycle-integrity",
+    ),
     "persistence-recovery": (
         "persistence-integrity",
         "recovery-security-assumptions",
@@ -166,12 +171,35 @@ def classify_change(path: str) -> Change:
         token in normalized for token in ("archive", "proof_bundle", "release_proof")
     ):
         families.add("archive-proof")
+    if (
+        normalized
+        in {
+            "src/statewake/release_trust/publication.py",
+            "src/statewake/release_trust/registry.py",
+        }
+        or normalized.startswith("scripts/release/")
+        and "publication" in normalized
+        or normalized == ".github/workflows/python-publish.yml"
+        or normalized.startswith("tests/unit/release_trust/test_release_publication")
+        or normalized.startswith("tests/unit/release_trust/test_registry_publication")
+        or normalized.startswith("tests/release/test_publication_execution_boundary")
+        or normalized.startswith(
+            "tests/release/test_registry_publication_reconciliation"
+        )
+        or normalized.startswith("tests/release/test_registry_publication_lifecycle")
+    ):
+        families.add("release-publication")
     if any(
         token in normalized
         for token in ("persistence", "recovery", "storage", "operations")
     ):
         families.add("persistence-recovery")
-    if normalized in {"pyproject.toml", "uv.lock"} or normalized.startswith("config/"):
+    if normalized in {
+        "pyproject.toml",
+        "uv.lock",
+        "scripts/common/project_metadata.py",
+        "scripts/common/project_paths.py",
+    }:
         families.add("dependencies-configuration")
     if normalized.startswith("src/") and not families:
         families.add("generic-source")
@@ -228,7 +256,7 @@ def assess(
     classifications = [classify_change(path) for path in changed]
     impacted = tuple(
         sorted(
-            invariant for change in classifications for invariant in change.invariants
+            {invariant for change in classifications for invariant in change.invariants}
         )
     )
     baseline_fingerprint = snapshot_fingerprint(baseline)
@@ -271,11 +299,39 @@ def main() -> int:
         default=Path("docs/security/security_assurance_baseline_manifest.txt"),
     )
     parser.add_argument("--no-reverify", action="store_true")
+    parser.add_argument(
+        "--promote-on-success",
+        action="store_true",
+        help="promote the current security snapshot only after successful re-verification",
+    )
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     root = args.root.resolve()
     baseline = args.baseline if args.baseline.is_absolute() else root / args.baseline
     result = assess(root, baseline, reverify=not args.no_reverify)
+    if args.promote_on_success and result.changed_files:
+        if args.no_reverify:
+            raise ValueError(
+                "cannot promote a changed security snapshot with --no-reverify"
+            )
+        if not result.reverified:
+            verified, returncode = run_security_assurance_reverification(root)
+            if not verified:
+                raise RuntimeError(
+                    "security assurance re-verification failed before baseline promotion "
+                    f"with exit code {returncode}"
+                )
+        if result.state != "VERIFIED":
+            raise RuntimeError(
+                "cannot promote a security snapshot that is not VERIFIED"
+            )
+        current = snapshot(root, exclude={baseline.relative_to(root).as_posix()})
+        write_snapshot_manifest(baseline, current)
+        result = assess(root, baseline, reverify=False)
+        if result.changed_files or result.state != "VERIFIED":
+            raise RuntimeError(
+                "promoted security snapshot did not converge to zero drift"
+            )
     payload = json.dumps(asdict(result), indent=2, sort_keys=True) + "\n"
     if args.output:
         output = args.output if args.output.is_absolute() else root / args.output

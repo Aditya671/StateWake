@@ -496,3 +496,19 @@ def test_state_store_rejects_from_state_mismatch() -> None:
                 raise AssertionError(
                     "state store accepted a mismatched predecessor state"
                 )
+
+
+def test_read_only_history_parser_rejects_partial_tail_without_repair(tmp_path):
+    """Pure history parsing must fail closed and never repair authoritative bytes."""
+    from statewake.adapters.reliability_state import parse_reliability_state_history
+
+    raw = b'{"partial": true}'
+    path = tmp_path / "history.jsonl"
+    path.write_bytes(raw)
+    try:
+        parse_reliability_state_history(path.read_bytes())
+    except ValueError as exc:
+        assert "incomplete final record" in str(exc)
+    else:
+        raise AssertionError("partial history tail was accepted")
+    assert path.read_bytes() == raw

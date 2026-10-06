@@ -184,7 +184,12 @@ class TestSignedReliabilityOutcome(unittest.TestCase):
             t = transition(c)
             store = JsonlReliabilityOutcomeAttestationStore(Path(d) / "a.jsonl")
             att = attest_reliability_outcome(
-                c, t, actor="operator", store=store, occurred_at=NOW
+                c,
+                t,
+                actor="operator",
+                store=store,
+                occurred_at=NOW,
+                signing_key_id="k1",
             )
             private = SigningKey.generate()
             public = private.verify_key.encode()

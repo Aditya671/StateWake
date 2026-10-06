@@ -16,7 +16,7 @@ from datetime import UTC, datetime
 from hashlib import sha256
 from pathlib import Path
 from threading import Lock
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeGuard
 
 from statewake.ai_contracts.observation import ObservationContract
 from statewake.ai_contracts.runtime import RuntimeTraceContract
@@ -128,6 +128,93 @@ def safe_metadata(**items: object) -> dict[str, str]:
     return result
 
 
+@dataclass(frozen=True, slots=True)
+class NativeCaptureFailureRecord:
+    """One privacy-safe failure-journal observation in recorded file order."""
+
+    sequence: int
+    stage: str
+    error_type: str
+
+    def to_dict(self) -> dict[str, object]:
+        """Return the stable public record representation."""
+        return {
+            "sequence": self.sequence,
+            "stage": self.stage,
+            "error_type": self.error_type,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class NativeCaptureFailureJournalSnapshot:
+    """Verified bounded snapshot of one configured native capture failure journal."""
+
+    records: tuple[NativeCaptureFailureRecord, ...]
+    byte_size: int
+    exists: bool
+
+
+def _valid_failure_token(value: object) -> TypeGuard[str]:
+    """Return whether a journal token satisfies the canonical redaction boundary."""
+    return (
+        isinstance(value, str)
+        and 0 < len(value) <= 128
+        and all(char.isascii() and (char.isalnum() or char in "._-") for char in value)
+    )
+
+
+def _failure_record(value: object, sequence: int) -> NativeCaptureFailureRecord:
+    """Parse one canonical privacy-safe journal record."""
+    if not isinstance(value, dict) or set(value) != {"stage", "error_type"}:
+        raise ValueError("invalid failure journal entry")
+    stage = value.get("stage")
+    error_type = value.get("error_type")
+    if not _valid_failure_token(stage) or not _valid_failure_token(error_type):
+        raise ValueError("invalid failure journal entry")
+    return NativeCaptureFailureRecord(sequence, stage, error_type)
+
+
+def read_native_capture_failure_journal_snapshot(
+    path: Path,
+    *,
+    max_bytes: int,
+    max_records: int,
+) -> NativeCaptureFailureJournalSnapshot:
+    """Read one bounded journal snapshot without mutating or following symlink paths."""
+    if max_bytes <= 0 or max_records <= 0:
+        raise ValueError("failure journal read bounds must be positive")
+    path = Path(path)
+    if path.is_symlink() or any(part.is_symlink() for part in path.parents):
+        raise ValueError("failure journal path cannot traverse a symlink")
+    if not path.exists():
+        return NativeCaptureFailureJournalSnapshot((), 0, False)
+    if not path.is_file():
+        raise ValueError("failure journal path must be a file")
+    size = path.stat().st_size
+    if size > max_bytes:
+        raise NativeCaptureCapacityError("failure journal exceeds its size limit")
+    with path.open("rb") as handle:
+        raw = handle.read(max_bytes + 1)
+    if len(raw) > max_bytes:
+        raise NativeCaptureCapacityError("failure journal exceeds its size limit")
+    if raw and not raw.endswith(b"\n"):
+        raise ValueError("failure journal contains a partial trailing entry")
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError("failure journal is not valid UTF-8") from exc
+    records: list[NativeCaptureFailureRecord] = []
+    for line in text.splitlines():
+        if len(records) >= max_records:
+            raise NativeCaptureCapacityError("failure journal exceeds its record limit")
+        try:
+            value = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise ValueError("invalid failure journal entry") from exc
+        records.append(_failure_record(value, len(records)))
+    return NativeCaptureFailureJournalSnapshot(tuple(records), len(raw), True)
+
+
 class NativeCaptureCapacityError(ValueError):
     """The bounded native capture queue cannot admit another result."""
 
@@ -173,35 +260,16 @@ class NativeCaptureSink:
                 part.is_symlink() for part in self.failure_journal.parents
             ):
                 raise ValueError("failure journal path cannot traverse a symlink")
-            if (
-                self.failure_journal.exists()
-                and self.failure_journal.stat().st_size > self.failure_journal_max_bytes
-            ):
-                raise NativeCaptureCapacityError(
-                    "failure journal exceeds its size limit"
-                )
-            if self.failure_journal.exists():
-                with self.failure_journal.open("r", encoding="utf-8") as journal:
-                    for line in journal:
-                        item = json.loads(line)
-                        if (
-                            not isinstance(item, dict)
-                            or set(item) != {"stage", "error_type"}
-                            or not all(
-                                isinstance(item.get(key), str)
-                                and 0 < len(item[key]) <= 128
-                                and all(
-                                    char.isascii() and (char.isalnum() or char in "._-")
-                                    for char in item[key]
-                                )
-                                for key in ("stage", "error_type")
-                            )
-                        ):
-                            raise ValueError("invalid failure journal entry")
-                        self.failure_count += 1
-                        self.failures.append(f"{item['stage']}: {item['error_type']}")
-                        if len(self.failures) > self.failure_capacity:
-                            self.failures.pop(0)
+            snapshot = read_native_capture_failure_journal_snapshot(
+                self.failure_journal,
+                max_bytes=self.failure_journal_max_bytes,
+                max_records=max(1, self.failure_journal_max_bytes),
+            )
+            for item in snapshot.records:
+                self.failure_count += 1
+                self.failures.append(f"{item.stage}: {item.error_type}")
+                if len(self.failures) > self.failure_capacity:
+                    self.failures.pop(0)
 
     def add(self, result: ContractCaptureResult) -> None:
         """Persist if configured; reject overflow without losing evidence silently."""
@@ -223,14 +291,7 @@ class NativeCaptureSink:
 
     def _record_failure(self, stage: str, error_type: str) -> None:
         """Record a privacy-safe failure under the sink lock."""
-        if (
-            not error_type
-            or len(error_type) > 128
-            or not all(
-                char.isascii() and (char.isalnum() or char in "._-")
-                for char in error_type
-            )
-        ):
+        if not _valid_failure_token(error_type):
             error_type = "UnclassifiedError"
         record = {"stage": stage, "error_type": error_type}
         if self.failure_journal is not None:
@@ -261,11 +322,7 @@ class NativeCaptureSink:
     def fail(self, stage: str, exc: Exception) -> None:
         """Journal a failure without persisting the exception message."""
         # Caller-controlled stages must not inject log records or unbounded text.
-        if (
-            not stage
-            or len(stage) > 128
-            or not all(c.isascii() and (c.isalnum() or c in "._-") for c in stage)
-        ):
+        if not _valid_failure_token(stage):
             stage = "native_capture.invalid_stage"
         with self._lock:
             self._record_failure(stage, type(exc).__name__)

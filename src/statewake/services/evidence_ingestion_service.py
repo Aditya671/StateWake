@@ -13,6 +13,7 @@ from ..adapters.evidence_ingestion import (
     LocalEvidenceIngestionAdapter,
 )
 from ..domain.evidence_receipt import ExternalEvidenceReceipt
+from ..domain.governance import PrivacyGovernanceRuntimeConfig
 
 
 def ingest_evidence_file(
@@ -28,11 +29,14 @@ def ingest_evidence_file(
     run_id: str | None = None,
     captured_at: datetime,
     metadata: dict[str, str] | None = None,
+    sensitivity: str = "internal",
+    privacy_governance: PrivacyGovernanceRuntimeConfig | None = None,
 ) -> ExternalEvidenceReceipt:
     """Ingest one external artifact idempotently into existing local storage primitives."""
     adapter = LocalEvidenceIngestionAdapter(
         ContentAddressedArtifactStore(artifact_store_root),
         JsonEvidenceReceiptStore(receipt_store_root),
+        privacy_governance=privacy_governance,
     )
     return adapter.ingest_file(
         path,
@@ -44,6 +48,7 @@ def ingest_evidence_file(
         run_id=run_id,
         captured_at=captured_at,
         metadata=metadata or {},
+        sensitivity=sensitivity,
     )
 
 

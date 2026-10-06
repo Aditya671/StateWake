@@ -13,7 +13,9 @@ release contract
 → wheel build
 → package boundary
 → release provenance
-→ human approval
+→ canonical publication basis
+→ protected human publication authorization
+→ fresh publication execution permit
 ```
 
 Run the deterministic candidate gate with:
@@ -49,4 +51,4 @@ The source-tree digest is a snapshot identity when no Git repository metadata is
 
 ## Approval boundary
 
-The release-candidate process cannot autonomously approve publication. Human release approval remains a required final gate, and a successful candidate run explicitly records `publication_authorized: false` until that decision is made.
+The release-candidate process cannot autonomously approve publication. Candidate evidence continues to record `publication_authorized: false`. The publication workflow separately freezes `ReleasePublicationBasis`, enters the configured protected registry environment, appends canonical human approval evidence, re-checks the current lifecycle and exact distribution bytes, and issues a fresh execution permit immediately before the external Trusted Publishing action. Revoked or superseded approval cannot satisfy a fresh permit.

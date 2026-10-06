@@ -55,4 +55,4 @@ claim.
 
 ## Evidence role
 
-This document defines Tier 4 security assurance evidence and traceability, not a release approval or independent certification. The package maturity classifier is maintained independently in `pyproject.toml`; deployment-specific security controls remain the responsibility of the deploying organization.
+This document defines Tier 4 security assurance evidence and traceability for the published Production/Stable v0.4.1 release. It does not constitute independent certification or independently authorize publication of a future or replacement release. Deployment-specific security controls remain the responsibility of the deploying organization.

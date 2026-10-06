@@ -177,7 +177,7 @@ class ExternalEvidenceReceipt:
             else self.receipt_reference(source=receipt_source),
         )
 
-    def to_evidence_item(self) -> EvidenceItem:
+    def to_evidence_item(self, *, sensitivity: str = "internal") -> EvidenceItem:
         """Adapt the receipt into the existing V1 evidence-manifest contract."""
         metadata = dict(self.metadata)
         metadata.update(
@@ -200,6 +200,7 @@ class ExternalEvidenceReceipt:
             digest=self.artifact_digest,
             content_ref=f"cas:{self.artifact_digest}",
             metadata=metadata,
+            sensitivity=sensitivity,
         )
 
     @classmethod

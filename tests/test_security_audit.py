@@ -8,7 +8,10 @@ from pathlib import Path
 import pytest
 
 from statewake.adapters.deployment_security import SecurityEvent
-from statewake.adapters.security_audit import JsonlSecurityAuditStore
+from statewake.adapters.security_audit import (
+    JsonlSecurityAuditStore,
+    read_security_audit_snapshot,
+)
 
 
 def _event(reason: str = "test") -> SecurityEvent:
@@ -88,3 +91,63 @@ def test_security_event_payload_is_not_persisted(tmp_path: Path) -> None:
     assert "Authorization" not in raw
     assert "secret-token" not in raw
     assert "request-body" not in raw
+
+
+def test_snapshot_reader_is_lock_free_and_bounded(tmp_path: Path) -> None:
+    """Read-only inspection must not create writer locks or exceed ceilings."""
+    path = tmp_path / "security.jsonl"
+    store = JsonlSecurityAuditStore(path)
+    store.append(_event("first"))
+    store.lock_path.unlink(missing_ok=True)
+
+    persisted = path.read_bytes()
+    snapshot = read_security_audit_snapshot(path, max_bytes=4096, max_records=2)
+
+    assert snapshot.exists is True
+    assert b"\r\n" not in persisted
+    assert snapshot.byte_size == len(persisted) == path.stat().st_size
+    assert len(snapshot.records) == 1
+    assert not store.lock_path.exists()
+
+
+def test_snapshot_counts_existing_crlf_audit_by_physical_bytes(tmp_path: Path) -> None:
+    """Existing CRLF journals remain readable and retain physical-byte accounting."""
+    path = tmp_path / "security-crlf.jsonl"
+    store = JsonlSecurityAuditStore(path)
+    expected = store.append(_event("first"))
+    canonical = path.read_bytes()
+    assert b"\r\n" not in canonical
+    crlf = b"\r\n".join(canonical.rstrip(b"\n").split(b"\n")) + b"\r\n"
+    path.write_bytes(crlf)
+
+    snapshot = read_security_audit_snapshot(path, max_bytes=4096, max_records=2)
+
+    assert snapshot.records == (expected,)
+    assert snapshot.byte_size == len(crlf) == path.stat().st_size
+
+
+def test_snapshot_reader_rejects_record_and_byte_limits(tmp_path: Path) -> None:
+    """Bound configured audit sources by both bytes and record count."""
+    path = tmp_path / "security.jsonl"
+    store = JsonlSecurityAuditStore(path)
+    store.append(_event("first"))
+    store.append(_event("second"))
+
+    with pytest.raises(OverflowError, match="record limit"):
+        read_security_audit_snapshot(path, max_bytes=4096, max_records=1)
+    with pytest.raises(OverflowError, match="byte limit"):
+        read_security_audit_snapshot(path, max_bytes=1, max_records=10)
+
+
+def test_snapshot_reader_rejects_symlink_source(tmp_path: Path) -> None:
+    """Never follow a configured security-audit symlink."""
+    source = tmp_path / "source.jsonl"
+    JsonlSecurityAuditStore(source).append(_event())
+    link = tmp_path / "linked.jsonl"
+    try:
+        link.symlink_to(source)
+    except OSError:
+        pytest.skip("symlinks are unavailable in this environment")
+
+    with pytest.raises(ValueError, match="symlink"):
+        read_security_audit_snapshot(link, max_bytes=4096, max_records=10)

@@ -18,8 +18,13 @@ from statewake.services.reliability_outcome_verification_service import (
 from statewake.utils.json_support import metadata_from_cli
 from statewake.utils.time import parse_datetime
 
+from ..adapters.key_management import (
+    ExternalCommandSigningProvider,
+    ExternalSigningAdapter,
+)
 from ..adapters.reliability_attestation import JsonlReliabilityOutcomeAttestationStore
 from ..adapters.reliability_state import JsonlReliabilityStateStore
+from ..domain.key_management import SigningKeyReference
 from ..services.evidence_admission_service import admit_external_evidence
 from ..services.evidence_ingestion_service import (
     ingest_evidence_file,
@@ -29,7 +34,9 @@ from ..services.evidence_ingestion_service import (
 from ..services.release_proof_service import build_release_proof
 from ..services.reliability_attestation_service import (
     attest_reliability_outcome,
+    attest_signed_reliability_outcome,
     load_reliability_outcome_attestation,
+    verify_persisted_signed_reliability_outcome,
     verify_reliability_outcome_binding,
     write_reliability_outcome_attestation,
 )
@@ -65,6 +72,14 @@ from ..services.reliability_state_service import (
     reliability_state_history,
     transition_reliability_state_from_file,
 )
+from ..services.trust_service import (
+    load_attestation_trust_state,
+    load_authority_store,
+    load_verified_attestation_trust_states,
+)
+
+_SIGNED_VERIFY_HISTORY_MAX_BYTES: Final[int] = 16 * 1024 * 1024
+_SIGNED_VERIFY_HISTORY_MAX_RECORDS: Final[int] = 100_000
 
 SUPPORTED_COMMANDS: Final[tuple[str, ...]] = (
     "version",
@@ -118,6 +133,160 @@ def _json(value: object) -> None:
 def _optional_path(value: str | None) -> Path | None:
     """Convert an optional command-line value to a path."""
     return None if value is None else Path(value)
+
+
+def _signed_attestation_requested(args: argparse.Namespace) -> bool:
+    """Return whether any explicit signed-attestation option was supplied."""
+    return any(
+        (
+            args.signer_command is not None,
+            bool(args.signer_arg),
+            args.signing_key_id is not None,
+            args.signing_key_provider is not None,
+            args.signing_key_version is not None,
+            args.signing_key_public_digest is not None,
+            args.attestation_trust_state is not None,
+            args.attestation_authority_store is not None,
+        )
+    )
+
+
+def _validate_signed_attestation_args(args: argparse.Namespace) -> bool:
+    """Validate the all-or-nothing CLI boundary for externally signed attestations."""
+    if not _signed_attestation_requested(args):
+        return False
+    required = {
+        "--signer-command": args.signer_command,
+        "--signing-key-id": args.signing_key_id,
+        "--signing-key-provider": args.signing_key_provider,
+        "--attestation-trust-state": args.attestation_trust_state,
+        "--attestation-authority-store": args.attestation_authority_store,
+    }
+    missing = [flag for flag, value in required.items() if value is None]
+    if missing:
+        raise ValueError(
+            "signed reliability attestation requires: " + ", ".join(missing)
+        )
+    return True
+
+
+def _signed_attestation_verification_requested(args: argparse.Namespace) -> bool:
+    """Return whether signed trust verification options were supplied."""
+    return any(
+        (
+            args.attestation_store is not None,
+            args.attestation_trust_state is not None,
+            args.attestation_trust_history is not None,
+            args.attestation_authority_store is not None,
+        )
+    )
+
+
+def _validate_signed_attestation_verification_args(args: argparse.Namespace) -> bool:
+    """Validate the all-or-nothing signed-attestation verification boundary."""
+    if not _signed_attestation_verification_requested(args):
+        return False
+    missing: list[str] = []
+    if args.attestation_store is None:
+        missing.append("--attestation-store")
+    if args.attestation_authority_store is None:
+        missing.append("--attestation-authority-store")
+    if args.attestation_trust_state is None and args.attestation_trust_history is None:
+        missing.append("--attestation-trust-state/--attestation-trust-history")
+    if missing:
+        raise ValueError(
+            "signed reliability attestation verification requires: "
+            + ", ".join(missing)
+        )
+    return True
+
+
+def _validate_proof_trust_args(args: argparse.Namespace) -> str | None:
+    """Validate manual or canonical signed-proof input as one coherent boundary."""
+    manual = args.signed_attestation is not None
+    canonical = (
+        args.attestation_store is not None or args.attestation_trust_history is not None
+    )
+    if manual and canonical:
+        raise ValueError(
+            "manual --signed-attestation cannot be combined with canonical --attestation-store/--attestation-trust-history"
+        )
+    if canonical:
+        missing: list[str] = []
+        if args.attestation_store is None:
+            missing.append("--attestation-store")
+        if args.attestation_authority_store is None:
+            missing.append("--attestation-authority-store")
+        if (
+            args.attestation_trust_state is None
+            and args.attestation_trust_history is None
+        ):
+            missing.append("--attestation-trust-state/--attestation-trust-history")
+        if missing:
+            raise ValueError(
+                "canonical signed reliability proof requires: " + ", ".join(missing)
+            )
+        return "canonical"
+    if manual:
+        missing = []
+        if args.attestation_trust_state is None:
+            missing.append("--attestation-trust-state")
+        if args.attestation_authority_store is None:
+            missing.append("--attestation-authority-store")
+        if missing:
+            raise ValueError(
+                "manual signed reliability proof requires: " + ", ".join(missing)
+            )
+        return "manual"
+    if (
+        args.attestation_trust_state is not None
+        or args.attestation_authority_store is not None
+    ):
+        raise ValueError(
+            "proof trust-state/authority inputs require --signed-attestation or --attestation-store"
+        )
+    return None
+
+
+def _human_approval_reconciliation_requested(args: argparse.Namespace) -> bool:
+    """Return whether release-proof approval reconciliation was requested."""
+    return any(
+        value is not None
+        for value in (
+            args.human_approval_basis_report,
+            args.human_approval_workspace,
+            args.human_approval_record_id,
+            args.human_approval_producer_id,
+            args.human_approval_action,
+            args.human_approval_scope,
+        )
+    )
+
+
+def _validate_human_approval_reconciliation_args(args: argparse.Namespace) -> bool:
+    """Validate release-proof human-approval inputs as one atomic group."""
+    if not _human_approval_reconciliation_requested(args):
+        return False
+    required = {
+        "--human-approval-basis-report": args.human_approval_basis_report,
+        "--human-approval-workspace": args.human_approval_workspace,
+        "--human-approval-record-id": args.human_approval_record_id,
+        "--human-approval-producer-id": args.human_approval_producer_id,
+        "--human-approval-action": args.human_approval_action,
+        "--human-approval-scope": args.human_approval_scope,
+        "--report": args.report,
+    }
+    missing = [flag for flag, value in required.items() if value is None]
+    if missing:
+        raise ValueError(
+            "release-proof human approval reconciliation requires: "
+            + ", ".join(missing)
+        )
+    if args.human_approval_basis_report == args.report:
+        raise ValueError(
+            "--human-approval-basis-report and --report must be different paths"
+        )
+    return True
 
 
 def _add_evidence_ingest_parser(subparsers: _ParserAdder) -> None:
@@ -209,12 +378,54 @@ def _add_state_and_attestation_parsers(subparsers: _ParserAdder) -> None:
     parser.add_argument("--actor", required=True)
     parser.add_argument("--occurred-at")
     parser.add_argument("--output", type=Path)
+    parser.add_argument(
+        "--signer-command",
+        help="Executable for the statewake-external-signing.v1 provider protocol.",
+    )
+    parser.add_argument(
+        "--signer-arg",
+        action="append",
+        default=[],
+        help="Argument passed to the external signer executable; repeat as needed.",
+    )
+    parser.add_argument(
+        "--signer-timeout-seconds",
+        type=float,
+        default=30.0,
+        help="Maximum time allowed for one external signing request.",
+    )
+    parser.add_argument("--signing-key-id")
+    parser.add_argument("--signing-key-provider")
+    parser.add_argument("--signing-key-version")
+    parser.add_argument("--signing-key-public-digest")
+    parser.add_argument("--attestation-trust-state", type=Path)
+    parser.add_argument("--attestation-authority-store", type=Path)
 
     parser = subparsers.add_parser("reliability-attest-verify")
     parser.add_argument("--attestation", type=Path, required=True)
     parser.add_argument("--chain", type=Path, required=True)
     parser.add_argument("--history", type=Path, required=True)
     parser.add_argument("--subject-id", required=True)
+    parser.add_argument(
+        "--attestation-store",
+        type=Path,
+        help="Canonical JSONL store containing the signed attestation binding.",
+    )
+    parser.add_argument(
+        "--attestation-trust-state",
+        type=Path,
+        help="Current signed attestation trust-state snapshot, when relevant.",
+    )
+    parser.add_argument(
+        "--attestation-trust-history",
+        type=Path,
+        help="Append-only signed trust-state history used to resolve historical bindings.",
+    )
+    parser.add_argument(
+        "--attestation-authority-store",
+        type=Path,
+        help="Independent authority public-key store for trust-state authentication.",
+    )
 
     parser = subparsers.add_parser("reliability-outcome-verify")
     parser.add_argument("--attestation", type=Path, required=True)
@@ -222,6 +433,40 @@ def _add_state_and_attestation_parsers(subparsers: _ParserAdder) -> None:
     parser.add_argument("--history", type=Path, required=True)
     parser.add_argument("--subject-id", required=True)
     parser.add_argument("--evidence-root", type=Path, required=True)
+
+
+def _add_proof_trust_arguments(
+    parser: argparse.ArgumentParser, *, workflow_label: str
+) -> None:
+    """Add the shared signed-trust inputs used by proof-producing workflows."""
+    parser.add_argument(
+        "--signed-attestation",
+        type=Path,
+        help=(
+            "Manual signed envelope input retained for backward-compatible "
+            f"{workflow_label} construction."
+        ),
+    )
+    parser.add_argument(
+        "--attestation-store",
+        type=Path,
+        help="Canonical attestation JSONL store containing the persisted signed binding.",
+    )
+    parser.add_argument(
+        "--attestation-trust-state",
+        type=Path,
+        help="Current signed attestation trust-state snapshot, when relevant.",
+    )
+    parser.add_argument(
+        "--attestation-trust-history",
+        type=Path,
+        help="Authenticated trust-state history used to resolve a historical signing state.",
+    )
+    parser.add_argument(
+        "--attestation-authority-store",
+        type=Path,
+        help="Independent authority public-key store for trust-state authentication.",
+    )
 
 
 def _add_proof_parsers(subparsers: _ParserAdder) -> None:
@@ -251,9 +496,7 @@ def _add_proof_parsers(subparsers: _ParserAdder) -> None:
     parser.add_argument("--history", type=Path, required=True)
     parser.add_argument("--evidence-root", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--signed-attestation", type=Path)
-    parser.add_argument("--attestation-trust-state", type=Path)
-    parser.add_argument("--attestation-authority-store", type=Path)
+    _add_proof_trust_arguments(parser, workflow_label="proof")
 
     parser = subparsers.add_parser("reliability-proof-verify")
     parser.add_argument("bundle", type=Path)
@@ -276,6 +519,33 @@ def _add_proof_parsers(subparsers: _ParserAdder) -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--profile", type=Path)
     parser.add_argument("--report", type=Path)
+    _add_proof_trust_arguments(parser, workflow_label="release-proof")
+    parser.add_argument(
+        "--human-approval-basis-report",
+        type=Path,
+        help="Immutable release verification report digest-bound by canonical approval evidence.",
+    )
+    parser.add_argument(
+        "--human-approval-workspace",
+        type=Path,
+        help="Workspace containing canonical HumanApprovalContract artifacts and receipts.",
+    )
+    parser.add_argument(
+        "--human-approval-record-id",
+        help="Exact canonical report record ID targeted by the approval evidence.",
+    )
+    parser.add_argument(
+        "--human-approval-producer-id",
+        help="Expected server-owned approval producer identity.",
+    )
+    parser.add_argument(
+        "--human-approval-action",
+        help="Expected server-owned approval action.",
+    )
+    parser.add_argument(
+        "--human-approval-scope",
+        help="Expected server-owned approval scope.",
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -405,6 +675,7 @@ def _run_state_transition(args: argparse.Namespace) -> None:
 
 def _run_attestation(args: argparse.Namespace) -> None:
     """Create a reliability outcome attestation from authoritative state."""
+    signed_mode = _validate_signed_attestation_args(args)
     chain = load_reliability_evidence_chain(args.chain)
     history = JsonlReliabilityStateStore(args.history).read(args.subject_id)
     transition = next(
@@ -424,11 +695,55 @@ def _run_attestation(args: argparse.Namespace) -> None:
         if args.occurred_at is None
         else parse_datetime(args.occurred_at, field="occurred_at")
     )
+    store = JsonlReliabilityOutcomeAttestationStore(args.attestation_store)
+    if signed_mode:
+        signing_key = SigningKeyReference(
+            key_id=args.signing_key_id,
+            provider=args.signing_key_provider,
+            version=args.signing_key_version,
+            public_key_digest=args.signing_key_public_digest,
+        )
+        provider = ExternalCommandSigningProvider(
+            (args.signer_command, *args.signer_arg),
+            timeout_seconds=args.signer_timeout_seconds,
+        )
+        binding = attest_signed_reliability_outcome(
+            chain,
+            transition,
+            actor=args.actor,
+            store=store,
+            signing_adapter=ExternalSigningAdapter(provider),
+            signing_key=signing_key,
+            trust_state=load_attestation_trust_state(args.attestation_trust_state),
+            authority_store=load_authority_store(args.attestation_authority_store),
+            occurred_at=occurred_at,
+        )
+        attestation = binding.attestation
+        if args.output is not None:
+            write_reliability_outcome_attestation(attestation, args.output)
+        _json(
+            {
+                "attestation": attestation.to_dict(),
+                "signed_binding": {
+                    "record_type": "signed-reliability-outcome-binding.v1",
+                    "persisted": True,
+                    "signature_envelope_recorded": True,
+                    "attestation_time_binding_recorded": False,
+                    "signing_key": signing_key.to_dict(),
+                    "envelope_digest": binding.trust_context.envelope_digest,
+                    "trust_state_version": binding.trust_context.trust_state_version,
+                    "trust_state_digest": binding.trust_context.trust_state_digest,
+                    "authority_key_id": binding.trust_context.authority_key_id,
+                },
+            }
+        )
+        return
+
     attestation = attest_reliability_outcome(
         chain,
         transition,
         actor=args.actor,
-        store=JsonlReliabilityOutcomeAttestationStore(args.attestation_store),
+        store=store,
         occurred_at=occurred_at,
     )
     if args.output is not None:
@@ -541,6 +856,7 @@ def _run_state(args: argparse.Namespace) -> None:
 
 def _run_attestation_verify(args: argparse.Namespace) -> None:
     """Verify an outcome attestation against state history and its chain."""
+    signed_mode = _validate_signed_attestation_verification_args(args)
     attestation = load_reliability_outcome_attestation(args.attestation)
     chain = load_reliability_evidence_chain(args.chain)
     history = JsonlReliabilityStateStore(args.history).read(args.subject_id)
@@ -553,7 +869,37 @@ def _run_attestation_verify(args: argparse.Namespace) -> None:
             f"reliability-state transition not found: {attestation.transition_id}"
         )
     verify_reliability_outcome_binding(attestation, chain, transition)
-    _json({"verified": True, "attestation_id": attestation.attestation_id})
+    result: dict[str, object] = {
+        "verified": True,
+        "attestation_id": attestation.attestation_id,
+    }
+    if signed_mode:
+        authority_store = load_authority_store(args.attestation_authority_store)
+        trust_states = load_verified_attestation_trust_states(
+            authority_store=authority_store,
+            current_state_path=args.attestation_trust_state,
+            history_path=args.attestation_trust_history,
+            max_history_bytes=_SIGNED_VERIFY_HISTORY_MAX_BYTES,
+            max_history_records=_SIGNED_VERIFY_HISTORY_MAX_RECORDS,
+        )
+        binding = verify_persisted_signed_reliability_outcome(
+            attestation,
+            store=JsonlReliabilityOutcomeAttestationStore(args.attestation_store),
+            trust_states=trust_states,
+            authority_store=authority_store,
+        )
+        context = binding.trust_context
+        result["signed_binding"] = {
+            "record_type": "signed-reliability-outcome-binding.v1",
+            "verified": True,
+            "signature_envelope_recorded": True,
+            "attestation_time_binding_recorded": False,
+            "signing_key_id": context.signing_key_id,
+            "trust_state_version": context.trust_state_version,
+            "trust_state_digest": context.trust_state_digest,
+            "authority_key_id": context.authority_key_id,
+        }
+    _json(result)
 
 
 def _run_outcome_verify(args: argparse.Namespace) -> None:
@@ -614,6 +960,7 @@ def _run_reconciliation_verify(args: argparse.Namespace) -> None:
 
 def _run_proof_bundle(args: argparse.Namespace) -> None:
     """Build a portable reliability proof bundle."""
+    _validate_proof_trust_args(args)
     bundle, report = build_reliability_proof_bundle(
         attestation_path=args.attestation,
         evidence_chain_path=args.chain,
@@ -621,7 +968,9 @@ def _run_proof_bundle(args: argparse.Namespace) -> None:
         evidence_root=args.evidence_root,
         output=args.output,
         signed_attestation_path=args.signed_attestation,
+        attestation_store_path=args.attestation_store,
         attestation_trust_state_path=args.attestation_trust_state,
+        attestation_trust_history_path=args.attestation_trust_history,
         attestation_authority_store_path=args.attestation_authority_store,
     )
     _json(
@@ -702,6 +1051,8 @@ def _run_decision_basis(args: argparse.Namespace) -> None:
 
 def _run_release_proof(args: argparse.Namespace) -> None:
     """Build and report final release-proof verification evidence."""
+    _validate_proof_trust_args(args)
+    _validate_human_approval_reconciliation_args(args)
     bundle, report, evaluation = build_release_proof(
         attestation_path=args.attestation,
         evidence_chain_path=args.chain,
@@ -710,18 +1061,29 @@ def _run_release_proof(args: argparse.Namespace) -> None:
         output=args.output,
         profile_path=args.profile,
         report_path=args.report,
+        signed_attestation_path=args.signed_attestation,
+        attestation_store_path=args.attestation_store,
+        attestation_trust_state_path=args.attestation_trust_state,
+        attestation_trust_history_path=args.attestation_trust_history,
+        attestation_authority_store_path=args.attestation_authority_store,
+        approval_basis_report_path=args.human_approval_basis_report,
+        approval_workspace_path=args.human_approval_workspace,
+        approval_record_id=args.human_approval_record_id,
+        approval_producer_id=args.human_approval_producer_id,
+        approval_action=args.human_approval_action,
+        approval_scope=args.human_approval_scope,
     )
     _json(
         {
-            "bundle_id": bundle.bundle_id,  # type: ignore
-            "manifest_id": bundle.manifest_id,  # type: ignore
+            "bundle_id": bundle.bundle_id,
+            "manifest_id": bundle.manifest_id,
             "profile": {
                 "id": evaluation.profile_id,
                 "version": evaluation.profile_version,
                 "satisfied": evaluation.satisfied,
             },
             "report": report.to_dict(),
-        }  # type: ignore
+        }
     )
 
 

@@ -140,4 +140,13 @@ The repository-side verifier cannot prove:
 
 Those boundaries are documented rather than silently converted into repository-level passes.
 
-# temporary test drift
+## Deterministic candidate identity lifecycle
+
+`verification_manifest.txt` and `candidate-fingerprint.txt` are generated release identity artifacts, not hand-maintained regression fixtures. The canonical source selection remains `scripts/common/release_scope.py`; `scripts/common/release_identity.py` owns generation and validation.
+
+Release orchestration refreshes candidate identity after legitimate source/security-baseline changes and verifies it immediately afterward. Direct verification remains non-mutating so an operator can still detect stale or tampered identity artifacts. Unit/regression tests create isolated candidate copies when they need to exercise stale/fresh identity behavior instead of requiring the checked-in snapshot to match an actively edited development tree.
+
+The continuous-security baseline is different: it is promoted only after successful affected security re-verification. It must never be refreshed before those checks merely to make drift disappear. After successful security-baseline promotion, release identity is refreshed once more so the final candidate fingerprint covers the promoted security evidence.
+
+Release and security verifiers must prefer structured metadata, executable behavior, AST/API structure, and machine-readable results. Human-facing documentation remains required where it is part of the product/release boundary, but exact prose sentences are not a release oracle.
+

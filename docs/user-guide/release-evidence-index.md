@@ -20,13 +20,13 @@ This index maps the public product claims to the evidence that supports them. It
 
 ### Five-minute first chain
 
-`docs/examples/first-evidence-chain.py` creates evidence, admits it, builds and verifies a chain, then mutates the artifact and demonstrates rejection.
+`examples/first-evidence-chain.py` creates evidence, admits it, builds and verifies a chain, then mutates the artifact and demonstrates rejection.
 
 ### Golden applications
 
-- `docs/examples/golden/payment_reliability.py`
-- `docs/examples/golden/enterprise_ai_reliability.py`
-- `docs/examples/golden/municipal_decision_reliability.py`
+- `examples/golden/payment_reliability.py`
+- `examples/golden/enterprise_ai_reliability.py`
+- `examples/golden/municipal_decision_reliability.py`
 
 Each demonstrates a valid path plus an application-specific deliberate failure.
 

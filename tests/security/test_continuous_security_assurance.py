@@ -9,6 +9,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import ModuleType
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 MODULE_PATH = ROOT / "scripts/security/verify_continuous_security_assurance.py"
@@ -79,6 +80,26 @@ class ContinuousSecurityAssuranceTests(unittest.TestCase):
         self.assertIn("crypto-trust", change.families)
         self.assertIn("cryptographic-boundary", change.invariants)
 
+    def test_publication_boundary_change_reopens_publication_assurance(self) -> None:
+        """Publication authority/workflow changes reopen the publication invariant."""
+        for path in (
+            "src/statewake/release_trust/publication.py",
+            "src/statewake/release_trust/registry.py",
+            "scripts/release/verify_publication_execution.py",
+            "scripts/release/reconcile_registry_publication.py",
+            "scripts/release/reconcile_registry_publication_lifecycle.py",
+            ".github/workflows/python-publish.yml",
+        ):
+            change = ASSURANCE_VERIFIER.classify_change(path)
+            self.assertIn("release-publication", change.families)
+            self.assertIn(
+                "release-publication-authorization-integrity", change.invariants
+            )
+            self.assertIn(
+                "registry-publication-reconciliation-integrity", change.invariants
+            )
+            self.assertIn("registry-publication-lifecycle-integrity", change.invariants)
+
     def test_security_evidence_change_invalidates_assurance(self) -> None:
         """A Tier 4 security-evidence edit cannot silently remain current."""
         change = ASSURANCE_VERIFIER.classify_change("docs/security/THREAT_MODEL.md")
@@ -110,13 +131,36 @@ class ContinuousSecurityAssuranceTests(unittest.TestCase):
         """A failing canonical verifier becomes ASSURANCE_BROKEN, not VERIFIED."""
         target = self.root / "src/statewake/adapters/key_management.py"
         target.write_text(target.read_text(encoding="utf-8") + "\n", encoding="utf-8")
-        broken = self.root / "docs/security/THREAT_MODEL.md"
+        broken = self.root / "scripts/security/verify_runtime_containment.py"
         original = broken.read_text(encoding="utf-8")
-        broken.write_text(original.replace("| T01 |", "| TXX |", 1), encoding="utf-8")
+        broken.write_text("def invalid(:\n" + original, encoding="utf-8")
         result = ASSURANCE_VERIFIER.assess(self.root, self.baseline_path, reverify=True)
         self.assertEqual(result.state, "ASSURANCE_BROKEN")
         self.assertTrue(result.reverified is False)
         self.assertNotEqual(result.reverify_returncode, 0)
+
+    def test_promote_on_success_reverifies_then_converges_to_zero_drift(self) -> None:
+        """The SDLC promotion option cannot bless drift without Tier 4 re-verification."""
+        target = self.root / "src/statewake/adapters/key_management.py"
+        target.write_text(target.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+        with patch.object(
+            sys,
+            "argv",
+            [
+                str(MODULE_PATH),
+                "--root",
+                str(self.root),
+                "--baseline",
+                str(self.baseline_path),
+                "--promote-on-success",
+            ],
+        ):
+            self.assertEqual(ASSURANCE_VERIFIER.main(), 0)
+        converged = ASSURANCE_VERIFIER.assess(
+            self.root, self.baseline_path, reverify=False
+        )
+        self.assertEqual(converged.state, "VERIFIED")
+        self.assertFalse(converged.changed_files)
 
     def test_assurance_state_values_are_closed(self) -> None:
         """Only documented assurance states can be emitted."""

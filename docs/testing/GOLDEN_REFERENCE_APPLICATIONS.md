@@ -2,7 +2,7 @@
 
 ## Audit decision
 
-Historical StateWake archives were audited before implementation. No historical archive contained three complete, executable golden applications satisfying the reference-application contract. Existing `docs/examples/first-evidence-chain.py` and the 24-scenario runner are valuable validated references, but neither provides the required three polished producer applications using the StateWake integration SDK.
+Historical StateWake archives were audited before implementation. No historical archive contained three complete, executable golden applications satisfying the reference-application contract. Existing `examples/first-evidence-chain.py` and the 24-scenario runner are valuable validated references, but neither provides the required three polished producer applications using the StateWake integration SDK.
 
 Therefore this stage extends the existing validated example/scenario frontier rather than duplicating or replacing the reliability core.
 
@@ -36,7 +36,7 @@ The three applications execute successfully and the dedicated regression tests r
 - deliberate failure visibility;
 - deliberate evidence-tamper rejection.
 
-The complete suite after this stage contains **221 tests**.
+The dedicated regressions and release product-experience gate execute these applications directly; current suite size is discovered by the test runner rather than recorded as a static documentation invariant.
 
 ## Boundary preservation
 

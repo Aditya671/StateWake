@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Phase 4 makes the local StateWake workspace durable across restart, backup, restore, export, and payload-integrity scenarios without replacing the existing SQLite workspace repository or portable dataset bundle surfaces.
+The local StateWake workspace is durable across restart, backup, restore, export, and payload-integrity scenarios without replacing the existing SQLite workspace repository or portable dataset bundle surfaces.
 
 StateWake still treats the content-addressed artifact store as authoritative for payload bytes and the SQLite database as the operational index. Backup and restore preserve both layers together.
 
@@ -21,7 +21,7 @@ Tests that need isolation should still pass an explicit temporary workspace path
 
 The current physical SQLite schema remains `PRAGMA user_version = 1` and the workspace manifest records `schema_version = "1"`.
 
-Phase 4 adds explicit migration markers under `statewake.workspace.migrations`:
+The workspace keeps explicit migration markers under `statewake.workspace.migrations`:
 
 ```text
 v0001_initial
@@ -29,7 +29,7 @@ v0002_ai_contracts
 v0003_claim_profile_results
 ```
 
-The Phase 1 AI contracts and Phase 2 claim-profile results are persisted through the existing evidence-receipt boundary, so no duplicate physical table was introduced for those payloads. Future physical migrations should add a new module, update the registry, and add a compatibility fixture before changing the repository schema.
+AI contracts and claim-profile results are persisted through the existing evidence-receipt boundary, so no duplicate physical table is introduced for those payloads. Future physical migrations should add a new module, update the registry, and add a compatibility fixture before changing the repository schema.
 
 ## Backup
 

@@ -7,9 +7,8 @@ Thank you for contributing to StateWake. StateWake is reliability infrastructure
 StateWake supports Python 3.11–3.13.
 
 ```bash
-uv sync
+uv sync --locked --group dev --extra integrations
 uv run pytest
-uv run python -m unittest discover -s tests -p 'test_*.py'
 ```
 
 ## Before opening a pull request
@@ -17,14 +16,12 @@ uv run python -m unittest discover -s tests -p 'test_*.py'
 Run the complete local verification set:
 
 ```bash
-uv run python scripts/release/verify_versioning.py
-python -m compileall -q src tests scripts
-uv run pytest
-uv run python -m unittest discover -s tests -p 'test_*.py'
-uv build
+make check
+make sdlc-check
+uv build --no-sources
 ```
 
-Also check that active source does not import from `legacy/` and that all Python modules parse successfully.
+Also check that production imports resolve only from `src/statewake`, that executable examples remain under `examples/`, and that no duplicate implementation authority is introduced outside the package.
 
 ## Engineering principles
 

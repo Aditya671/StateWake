@@ -18,6 +18,10 @@ from .domain.runtime_containment import (
 )
 from .public_api import load_evidence_chain, verify_evidence_chain
 from .services.reliability_proof_bundle_service import verify_reliability_proof_bundle
+from .services.runtime_containment_snapshot_service import (
+    RuntimeContainmentConfigSnapshot,
+    write_runtime_containment_snapshot,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,6 +34,7 @@ class VerificationServiceConfig:
     require_https: bool = True
     allow_insecure_http: bool = False
     runtime_limits: RuntimeContainmentLimits = RuntimeContainmentLimits()
+    runtime_snapshot_path: Path | None = None
 
     def __post_init__(self) -> None:
         """Validate and normalize the instance after initialization."""
@@ -41,6 +46,15 @@ class VerificationServiceConfig:
             object.__setattr__(self, "require_https", False)
         roots = tuple(path.resolve() for path in self.artifact_roots)
         object.__setattr__(self, "artifact_roots", roots)
+        if self.runtime_snapshot_path is not None:
+            snapshot_path = self.runtime_snapshot_path.expanduser()
+            if snapshot_path.is_symlink() or any(
+                parent.is_symlink() for parent in snapshot_path.parents
+            ):
+                raise ValueError(
+                    "runtime containment snapshot path cannot traverse a symlink"
+                )
+            object.__setattr__(self, "runtime_snapshot_path", snapshot_path.resolve())
 
     @classmethod
     def from_environment(cls) -> VerificationServiceConfig:
@@ -52,7 +66,16 @@ class VerificationServiceConfig:
         allow_insecure = os.environ.get(
             "STATEWAKE_ALLOW_INSECURE_HTTP", "0"
         ).lower() in {"1", "true", "yes"}
-        return cls(artifact_roots=roots, allow_insecure_http=allow_insecure)
+        runtime_snapshot = os.environ.get(
+            "STATEWAKE_VERIFICATION_RUNTIME_SNAPSHOT", ""
+        ).strip()
+        return cls(
+            artifact_roots=roots,
+            allow_insecure_http=allow_insecure,
+            runtime_snapshot_path=(
+                Path(runtime_snapshot) if runtime_snapshot else None
+            ),
+        )
 
     def resolve_allowed(self, value: str) -> Path:
         """Resolve one client path only when it is contained by an allowed root."""
@@ -97,6 +120,16 @@ def create_application(
 ) -> WSGIApplication:
     """Create a bounded WSGI verification application."""
     cfg = config or VerificationServiceConfig.from_environment()
+    if cfg.runtime_snapshot_path is not None:
+        snapshot = RuntimeContainmentConfigSnapshot.capture(
+            max_request_bytes=cfg.max_request_bytes,
+            read_only=cfg.read_only,
+            require_https=cfg.require_https,
+            allow_insecure_http=cfg.allow_insecure_http,
+            artifact_root_count=len(cfg.artifact_roots),
+            runtime_limits=cfg.runtime_limits,
+        )
+        write_runtime_containment_snapshot(cfg.runtime_snapshot_path, snapshot)
 
     def application(
         environ: WSGIEnvironment,

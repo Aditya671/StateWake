@@ -99,9 +99,10 @@ class WorkspaceDiagnosticsCollector:
         sizes["database"] = sum(
             _regular_file_bytes(self._root / suffix)
             for suffix in (
-                "statewake.sqlite3",
-                "statewake.sqlite3-wal",
-                "statewake.sqlite3-shm",
+                "statewake.db",
+                "statewake.db-wal",
+                "statewake.db-shm",
+                "statewake.db-journal",
             )
         )
         return WorkspaceStorageReport(

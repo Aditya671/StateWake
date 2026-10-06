@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-"""Verify Tier 13 data-lifecycle and confidentiality evidence."""
+"""Verify Tier 13 data-lifecycle/confidentiality assurance structure."""
 
 from __future__ import annotations
 
@@ -12,21 +11,11 @@ DOC = ROOT / "docs/security/data_lifecycle_confidentiality.md"
 MODULE = ROOT / "src/statewake/domain/data_lifecycle.py"
 OPERATIONS = ROOT / "src/statewake/domain/operations.py"
 TELEMETRY = ROOT / "src/statewake/adapters/opentelemetry.py"
+INGESTION = ROOT / "src/statewake/adapters/evidence_ingestion.py"
+PRIVACY_RUNTIME = ROOT / "src/statewake/services/privacy_governance_runtime_service.py"
 SERVER = ROOT / "src/statewake/server.py"
 TESTS = ROOT / "tests/security/test_data_lifecycle_confidentiality.py"
 
-REQUIRED_DOC_PHRASES = (
-    "Data Lifecycle & Confidentiality Protection",
-    "classification inheritance",
-    "retention",
-    "payload deletion",
-    "historical claim preservation",
-    "minimal disclosure",
-    "encryption at rest",
-    "TLS",
-    "sensitive errors",
-    "not a release",
-)
 REQUIRED_SYMBOLS = (
     "DataLifecyclePolicy",
     "DataLifecycleDecision",
@@ -43,6 +32,8 @@ REQUIRED_TESTS = (
     "test_disclosure_ceiling_blocks_sensitive_objects",
     "test_encryption_and_tls_requirements_are_explicit",
     "test_telemetry_does_not_expose_restricted_evidence",
+    "test_runtime_governance_omits_restricted_evidence_ids_from_telemetry",
+    "test_runtime_governance_rejects_storage_before_artifact_write",
     "test_http_errors_do_not_echo_untrusted_payload",
     "test_operational_bundle_rejects_sensitivity_downgrade",
     "test_disclosed_bundle_excludes_restricted_artifacts",
@@ -59,60 +50,86 @@ class Finding:
     detail: str
 
 
-def _names(path: Path) -> set[str]:
-    """Return function and class names defined by one Python module."""
-    tree = ast.parse(path.read_text(encoding="utf-8"))
+def _tree(path: Path) -> ast.AST:
+    return ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+
+
+def _defined_names(path: Path) -> set[str]:
     return {
         node.name
-        for node in ast.walk(tree)
+        for node in ast.walk(_tree(path))
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
     }
 
 
+def _identifiers(path: Path) -> set[str]:
+    names = _defined_names(path)
+    for node in ast.walk(_tree(path)):
+        if isinstance(node, ast.Name):
+            names.add(node.id)
+        elif isinstance(node, ast.Attribute):
+            names.add(node.attr)
+    return names
+
+
 def verify() -> list[Finding]:
-    """Return missing Tier 13 evidence items."""
+    """Return missing Tier 13 structural evidence items."""
     findings: list[Finding] = []
     if not DOC.is_file():
-        return [Finding("missing-document", str(DOC))]
-    document = DOC.read_text(encoding="utf-8").casefold()
+        findings.append(Finding("missing-document", str(DOC)))
+    elif DOC.stat().st_size == 0:
+        findings.append(Finding("empty-document", str(DOC)))
+
+    for path in (
+        MODULE,
+        OPERATIONS,
+        TELEMETRY,
+        INGESTION,
+        PRIVACY_RUNTIME,
+        SERVER,
+        TESTS,
+    ):
+        if not path.is_file():
+            findings.append(Finding("missing-file", str(path)))
+    if findings:
+        return findings
+
+    names = _defined_names(MODULE)
     findings.extend(
-        Finding("missing-document-evidence", phrase)
-        for phrase in REQUIRED_DOC_PHRASES
-        if phrase.casefold() not in document
+        Finding("missing-symbol", symbol)
+        for symbol in REQUIRED_SYMBOLS
+        if symbol not in names
     )
-    if not MODULE.is_file():
-        findings.append(Finding("missing-module", str(MODULE)))
-    else:
-        names = _names(MODULE)
-        findings.extend(
-            Finding("missing-symbol", symbol)
-            for symbol in REQUIRED_SYMBOLS
-            if symbol not in names
-        )
-    operations = OPERATIONS.read_text(encoding="utf-8")
-    telemetry = TELEMETRY.read_text(encoding="utf-8")
-    server = SERVER.read_text(encoding="utf-8")
-    integration_checks = {
-        "operational-classification-inheritance": "inherit_sensitivity" in operations,
-        "telemetry-redaction": "Redactor" in telemetry
-        and "privacy_policy" in telemetry,
-        "generic-http-error": '"INVALID_REQUEST"' in server
-        and "verification request is invalid" in server,
+
+    integration_requirements = {
+        "operational-classification-inheritance": (OPERATIONS, {"inherit_sensitivity"}),
+        "telemetry-redaction": (TELEMETRY, {"Redactor", "privacy_policy"}),
+        "prewrite-evidence-governance": (
+            INGESTION,
+            {"evaluate_evidence_governance", "storage_allowed", "put"},
+        ),
+        "telemetry-evidence-projection": (
+            TELEMETRY,
+            {"project_manifest_for_telemetry", "privacy_governance"},
+        ),
+        "runtime-policy-evidence": (
+            PRIVACY_RUNTIME,
+            {
+                "write_privacy_governance_runtime_snapshot",
+                "load_privacy_governance_runtime_snapshot",
+            },
+        ),
     }
+    for label, (path, required) in integration_requirements.items():
+        if not required <= _identifiers(path):
+            findings.append(Finding("missing-integration", label))
+
+    test_names = _defined_names(TESTS)
     findings.extend(
-        Finding("missing-integration", name)
-        for name, present in integration_checks.items()
-        if not present
+        Finding("missing-regression", test)
+        for test in REQUIRED_TESTS
+        if test not in test_names
     )
-    if not TESTS.is_file():
-        findings.append(Finding("missing-regression-suite", str(TESTS)))
-    else:
-        test_names = _names(TESTS)
-        findings.extend(
-            Finding("missing-regression", test)
-            for test in REQUIRED_TESTS
-            if test not in test_names
-        )
     return findings
 
 

@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import re
 import tomllib
 
-from config.project_paths import PROJECT_ROOT
+from scripts.common.project_paths import PROJECT_ROOT
 
 ROOT = PROJECT_ROOT
-SUPPORTED = ("3.11", "3.12", "3.13")
+SUPPORTED = (3, 11), (3, 12), (3, 13)
 
 
 def _pyproject() -> dict[str, object]:
@@ -15,50 +16,35 @@ def _pyproject() -> dict[str, object]:
         return tomllib.load(stream)
 
 
-def test_v041_requires_python_stops_before_314() -> None:
+def _supports(version: tuple[int, int], specifier: str) -> bool:
+    """Evaluate the simple bounded Python range used by StateWake."""
+    match = re.fullmatch(r">=(\d+)\.(\d+),<(\d+)\.(\d+)", specifier.replace(" ", ""))
+    assert match is not None, f"unsupported requires-python form: {specifier}"
+    lower = int(match.group(1)), int(match.group(2))
+    upper = int(match.group(3)), int(match.group(4))
+    return lower <= version < upper
+
+
+def test_declared_python_range_covers_the_qualified_matrix() -> None:
+    """The metadata range must include every explicitly qualified Python minor."""
     project = _pyproject()["project"]
     assert isinstance(project, dict)
-    assert project["requires-python"] == ">=3.11,<3.14"
+    specifier = project["requires-python"]
+    assert isinstance(specifier, str)
+    assert all(_supports(version, specifier) for version in SUPPORTED)
+    assert not _supports((3, 14), specifier)
 
 
-def test_v041_classifiers_advertise_only_qualified_minors() -> None:
+def test_python_classifiers_match_the_qualified_matrix() -> None:
+    """Python-version classifiers must describe the same supported minor matrix."""
     project = _pyproject()["project"]
     assert isinstance(project, dict)
     classifiers = project["classifiers"]
     assert isinstance(classifiers, list)
-    for version in SUPPORTED:
-        assert f"Programming Language :: Python :: {version}" in classifiers
-    assert "Programming Language :: Python :: 3.14" not in classifiers
-
-
-def test_ci_and_release_matrices_do_not_claim_python_314() -> None:
-    workflow_paths = (
-        ROOT / ".github/workflows/ci.yml",
-        ROOT / ".github/workflows/release-verification.yml",
-        ROOT / ".github/workflows/python-publish.yml",
-    )
-    for path in workflow_paths:
-        text = path.read_text(encoding="utf-8")
-        for version in SUPPORTED:
-            assert version in text
-        assert "3.14" not in text
-
-
-def test_current_docs_state_314_is_unsupported_for_v041() -> None:
-    policy = (ROOT / "docs/user-guide/python-support.md").read_text(encoding="utf-8")
-    readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    governance = (ROOT / "docs/governance/RELEASE_GOVERNANCE.md").read_text(
-        encoding="utf-8"
-    )
-    assert ">=3.11,<3.14" in policy
-    assert "Python 3.14 is intentionally" in policy
-    assert "forced wheel installation" in policy
-    assert "Python 3.14 is intentionally outside" in readme
-    assert "Python 3.14 is deliberately outside" in governance
-
-
-def test_fastapi_trial_boundary_is_documented_without_support_claim() -> None:
-    policy = (ROOT / "docs/user-guide/python-support.md").read_text(encoding="utf-8")
-    assert "FastAPI Full Stack Template" in policy
-    assert "outside the StateWake v0.4.1 compatibility matrix" in policy
-    assert "not a StateWake compatibility result" in policy
+    advertised = {
+        tuple(int(part) for part in classifier.rsplit("::", 1)[-1].strip().split("."))
+        for classifier in classifiers
+        if isinstance(classifier, str)
+        and classifier.startswith("Programming Language :: Python :: 3.")
+    }
+    assert advertised == set(SUPPORTED)

@@ -8,6 +8,9 @@ from hashlib import sha256
 from pathlib import Path
 from zipfile import ZipFile
 
+from statewake.adapters.reliability_attestation import (
+    JsonlReliabilityOutcomeAttestationStore,
+)
 from statewake.domain.evidence_receipt import ExternalEvidenceReceipt
 from statewake.domain.operations import OperationalArtifact, OperationalBundle
 from statewake.domain.reliability_attestation import SignedReliabilityOutcomeEnvelope
@@ -30,7 +33,10 @@ from ..domain.reliability_proof_bundle import (
 )
 from .operations_service import build_bundle, export_bundle, verify_bundle
 from .reliability_attestation_service import (
+    build_reliability_attestation_trust_context,
     load_reliability_outcome_attestation,
+    resolve_reliability_attestation_trust_state,
+    verify_persisted_signed_reliability_outcome,
     verify_signed_reliability_outcome_envelope,
 )
 from .reliability_evidence_service import load_reliability_evidence_chain
@@ -43,8 +49,12 @@ from .reliability_proof_completeness_service import (
 from .trust_service import (
     load_attestation_trust_state,
     load_authority_store,
+    load_verified_attestation_trust_states,
     verify_attestation_trust_state,
 )
+
+_PROOF_TRUST_HISTORY_MAX_BYTES = 16 * 1024 * 1024
+_PROOF_TRUST_HISTORY_MAX_RECORDS = 100_000
 
 
 def _canonical_json(payload: object) -> bytes:
@@ -112,7 +122,9 @@ def build_reliability_proof_bundle(
     evidence_root: Path,
     output: Path,
     signed_attestation_path: Path | None = None,
+    attestation_store_path: Path | None = None,
     attestation_trust_state_path: Path | None = None,
+    attestation_trust_history_path: Path | None = None,
     attestation_authority_store_path: Path | None = None,
     cryptographic_profile: CryptographicProfile | None = None,
 ) -> tuple[OperationalBundle, ReliabilityOutcomeVerificationReport]:
@@ -132,15 +144,47 @@ def build_reliability_proof_bundle(
             + "; ".join(report.failures)
         )
 
-    trust_inputs = (
-        signed_attestation_path,
-        attestation_trust_state_path,
-        attestation_authority_store_path,
+    manual_trust_requested = signed_attestation_path is not None
+    canonical_trust_requested = (
+        attestation_store_path is not None or attestation_trust_history_path is not None
     )
-    trust_supplied = any(item is not None for item in trust_inputs)
-    if trust_supplied and not all(item is not None for item in trust_inputs):
+    if manual_trust_requested and canonical_trust_requested:
         raise ValueError(
-            "signed_attestation_path, attestation_trust_state_path, and attestation_authority_store_path must be supplied together"
+            "manual signed-attestation input cannot be combined with canonical attestation-store/history input"
+        )
+    if canonical_trust_requested:
+        missing: list[str] = []
+        if attestation_store_path is None:
+            missing.append("attestation_store_path")
+        if attestation_authority_store_path is None:
+            missing.append("attestation_authority_store_path")
+        if (
+            attestation_trust_state_path is None
+            and attestation_trust_history_path is None
+        ):
+            missing.append(
+                "attestation_trust_state_path/attestation_trust_history_path"
+            )
+        if missing:
+            raise ValueError(
+                "canonical signed reliability proof requires: " + ", ".join(missing)
+            )
+    elif manual_trust_requested:
+        missing = []
+        if attestation_trust_state_path is None:
+            missing.append("attestation_trust_state_path")
+        if attestation_authority_store_path is None:
+            missing.append("attestation_authority_store_path")
+        if missing:
+            raise ValueError(
+                "manual signed reliability proof requires: " + ", ".join(missing)
+            )
+    elif (
+        attestation_trust_state_path is not None
+        or attestation_authority_store_path is not None
+    ):
+        raise ValueError(
+            "trust-state/authority inputs require either signed_attestation_path or attestation_store_path"
         )
 
     lineage_closure = verify_reliability_lineage_closure(chain, root=evidence_root)
@@ -149,7 +193,36 @@ def build_reliability_proof_bundle(
     signed_envelope: SignedReliabilityOutcomeEnvelope | None = None
     trust_state = None
     authority_store = None
-    if trust_supplied:
+    if canonical_trust_requested:
+        assert attestation_store_path is not None
+        assert attestation_authority_store_path is not None
+        authority_store = load_authority_store(attestation_authority_store_path)
+        trust_states = load_verified_attestation_trust_states(
+            authority_store=authority_store,
+            current_state_path=attestation_trust_state_path,
+            history_path=attestation_trust_history_path,
+            max_history_bytes=_PROOF_TRUST_HISTORY_MAX_BYTES,
+            max_history_records=_PROOF_TRUST_HISTORY_MAX_RECORDS,
+        )
+        binding = verify_persisted_signed_reliability_outcome(
+            attestation,
+            store=JsonlReliabilityOutcomeAttestationStore(attestation_store_path),
+            trust_states=trust_states,
+            authority_store=authority_store,
+        )
+        signed_envelope = binding.envelope
+        trust_state = resolve_reliability_attestation_trust_state(
+            binding, trust_states=trust_states
+        )
+        trust_context = build_reliability_attestation_trust_context(
+            signed_envelope,
+            trust_state=trust_state,
+            authority_store=authority_store,
+            envelope_artifact_id="proof-attestation-envelope",
+            trust_state_artifact_id="proof-attestation-trust-state",
+            authority_store_artifact_id="proof-attestation-authority-store",
+        )
+    elif manual_trust_requested:
         assert signed_attestation_path is not None
         assert attestation_trust_state_path is not None
         assert attestation_authority_store_path is not None
@@ -163,60 +236,21 @@ def build_reliability_proof_bundle(
         signed_envelope = SignedReliabilityOutcomeEnvelope.from_dict(envelope_payload)
         trust_state = load_attestation_trust_state(attestation_trust_state_path)
         authority_store = load_authority_store(attestation_authority_store_path)
-        verify_attestation_trust_state(attestation_trust_state_path, authority_store)
-        verify_signed_reliability_outcome_envelope(
+        trust_context = build_reliability_attestation_trust_context(
             signed_envelope,
-            trusted_public_keys={
-                anchor.key_id: anchor.public_key for anchor in trust_state.anchors
-            },
             trust_state=trust_state,
-        )
-        signed_attestation = signed_envelope.attestation
-        if signed_envelope.key_id != attestation.signing_key_id:
-            raise ValueError(
-                "signed attestation key id does not match the attestation signing_key_id"
-            )
-        if (
-            signed_attestation.get("attestation_id") != attestation.attestation_id
-            or signed_attestation.get("digest") != attestation.digest
-        ):
-            raise ValueError(
-                "signed attestation does not match the packaged reliability outcome attestation"
-            )
-        anchor = next(
-            (
-                item
-                for item in trust_state.anchors
-                if item.key_id == signed_envelope.key_id
-            ),
-            None,
-        )
-        if anchor is None:
-            raise ValueError(
-                "signed attestation key is absent from the attestation trust state"
-            )
-        if trust_state.authority_key_id not in authority_store:
-            raise ValueError(
-                "attestation trust-state authority key is absent from the authority store"
-            )
-        trust_context = ReliabilityAttestationTrustContext(
-            format_version="1",
+            authority_store=authority_store,
             envelope_artifact_id="proof-attestation-envelope",
-            envelope_digest=sha256(
-                _canonical_json(signed_envelope.to_dict())
-            ).hexdigest(),
-            attestation_id=attestation.attestation_id,
-            attestation_digest=attestation.digest,
-            signing_key_id=signed_envelope.key_id,
-            signing_key_digest=sha256(anchor.public_key).hexdigest(),
             trust_state_artifact_id="proof-attestation-trust-state",
-            trust_state_digest=trust_state.digest(),
-            trust_state_version=trust_state.version,
             authority_store_artifact_id="proof-attestation-authority-store",
-            authority_key_id=trust_state.authority_key_id,
-            authority_key_digest=sha256(
-                authority_store[trust_state.authority_key_id]
-            ).hexdigest(),
+        )
+
+    if trust_context is not None and (
+        trust_context.attestation_id != attestation.attestation_id
+        or trust_context.attestation_digest != attestation.digest
+    ):
+        raise ValueError(
+            "signed attestation does not match the packaged reliability outcome attestation"
         )
 
     evidence_root = evidence_root.resolve()

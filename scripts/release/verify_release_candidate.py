@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import subprocess
 import sys
@@ -16,21 +15,15 @@ PROJECT_CONFIG_BOOTSTRAP = Path(__file__).resolve().parents[2]
 if str(PROJECT_CONFIG_BOOTSTRAP) not in sys.path:
     sys.path.insert(0, str(PROJECT_CONFIG_BOOTSTRAP))
 
-from config.project_paths import PROJECT_ROOT, VERIFICATION_PATH  # noqa: E402
-from scripts.common.release_scope import release_input_files  # noqa: E402
+from scripts.common.project_paths import PROJECT_ROOT, VERIFICATION_PATH  # noqa: E402
+from scripts.common.release_identity import (  # noqa: E402
+    refresh_release_identity,
+    source_tree_digest,
+    validate_release_identity,
+)
+from scripts.release import verify_supply_chain_provenance as supply_chain  # noqa: E402
 
 ROOT = PROJECT_ROOT
-
-
-def _project_version() -> str:
-    """Read the authoritative package version from pyproject.toml."""
-    import tomllib
-
-    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
-    return str(project["project"]["version"])
-
-
-EXPECTED_VERSION = _project_version()
 REQUIRED_DOCS = (
     "docs/user-guide/index.md",
     "docs/user-guide/release.md",
@@ -49,17 +42,33 @@ class GateFailureError(RuntimeError):
     """Raised when an executable release gate fails."""
 
 
-def run_gate(name: str, command: Sequence[str], *, timeout: int) -> dict[str, object]:
+def run_gate(
+    name: str,
+    command: Sequence[str],
+    *,
+    timeout: int | None,
+) -> dict[str, object]:
     """Run one release gate and return machine-readable evidence."""
-    completed = subprocess.run(
-        command,
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-        timeout=timeout,
-        check=False,
-    )
-    result: dict[str, object] = {
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        result: dict[str, object] = {
+            "name": name,
+            "command": list(command),
+            "status": "timed_out",
+            "timeout_seconds": timeout,
+            "stdout": (exc.stdout or "")[-4000:] if isinstance(exc.stdout, str) else "",
+            "stderr": (exc.stderr or "")[-4000:] if isinstance(exc.stderr, str) else "",
+        }
+        raise GateFailureError(json.dumps(result, sort_keys=True)) from exc
+    result = {
         "name": name,
         "command": list(command),
         "returncode": completed.returncode,
@@ -73,31 +82,23 @@ def run_gate(name: str, command: Sequence[str], *, timeout: int) -> dict[str, ob
 
 
 def tree_digest() -> str:
-    """Return a deterministic digest of tracked release-source bytes."""
-    digest = hashlib.sha256()
-    paths = release_input_files(ROOT)
-    for path in paths:
-        relative = path.relative_to(ROOT).as_posix().encode("utf-8")
-        digest.update(len(relative).to_bytes(8, "big"))
-        digest.update(relative)
-        data = path.read_bytes()
-        digest.update(len(data).to_bytes(8, "big"))
-        digest.update(data)
-    return digest.hexdigest()
+    """Return the canonical deterministic digest of release-source bytes."""
+    return source_tree_digest(ROOT)
 
 
 def static_contract() -> dict[str, object]:
-    """Verify release identity and required release documentation locally."""
-    pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
-    package = (ROOT / "src/statewake/__init__.py").read_text(encoding="utf-8")
+    """Verify structured release identity and required release-document inventory."""
+    metadata = supply_chain.project_metadata(ROOT)
     missing = [path for path in REQUIRED_DOCS if not (ROOT / path).is_file()]
-    if f'version = "{EXPECTED_VERSION}"' not in pyproject:
-        raise GateFailureError(f"release candidate version is not v{EXPECTED_VERSION}")
-    if f'__version__ = "{EXPECTED_VERSION}"' not in package:
-        raise GateFailureError(f"package version is not {EXPECTED_VERSION}")
     if missing:
         raise GateFailureError("missing release documents: " + ", ".join(missing))
-    return {"name": "release-contract", "status": "passed", "missing": []}
+    return {
+        "name": "release-contract",
+        "status": "passed",
+        "distribution": metadata["distribution"],
+        "version": metadata["version"],
+        "missing": [],
+    }
 
 
 def _parse_args() -> argparse.Namespace:
@@ -108,20 +109,61 @@ def _parse_args() -> argparse.Namespace:
         type=Path,
         default=VERIFICATION_PATH / "release-candidate-evidence.json",
     )
-    parser.add_argument("--timeout", type=int, default=180)
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=300,
+        help="Per-gate timeout in seconds; use 0 to disable process timeouts.",
+    )
     parser.add_argument("--skip-build", action="store_true")
     return parser.parse_args()
 
 
+def _timeout(value: int) -> int | None:
+    return None if value == 0 else value
+
+
 def main() -> int:
-    """Execute release gates and persist the resulting provenance record."""
+    """Refresh identity, execute release gates, and persist provenance evidence."""
     args = _parse_args()
-    gates: list[dict[str, object]] = [static_contract()]
+    gates: list[dict[str, object]] = []
+    try:
+        identity = refresh_release_identity(ROOT)
+        gates.append(
+            {"name": "release-identity-refresh", "status": "passed", **identity}
+        )
+        validate_release_identity(ROOT)
+        gates.append({"name": "release-identity-verify", "status": "passed"})
+        gates.append(static_contract())
+    except (GateFailureError, ValueError) as exc:
+        preflight_failure = str(exc)
+        record: dict[str, Any] = {
+            "status": "failed",
+            "generated_at": datetime.now(UTC).isoformat(),
+            "source_tree_sha256": tree_digest(),
+            "gates": gates,
+            "failure": preflight_failure,
+            "publication_authorized": False,
+        }
+        output = args.output if args.output.is_absolute() else ROOT / args.output
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(
+            json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        print(json.dumps(record, sort_keys=True))
+        return 1
+
     commands = [
         ("versioning", [sys.executable, "scripts/release/verify_versioning.py"]),
         (
             "compatibility-fixtures",
-            [sys.executable, "-m", "pytest", "tests/test_compatibility_fixtures.py"],
+            [
+                sys.executable,
+                "-m",
+                "pytest",
+                "-q",
+                "tests/test_compatibility_fixtures.py",
+            ],
         ),
         (
             "product-experience",
@@ -140,42 +182,31 @@ def main() -> int:
                 [sys.executable, "scripts/release/verify_package_boundary.py", "dist"],
             )
         )
+    failure: str | None = None
     try:
         for name, command in commands:
-            gates.append(run_gate(name, command, timeout=args.timeout))
-    except (GateFailureError, subprocess.TimeoutExpired) as exc:
-        record: dict[str, Any] = {
-            "status": "failed",
-            "version": EXPECTED_VERSION,
-            "generated_at": datetime.now(UTC).isoformat(),
-            "source_tree_sha256": tree_digest(),
-            "gates": gates,
-            "failure": str(exc),
-        }
-        output = ROOT / args.output
-        output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(
-            json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-        )
-        print(json.dumps(record, sort_keys=True))
-        return 1
+            gates.append(run_gate(name, command, timeout=_timeout(args.timeout)))
+    except GateFailureError as exc:
+        failure = str(exc)
 
+    metadata = supply_chain.project_metadata(ROOT)
     record = {
-        "status": "passed",
-        "version": EXPECTED_VERSION,
+        "status": "passed" if failure is None else "failed",
+        "version": metadata["version"],
         "generated_at": datetime.now(UTC).isoformat(),
         "source_tree_sha256": tree_digest(),
         "gates": gates,
+        "failure": failure,
         "approval": "human-release-approval-required",
         "publication_authorized": False,
     }
-    output = ROOT / args.output
+    output = args.output if args.output.is_absolute() else ROOT / args.output
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(
         json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     print(json.dumps(record, sort_keys=True))
-    return 0
+    return 0 if failure is None else 1
 
 
 if __name__ == "__main__":

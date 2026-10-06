@@ -89,10 +89,10 @@ jobs:
         run: uv run python scripts/release/verify_release_candidate.py --skip-build
 
       - name: Run formatting check
-        run: uv run ruff format --check src tests scripts
+        run: uv run ruff format --check src tests scripts examples
 
       - name: Run lint checks
-        run: uv run ruff check src tests scripts
+        run: uv run ruff check src tests scripts examples
 
       - name: Run strict type checks
         run: uv run --extra integrations mypy
@@ -109,23 +109,43 @@ jobs:
         run: uv run python scripts/release/verify_package_boundary.py dist
 
       - name: Validate distribution metadata
-        run: uvx twine@7.0.0 check dist/*
+        run: uvx twine@7.0.0 check dist/*.whl dist/*.tar.gz
+
+      - name: Stage exact publication distributions
+        run: |
+          rm -rf publish-dist
+          mkdir -p publish-dist release-metadata
+          cp dist/*.whl dist/*.tar.gz publish-dist/
 
       - name: Generate checksums
+        run: sha256sum publish-dist/* > release-metadata/SHA256SUMS
+
+      - name: Freeze canonical publication basis
+        shell: bash
         run: |
-          mkdir -p release-metadata
-          sha256sum dist/* > release-metadata/SHA256SUMS
+          if [ "$GITHUB_EVENT_NAME" = "release" ]; then
+            target="pypi"
+          else
+            target="testpypi"
+          fi
+          cp verification/release-candidate-evidence.json release-metadata/release-candidate-evidence.json
+          uv run python scripts/release/create_publication_basis.py \
+            --target "$target" \
+            --dist publish-dist \
+            --verification-evidence release-metadata/release-candidate-evidence.json \
+            --expected-source-revision "$GITHUB_SHA" \
+            --output release-metadata/publication-basis.json
 
       - name: Generate build provenance
         uses: actions/attest-build-provenance@v3
         with:
-          subject-path: "dist/*"
+          subject-path: "publish-dist/*"
 
       - name: Upload release distributions
         uses: actions/upload-artifact@v4
         with:
           name: statewake-python-distributions
-          path: dist/
+          path: publish-dist/
           if-no-files-found: error
           retention-days: 14
 
@@ -262,11 +282,61 @@ jobs:
       url: https://test.pypi.org/project/statewake-ai/
 
     steps:
+      - name: Check out exact source revision
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install Python 3.13 and locked environment
+        run: |
+          uv python install 3.13
+          uv sync --locked --python 3.13
+
       - name: Download verified distributions
         uses: actions/download-artifact@v4
         with:
           name: statewake-python-distributions
           path: dist
+
+      - name: Download canonical release metadata
+        uses: actions/download-artifact@v4
+        with:
+          name: statewake-release-metadata
+          path: release-metadata
+
+      - name: Record protected-environment publication authorization
+        run: >-
+          uv run python scripts/release/record_publication_authorization_from_github.py
+          --basis release-metadata/publication-basis.json
+          --workspace publication-authority
+          --target testpypi
+
+      - name: Issue fresh publication execution permit
+        run: >-
+          uv run python scripts/release/verify_publication_execution.py
+          --basis release-metadata/publication-basis.json
+          --workspace publication-authority
+          --dist dist
+          --verification-evidence release-metadata/release-candidate-evidence.json
+          --target testpypi
+          --expected-source-revision "$GITHUB_SHA"
+          --output release-metadata/publication-permit.json
+
+      - name: Upload canonical publication authorization evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: statewake-testpypi-publication-authorization
+          path: |
+            publication-authority/
+            release-metadata/publication-basis.json
+            release-metadata/publication-permit.json
+          if-no-files-found: error
+          retention-days: 90
 
       - name: Publish distributions to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
@@ -292,13 +362,179 @@ jobs:
       url: https://pypi.org/project/statewake-ai/
 
     steps:
+      - name: Check out exact source revision
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install Python 3.13 and locked environment
+        run: |
+          uv python install 3.13
+          uv sync --locked --python 3.13
+
       - name: Download verified distributions
         uses: actions/download-artifact@v4
         with:
           name: statewake-python-distributions
           path: dist
 
+      - name: Download canonical release metadata
+        uses: actions/download-artifact@v4
+        with:
+          name: statewake-release-metadata
+          path: release-metadata
+
+      - name: Record protected-environment publication authorization
+        run: >-
+          uv run python scripts/release/record_publication_authorization_from_github.py
+          --basis release-metadata/publication-basis.json
+          --workspace publication-authority
+          --target pypi
+
+      - name: Issue fresh publication execution permit
+        run: >-
+          uv run python scripts/release/verify_publication_execution.py
+          --basis release-metadata/publication-basis.json
+          --workspace publication-authority
+          --dist dist
+          --verification-evidence release-metadata/release-candidate-evidence.json
+          --target pypi
+          --expected-source-revision "$GITHUB_SHA"
+          --output release-metadata/publication-permit.json
+
+      - name: Upload canonical publication authorization evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: statewake-pypi-publication-authorization
+          path: |
+            publication-authority/
+            release-metadata/publication-basis.json
+            release-metadata/publication-permit.json
+          if-no-files-found: error
+          retention-days: 90
+
       - name: Publish distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist/
+
+  reconcile-testpypi:
+    name: Reconcile TestPyPI publication
+    needs:
+      - publish-testpypi
+    if: github.event_name == 'workflow_dispatch' && inputs.repository == 'testpypi'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out exact source revision
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install Python 3.13 and locked environment
+        run: |
+          uv python install 3.13
+          uv sync --locked --python 3.13
+
+      - name: Download publication authorization evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: statewake-testpypi-publication-authorization
+          path: publication-evidence
+
+      - name: Independently reconcile TestPyPI registry bytes
+        run: >-
+          uv run python scripts/release/reconcile_registry_publication.py
+          --basis publication-evidence/release-metadata/publication-basis.json
+          --permit publication-evidence/release-metadata/publication-permit.json
+          --target testpypi
+          --output release-metadata/registry-publication-receipt.json
+
+      - name: Initialize TestPyPI registry lifecycle history
+        run: >-
+          uv run python scripts/release/reconcile_registry_publication_lifecycle.py
+          --basis publication-evidence/release-metadata/publication-basis.json
+          --permit publication-evidence/release-metadata/publication-permit.json
+          --receipt release-metadata/registry-publication-receipt.json
+          --history release-metadata/registry-publication-lifecycle.jsonl
+          --target testpypi
+
+      - name: Upload reconciled TestPyPI publication evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: statewake-testpypi-registry-publication-receipt
+          path: |
+            release-metadata/registry-publication-receipt.json
+            release-metadata/registry-publication-lifecycle.jsonl
+          if-no-files-found: error
+          retention-days: 90
+
+  reconcile-pypi:
+    name: Reconcile PyPI publication
+    needs:
+      - publish-pypi
+    if: github.event_name == 'release' && github.event.action == 'published'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out exact source revision
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install Python 3.13 and locked environment
+        run: |
+          uv python install 3.13
+          uv sync --locked --python 3.13
+
+      - name: Download publication authorization evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: statewake-pypi-publication-authorization
+          path: publication-evidence
+
+      - name: Independently reconcile PyPI registry bytes
+        run: >-
+          uv run python scripts/release/reconcile_registry_publication.py
+          --basis publication-evidence/release-metadata/publication-basis.json
+          --permit publication-evidence/release-metadata/publication-permit.json
+          --target pypi
+          --output release-metadata/registry-publication-receipt.json
+
+      - name: Initialize PyPI registry lifecycle history
+        run: >-
+          uv run python scripts/release/reconcile_registry_publication_lifecycle.py
+          --basis publication-evidence/release-metadata/publication-basis.json
+          --permit publication-evidence/release-metadata/publication-permit.json
+          --receipt release-metadata/registry-publication-receipt.json
+          --history release-metadata/registry-publication-lifecycle.jsonl
+          --target pypi
+
+      - name: Upload reconciled PyPI publication evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: statewake-pypi-registry-publication-receipt
+          path: |
+            release-metadata/registry-publication-receipt.json
+            release-metadata/registry-publication-lifecycle.jsonl
+          if-no-files-found: error
+          retention-days: 90

@@ -32,4 +32,4 @@ The active layers are:
 
 Historical orchestration, scheduling, watchdog, and generic control-plane concepts remain historical reference material and are not current StateWake runtime authorities. New features must extend existing evidence, verification, state, reconciliation, trust, or integration boundaries rather than introduce a competing authority.
 
-This ADR supersedes ADR 0002 as the current domain-model authority while preserving ADR 0002 as historical decision provenance.
+This ADR supersedes the historical ADR 0002 decision as the current domain-model authority. The original ADR 0002 file is not part of the current source tree; its superseded status is recorded in `docs/governance/DECISIONS.md`.

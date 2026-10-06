@@ -11,10 +11,13 @@ from datetime import UTC, datetime
 from typing import Any
 
 from ..domain.events import EventEnvelope
-from ..domain.privacy import (
-    PrivacyPolicy,
-    Redactor,
+from ..domain.evidence import EvidenceManifest
+from ..domain.governance import (
+    PrivacyGovernanceRuntimeConfig,
+    evaluate_evidence_governance,
+    project_manifest_for_telemetry,
 )
+from ..domain.privacy import PrivacyPolicy, Redactor
 
 
 class OpenTelemetryTelemetrySink:
@@ -30,26 +33,55 @@ class OpenTelemetryTelemetrySink:
         *,
         instrumentation_scope: str = "statewake-ai",
         privacy_policy: PrivacyPolicy | None = None,
+        privacy_governance: PrivacyGovernanceRuntimeConfig | None = None,
     ) -> None:
         """Initialize this component with its configured state."""
         if tracer is None or not hasattr(tracer, "start_span"):
             raise TypeError("tracer must provide the OpenTelemetry Tracer API.")
         self.tracer = tracer
+        if privacy_policy is not None and privacy_governance is not None:
+            raise ValueError(
+                "privacy_policy and privacy_governance are mutually exclusive"
+            )
         self.instrumentation_scope = instrumentation_scope
+        effective_privacy = (
+            privacy_governance.privacy_policy
+            if privacy_governance is not None
+            else privacy_policy
+        )
+        self._privacy_governance = privacy_governance
         self._redactor = (
-            Redactor(privacy_policy) if privacy_policy is not None else None
+            Redactor(effective_privacy) if effective_privacy is not None else None
         )
         self._spans: dict[str, Any] = {}
 
-    def emit(self, event: EventEnvelope) -> None:
+    def emit(
+        self,
+        event: EventEnvelope,
+        *,
+        evidence_manifest: EvidenceManifest | None = None,
+    ) -> None:
         """Translate one canonical event into an OpenTelemetry run span/event."""
         if self._redactor is not None:
             event = self._redactor.redact_event(event)
         timestamp = _timestamp_ns(event.occurred_at)
+        if evidence_manifest is not None and evidence_manifest.run_id != event.run_id:
+            raise ValueError("evidence manifest run_id does not match telemetry event")
         if event.event_type == "run.started":
+            attributes = _span_attributes(event)
+            if evidence_manifest is not None:
+                if self._privacy_governance is None:
+                    raise ValueError(
+                        "evidence telemetry projection requires privacy_governance"
+                    )
+                attributes.update(
+                    _evidence_governance_attributes(
+                        evidence_manifest, self._privacy_governance
+                    )
+                )
             span = self.tracer.start_span(
                 event.name or "agent.run",
-                attributes=_span_attributes(event),
+                attributes=attributes,
                 start_time=timestamp,
             )
             self._spans[event.run_id] = span
@@ -80,12 +112,18 @@ def export_recorded_run(
     tracer: Any,
     *,
     privacy_policy: PrivacyPolicy | None = None,
+    privacy_governance: PrivacyGovernanceRuntimeConfig | None = None,
+    evidence_manifest: EvidenceManifest | None = None,
 ) -> None:
     """Export one validated recorded run through the OpenTelemetry bridge."""
-    sink = OpenTelemetryTelemetrySink(tracer, privacy_policy=privacy_policy)
+    sink = OpenTelemetryTelemetrySink(
+        tracer,
+        privacy_policy=privacy_policy,
+        privacy_governance=privacy_governance,
+    )
     try:
         for event in events:
-            sink.emit(event)
+            sink.emit(event, evidence_manifest=evidence_manifest)
     finally:
         sink.close()
 
@@ -93,7 +131,7 @@ def export_recorded_run(
 def inject_trace_context(carrier: dict[str, str], context: Any | None = None) -> None:
     """Inject the active OpenTelemetry trace context into a carrier.
 
-    OpenTelemetry is imported lazily so the base engine remains dependency-light.
+    OpenTelemetry is imported lazily so this helper stays isolated from provider setup.
     """
     from opentelemetry.propagate import inject
 
@@ -141,12 +179,29 @@ def _event_attributes(event: EventEnvelope) -> dict[str, str]:
     return attributes
 
 
+def _evidence_governance_attributes(
+    manifest: EvidenceManifest,
+    runtime: PrivacyGovernanceRuntimeConfig,
+) -> dict[str, str]:
+    """Return metadata-only telemetry attributes allowed by evidence governance."""
+    decision = evaluate_evidence_governance(manifest, runtime.evidence_policy)
+    projected = project_manifest_for_telemetry(manifest, runtime.evidence_policy)
+    visible_ids = tuple(item.evidence_id for item in projected.items)
+    return {
+        "statewake.evidence.manifest_id": manifest.manifest_id,
+        "statewake.evidence.governance_policy_id": decision.policy_id,
+        "statewake.evidence.visible_ids": ",".join(visible_ids),
+        "statewake.evidence.visible_count": str(len(visible_ids)),
+        "statewake.evidence.omitted_count": str(len(manifest.items) - len(visible_ids)),
+    }
+
+
 def _set_terminal_status(span: Any, *, success: bool) -> None:
     """Set the terminal OpenTelemetry status for the completed operation."""
     try:
         from opentelemetry.trace import Status, StatusCode
     except ImportError:
-        # Keep the adapter testable and importable without the optional dependency.
+        # Keep the adapter testable with a minimal tracer double when imports are unavailable.
         span.set_status("OK" if success else "ERROR")
         return
     span.set_status(Status(StatusCode.OK if success else StatusCode.ERROR))

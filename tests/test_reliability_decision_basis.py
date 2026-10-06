@@ -268,6 +268,12 @@ def test_claim_profile_can_prepare_and_bind_decision_basis_before_state_attestat
     )
     assert bound.decision_basis_ref is not None
     assert bound.decision_basis_ref.source == basis_path.name
+    basis = ReliabilityDecisionBasis.from_dict(json.loads(basis_path.read_text()))
+    assert chain.provenance.digest not in basis.input_digests
+    assert chain.integrity.digest not in basis.input_digests
+    assert chain.run.digest in basis.input_digests
+    assert chain.state.digest in basis.input_digests
+    assert chain.evidence[0].digest in basis.input_digests
     assert (
         load_evidence_chain(chain_path).decision_basis_ref == bound.decision_basis_ref
     )

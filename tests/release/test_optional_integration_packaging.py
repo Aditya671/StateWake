@@ -1,4 +1,4 @@
-"""Regression tests for the native SDK optional-integration package boundary."""
+"""Regression tests for native SDK optional-integration package boundaries."""
 
 from __future__ import annotations
 
@@ -7,17 +7,9 @@ import subprocess
 import sys
 import tomllib
 
-from config.project_paths import PROJECT_ROOT
+from scripts.common.project_paths import PROJECT_ROOT
 
 ROOT = PROJECT_ROOT
-
-FRAMEWORK_REQUIREMENTS = {
-    "openai-agents>=0.3,<1",
-    "langchain-core>=0.3,<2",
-    "langgraph>=0.3,<2",
-    "llama-index-core>=0.12,<1",
-    "opentelemetry-sdk>=1.44,<2",
-}
 
 
 def _project() -> dict[str, object]:
@@ -26,48 +18,43 @@ def _project() -> dict[str, object]:
     ]
 
 
-def test_framework_sdks_are_not_base_runtime_dependencies() -> None:
-    """Installing StateWake base must not force any native framework SDK."""
+def _integration_extras() -> dict[str, set[str]]:
     project = _project()
-    raw_dependencies = project["dependencies"]
-    assert isinstance(raw_dependencies, list)
-    assert all(isinstance(item, str) for item in raw_dependencies)
-    dependencies = set(raw_dependencies)
-    assert FRAMEWORK_REQUIREMENTS.isdisjoint(dependencies)
-
-
-def test_each_native_framework_has_one_explicit_extra() -> None:
-    """Each adapter family has an independently requestable dependency boundary."""
-    project = _project()
-    extras = project["optional-dependencies"]  # type: ignore[index]
-    assert extras == {
-        "integrations-openai-agents": ["openai-agents>=0.3,<1"],
-        "integrations-langchain": ["langchain-core>=0.3,<2"],
-        "integrations-langgraph": ["langgraph>=0.3,<2"],
-        "integrations-llamaindex": ["llama-index-core>=0.12,<1"],
-        "integrations-opentelemetry": ["opentelemetry-sdk>=1.44,<2"],
-        "integrations": [
-            "openai-agents>=0.3,<1",
-            "langchain-core>=0.3,<2",
-            "langgraph>=0.3,<2",
-            "llama-index-core>=0.12,<1",
-            "opentelemetry-sdk>=1.44,<2",
-        ],
+    raw = project.get("optional-dependencies", {})
+    assert isinstance(raw, dict)
+    return {
+        str(name): {str(item) for item in values}
+        for name, values in raw.items()
+        if str(name).startswith("integrations-") and isinstance(values, list)
     }
 
 
-def test_all_integrations_extra_is_exact_union() -> None:
-    """The convenience extra cannot silently omit or add a framework family."""
+def test_native_framework_extras_are_independent_from_base_runtime() -> None:
+    """Native SDK extras must remain optional and independently requestable."""
     project = _project()
-    raw_extras = project["optional-dependencies"]
-    assert isinstance(raw_extras, dict)
-    integrations = raw_extras["integrations"]
-    assert isinstance(integrations, list)
-    assert all(isinstance(item, str) for item in integrations)
-    assert set(integrations) == FRAMEWORK_REQUIREMENTS
+    dependencies = project.get("dependencies", [])
+    assert isinstance(dependencies, list)
+    base = {str(item) for item in dependencies}
+    extras = _integration_extras()
+    assert extras
+    component_union = set().union(*extras.values())
+    assert component_union
+    assert base.isdisjoint(component_union)
+    assert all(values for values in extras.values())
 
 
-def test_integrations_module_import_does_not_import_framework_sdks() -> None:
+def test_integrations_convenience_extra_is_union_of_component_extras() -> None:
+    """The aggregate extra follows component extras without a frozen framework list."""
+    project = _project()
+    raw = project.get("optional-dependencies", {})
+    assert isinstance(raw, dict)
+    aggregate = raw.get("integrations")
+    assert isinstance(aggregate, list)
+    component_union = set().union(*_integration_extras().values())
+    assert {str(item) for item in aggregate} == component_union
+
+
+def test_integrations_module_import_does_not_eagerly_import_framework_sdks() -> None:
     """Public integration helpers remain importable without eager SDK imports."""
     script = r"""
 import builtins

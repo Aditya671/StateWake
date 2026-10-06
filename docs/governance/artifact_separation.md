@@ -1,42 +1,26 @@
 # Artifact Separation
 
-StateWake publishes three distinct archive roles:
+StateWake distinguishes source, built distributions, generated verification evidence, and historical release records so one artifact role is not mistaken for another.
 
-1. **Production distribution** — the built wheel plus installation, license,
-   security, third-party notice, changelog, and checksum information.
-2. **Development support** — source, tests, verification scripts, CI definitions,
-   project documentation, build configuration, and review evidence. These files
-   support development and verification but are not installed as production
-   runtime content.
-3. **Complete source** — the full, purpose-renamed project used to create the
-   other two archives.
+## Artifact roles
 
-The originally uploaded candidate is retained unchanged as a separate archival
-artifact. It is not the renamed candidate and must not be mistaken for the
-production distribution.
+1. **Source repository** — `src/`, tests, examples, scripts, UI source, maintained documentation, CI definitions, packaging metadata, and release-governance inputs.
+2. **Python distributions** — the wheel and source distribution produced from the exact candidate by the configured build backend.
+3. **Generated release evidence** — checksums, attestations, SBOMs, audit output, release-candidate evidence, and similar run-specific files produced by verification/publishing workflows.
+4. **Historical release records** — versioned notes and evidence retained beneath `docs/releases/`; these records are not rewritten merely because the current package advances.
 
-## Production inclusion rule
+## Production distribution boundary
 
-The production archive contains only:
+The installable Python runtime is the built `statewake-ai` distribution. Repository tests, scripts, UI source, CI automation, benchmark fixtures, and project documentation support development and verification but are not installed as runtime package modules unless the build configuration explicitly includes them.
 
-- `statewake_ai-0.4.0-py3-none-any.whl`;
-- `README.md`;
-- `LICENSE`;
-- `SECURITY.md`;
-- `THIRD_PARTY_NOTICES.md`;
-- `CHANGELOG.md`;
-- `SHA256SUMS.txt`;
-- `PRODUCTION_ARTIFACT.md`.
+Built filenames are derived from the authoritative project metadata rather than hard-coded in governance policy. For example, a release wheel follows the normalized distribution/version form produced by the build backend (such as `statewake_ai-<version>-py3-none-any.whl`).
 
-The wheel is the executable Python distribution. Repository tests, development
-scripts, CI automation, release evidence, source history, and design documents
-remain in the development-support and complete-source archives.
+## Generated-output rule
+
+`dist/`, `build/`, verification output, runtime workspaces, caches, UI build products, and local evidence are generated surfaces. They must not become source authorities and are excluded from maintained source identity except where a release workflow deliberately stages exact built distributions for publication evidence.
 
 ## Naming rule
 
-Active files are named by purpose using lowercase `snake_case`. Historical
-sequence identifiers such as `tier4` through `tier15` are not used in active
-file, test-module, or verifier-module names. Historical narrative may still
-refer to tiers where that wording describes the original architecture roadmap.
+Active files are named by purpose. Development-sequence identifiers such as historical `tier*` or `phase*` labels are not used in active file/module/test names when a stable purpose name exists. Historical release records and immutable evidence may retain original names where changing them would falsify the record.
 
-The complete mapping is recorded in `rename_map.tsv`.
+The maintained rename history is recorded in `docs/governance/rename_map.tsv`.

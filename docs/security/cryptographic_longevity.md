@@ -14,6 +14,12 @@ Historical verification is distinct from permission to perform new signing. A re
 
 Existing proof bundles remain unchanged when no cryptographic profile is supplied. Tier 15 metadata is an additive optional field, allowing older evidence to remain readable while new evidence can make the cryptographic contract explicit.
 
+## Durable attestation trust-state history
+
+The attestation trust domain now has an append-only JSONL history authority for signed `SignedAttestationTrustState` snapshots. Each append authenticates the supplied snapshot, requires exact version progression and predecessor-digest continuity, preserves public-key identity, and rejects lifecycle reactivation. The bounded reader independently revalidates the structural chain; operator-facing lifecycle conclusions are derived only when all stored snapshots authenticate against an independently configured authority store.
+
+The history provides migration evidence, not attestation-time signing proof. Existing `ReliabilityOutcomeAttestation` records contain a `signing_key_id` but no trust-state version/digest binding and no signed envelope, so StateWake does not infer which historical state governed a particular attestation from timestamps alone. A revoked or superseded key remains historically inspectable without regaining current signing authority.
+
 ## Security boundary
 
 Private signing keys remain outside StateWake. Enterprise KMS/HSM, network protection, certificate infrastructure, and external key custody remain deployment/provider responsibilities.

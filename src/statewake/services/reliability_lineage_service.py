@@ -130,21 +130,40 @@ def build_reliability_lineage_closure(
             )
         basis = load_object(basis_path)
         input_digests = tuple(str(item) for item in basis.get("input_digests", []))  # type: ignore
-        chain_input_digests = {
+        lineage_input_digests = {
             chain.run.digest,
             chain.state.digest,
             *(item.digest for item in chain.evidence),
         }
         if chain.reconciliation_ref is not None:
-            chain_input_digests.add(chain.reconciliation_ref.digest)
+            lineage_input_digests.add(chain.reconciliation_ref.digest)
         if chain.recovery_ref is not None:
-            chain_input_digests.add(chain.recovery_ref.digest)
-        missing = [item for item in input_digests if item not in chain_input_digests]
+            lineage_input_digests.add(chain.recovery_ref.digest)
+        if chain.comparison_ref is not None:
+            lineage_input_digests.add(chain.comparison_ref.digest)
+
+        # Decision bases can legitimately bind verification-context artifacts that
+        # cannot themselves be provenance-graph nodes.  In particular, the
+        # provenance graph file cannot contain a stable node whose digest is the
+        # digest of the graph file that contains that node without creating a
+        # self-referential digest cycle.  Integrity and attestation artifacts are
+        # likewise verification context rather than required graph lineage nodes.
+        verification_context_digests = {
+            chain.provenance.digest,
+            chain.integrity.digest,
+        }
+        if chain.attestation_ref is not None:
+            verification_context_digests.add(chain.attestation_ref.digest)
+
+        allowed_input_digests = lineage_input_digests | verification_context_digests
+        missing = [item for item in input_digests if item not in allowed_input_digests]
         if missing:
             raise ValueError(
                 f"decision-basis input is outside the reliability chain lineage: {missing}"
             )
         for digest in input_digests:
+            if digest in verification_context_digests:
+                continue
             role_candidates = [item for item in bindings if item.digest == digest]
             if not role_candidates:
                 raise ValueError(

@@ -20,14 +20,17 @@ from .first_party_evidence import (
     OpenTelemetryTraceAdapter,
 )
 from .jsonl_store import JsonlEventStore
-from .key_management import ExternalSigningAdapter
+from .key_management import ExternalCommandSigningProvider, ExternalSigningAdapter
 from .opentelemetry import (
     OpenTelemetryTelemetrySink,
     export_recorded_run,
     extract_trace_context,
     inject_trace_context,
 )
-from .reliability_attestation import JsonlReliabilityOutcomeAttestationStore
+from .reliability_attestation import (
+    JsonlReliabilityOutcomeAttestationStore,
+    SignedReliabilityOutcomeBinding,
+)
 from .reliability_state import (
     JsonlReliabilityStateStore,
     ReliabilityStateStore,
@@ -48,6 +51,7 @@ __all__ = [
     "EvidenceIngestionFileKwargs",
     "EvidenceIngestionKwargs",
     "EvidenceReceiptStore",
+    "ExternalCommandSigningProvider",
     "ExternalSigningAdapter",
     "FileEvidenceAdapter",
     "IncidentRecoveryRecordAdapter",
@@ -55,6 +59,7 @@ __all__ = [
     "JsonEvidenceReceiptStore",
     "JsonlEventStore",
     "JsonlReliabilityOutcomeAttestationStore",
+    "SignedReliabilityOutcomeBinding",
     "JsonlReliabilityStateStore",
     "LocalEvidenceIngestionAdapter",
     "OpenTelemetryTelemetrySink",

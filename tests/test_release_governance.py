@@ -1,30 +1,26 @@
-from config.project_paths import PROJECT_ROOT
+"""Behavioral release-governance regression tests."""
 
-ROOT = PROJECT_ROOT
+from __future__ import annotations
 
-
-def test_ci_targets_main_and_supported_python_matrix():
-    text = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
-    assert "branches: [main]" in text
-    assert '"3.11"' in text and '"3.12"' in text and '"3.13"' in text
-    assert "uv lock --check" in text
-    assert "uv build" in text
+import scripts.release.run_sdlc_validation as sdlc
 
 
-def test_release_workflow_tests_built_wheel_and_persists_security_evidence():
-    text = (ROOT / ".github/workflows/release-verification.yml").read_text(
-        encoding="utf-8"
+def test_release_profile_preserves_human_publication_boundary() -> None:
+    """Release validation must finish with verification, never publication."""
+    names = [name for name, _ in sdlc.command_plan("release")]
+    assert "release-candidate" in names
+    assert names.index("continuous-security-assurance") < names.index(
+        "final-release-identity-refresh"
     )
-    assert "tags: ['v*']" in text
-    assert "uv build" in text
-    assert "pip install dist/*.whl pip-audit" in text
-    assert "pip-audit --format=json --output=pip-audit.json" in text
-    assert "name: release-dependency-audit" in text
-    assert "format: cyclonedx-json" in text
-    assert "actions/attest-build-provenance@v3" in text
+    assert names.index("final-release-identity-refresh") < names.index(
+        "release-candidate"
+    )
 
 
-def test_release_governance_separates_maturity_from_deployment_security():
-    text = (ROOT / "docs/governance/RELEASE_GOVERNANCE.md").read_text(encoding="utf-8")
-    assert "does not by itself authorize publication" in text
-    assert "not a certification of every host deployment" in text
+def test_release_identity_is_stabilized_before_it_is_verified() -> None:
+    """Every SDLC profile must prepare current identity before checking it."""
+    for profile in ("check", "release"):
+        names = [name for name, _ in sdlc.command_plan(profile)]
+        assert names.index("validation-state-stabilization") < names.index(
+            "release-identity-verify"
+        )

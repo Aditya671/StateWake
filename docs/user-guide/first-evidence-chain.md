@@ -9,7 +9,7 @@ artifact → receipt → admission/binding → evidence chain → verify → tam
 Run:
 
 ```bash
-python docs/examples/first-evidence-chain.py
+python examples/first-evidence-chain.py
 ```
 
 The example creates one small local JSON artifact, creates a producer receipt, persists a chain through the public loader, verifies the chain, then changes the source artifact. The final verification must reject the tampered bytes.

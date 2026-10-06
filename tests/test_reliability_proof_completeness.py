@@ -11,7 +11,7 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 
-from config.project_paths import PROJECT_ROOT, SRC_PATH
+from scripts.common.project_paths import PROJECT_ROOT, SRC_PATH
 from statewake.domain.reliability_proof_completeness import ReliabilityProofCompleteness
 from statewake.services.reliability_proof_bundle_service import (
     build_reliability_proof_bundle,

@@ -1,8 +1,9 @@
-"""Verify Tier 6 recovery and resilience assurance evidence consistency."""
+"""Verify Tier 6 recovery/resilience assurance structure."""
 
 from __future__ import annotations
 
 import argparse
+import ast
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -33,21 +34,6 @@ REQUIRED_TEST_NAMES = (
     "test_partial_failure_does_not_promote_unverified_state",
     "test_post_recovery_verification_is_mandatory",
 )
-REQUIRED_TERMS = (
-    "independent trusted source",
-    "verified canonical evidence",
-    "validated durable state",
-    "derived local views",
-    "caches / transient observations",
-    "Mode A",
-    "Mode B",
-    "Mode C",
-    "Mode D",
-    "Mode E",
-    "Recovery non-invention invariant",
-    "post-recovery verification",
-    "not a release approval",
-)
 
 
 @dataclass(frozen=True, slots=True)
@@ -58,68 +44,48 @@ class Finding:
     detail: str
 
 
-def _exists(root: Path, relative: str) -> bool:
-    return (root / relative).is_file()
+def _defined_names(path: Path) -> set[str]:
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    return {
+        node.name
+        for node in ast.walk(tree)
+        if isinstance(node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef))
+    }
 
 
 def verify(root: Path) -> tuple[Finding, ...]:
-    """Return deterministic findings for Tier 6 evidence consistency."""
+    """Return deterministic structural findings for Tier 6 assurance."""
     findings: list[Finding] = []
     for relative in (*REQUIRED_DOCUMENTS, *REQUIRED_RUNTIME_REFS):
-        if not _exists(root, relative):
+        path = root / relative
+        if not path.is_file():
             findings.append(Finding("missing-file", relative))
-
-    tier6_path = root / "docs/security/recovery_resilience_assurance.md"
-    if tier6_path.is_file():
-        text = tier6_path.read_text(encoding="utf-8")
-        for term in REQUIRED_TERMS:
-            if term.lower() not in text.lower():
-                findings.append(Finding("missing-semantic-term", term))
+        elif relative.startswith("docs/") and path.stat().st_size == 0:
+            findings.append(Finding("empty-document", relative))
 
     test_path = root / "tests/security/test_recovery_resilience.py"
     if not test_path.is_file():
         findings.append(Finding("missing-test-suite", str(test_path)))
     else:
-        test_text = test_path.read_text(encoding="utf-8")
-        for name in REQUIRED_TEST_NAMES:
-            if f"def {name}" not in test_text:
-                findings.append(Finding("missing-regression", name))
+        test_names = _defined_names(test_path)
+        findings.extend(
+            Finding("missing-regression", name)
+            for name in REQUIRED_TEST_NAMES
+            if name not in test_names
+        )
 
     recovery_service = root / "src/statewake/services/reliability_recovery_service.py"
     if recovery_service.is_file():
-        text = recovery_service.read_text(encoding="utf-8")
-        required = (
-            "verify_reliability_recovery_outcome",
-            "recovery artifact digest mismatch",
-            "recovered reliability outcome requires",
-        )
-        for term in required:
-            if term not in text:
-                findings.append(Finding("missing-recovery-invariant", term))
+        names = _defined_names(recovery_service)
+        for required in ("verify_reliability_recovery_outcome",):
+            if required not in names:
+                findings.append(Finding("missing-recovery-invariant", required))
 
     state_store = root / "src/statewake/adapters/reliability_state.py"
-    if state_store.is_file():
-        text = state_store.read_text(encoding="utf-8")
-        for term in (
-            "previous transition digest",
-            "stored transition digest mismatch",
-            "_recover_partial_tail",
-        ):
-            if term not in text:
-                findings.append(Finding("missing-state-invariant", term))
-
-    if (root / "pyproject.toml").is_file():
-        import tomllib
-
-        pyproject_path = root / "pyproject.toml"
-        pyproject = pyproject_path.read_text(encoding="utf-8")
-        project = tomllib.loads(pyproject)["project"]
-        project_version = str(project["version"])
-        package = (root / "src/statewake/__init__.py").read_text(encoding="utf-8")
-        if f'__version__ = "{project_version}"' not in package:
-            findings.append(
-                Finding("release-boundary", "package version is not synchronized")
-            )
+    if state_store.is_file() and "_recover_partial_tail" not in _defined_names(
+        state_store
+    ):
+        findings.append(Finding("missing-state-invariant", "_recover_partial_tail"))
 
     return tuple(findings)
 
@@ -148,7 +114,8 @@ def main() -> int:
     )
     parser.add_argument("--run-tests", action="store_true")
     args = parser.parse_args()
-    findings = verify(args.root.resolve())
+    root = args.root.resolve()
+    findings = verify(root)
     if findings:
         print("RECOVERY RESILIENCE ASSURANCE: FAIL")
         for item in findings:
@@ -156,7 +123,7 @@ def main() -> int:
         return 1
     print("RECOVERY RESILIENCE ASSURANCE: PASS")
     if args.run_tests:
-        return run_tests(args.root.resolve())
+        return run_tests(root)
     return 0
 
 

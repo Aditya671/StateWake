@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import scripts.release.verify_repository_structure as verifier
-from config.project_paths import PROJECT_ROOT
+from scripts.common.project_paths import PROJECT_ROOT
 
 ROOT = PROJECT_ROOT
 

@@ -23,7 +23,11 @@ jobs:
       - run: uv lock --check
       - run: uv python install 3.13
       - run: uv sync --locked --python 3.13
-      - run: uv run python scripts/release/verify_versioning.py
+      - name: Refresh candidate release identity
+        run: uv run --no-sync python scripts/release/refresh_release_identity.py
+      - name: Verify candidate release identity
+        run: uv run --no-sync python scripts/release/verify_release_identity.py
+      - run: uv run --no-sync python scripts/release/verify_versioning.py
       - run: uv build
       - run: uv run python scripts/release/verify_package_boundary.py dist
       - id: paths

@@ -14,7 +14,7 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
-from config.project_paths import PROJECT_ROOT, SRC_PATH
+from scripts.common.project_paths import PROJECT_ROOT, SRC_PATH
 from statewake.adapters.jsonl_store import JsonlEventStore
 from statewake.domain.events import EventEnvelope
 from statewake.domain.provenance import ProvenanceGraph, ProvenanceNode

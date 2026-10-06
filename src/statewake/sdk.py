@@ -16,6 +16,7 @@ from .adapters.evidence_ingestion import (
     LocalEvidenceIngestionAdapter,
 )
 from .domain.evidence_receipt import ExternalEvidenceReceipt
+from .domain.governance import PrivacyGovernanceRuntimeConfig
 from .utils.json_support import JsonValue
 
 
@@ -79,11 +80,13 @@ class StateWakeClient:
         context: IntegrationContext,
         *,
         root: Path = Path(".statewake"),
+        privacy_governance: PrivacyGovernanceRuntimeConfig | None = None,
     ) -> StateWakeClient:
         """Create a local client using StateWake's content and receipt stores."""
         ingestion = LocalEvidenceIngestionAdapter(
             ContentAddressedArtifactStore(root / "artifacts"),
             JsonEvidenceReceiptStore(root / "receipts"),
+            privacy_governance=privacy_governance,
         )
         return cls(ingestion, context)
 
@@ -101,6 +104,7 @@ class StateWakeClient:
         source_event_id: str | None = None,
         captured_at: datetime | None = None,
         metadata: Mapping[str, str] | None = None,
+        sensitivity: str = "internal",
     ) -> ExternalEvidenceReceipt:
         """Capture raw producer bytes through the canonical receipt boundary."""
         if not producer_type.strip():
@@ -124,6 +128,7 @@ class StateWakeClient:
                 run_id=self._context.run_id,
                 captured_at=timestamp,
                 metadata=merged_metadata,
+                sensitivity=sensitivity,
             )
         except ValueError as exc:
             message = str(exc)
@@ -141,6 +146,7 @@ class StateWakeClient:
         source_event_id: str | None = None,
         captured_at: datetime | None = None,
         metadata: Mapping[str, str] | None = None,
+        sensitivity: str = "internal",
     ) -> ExternalEvidenceReceipt:
         """Capture one existing producer artifact through the canonical boundary."""
         if not path.is_file():
@@ -152,6 +158,7 @@ class StateWakeClient:
             source_event_id=source_event_id,
             captured_at=captured_at,
             metadata=metadata,
+            sensitivity=sensitivity,
         )
 
     def verify_receipt(self, receipt: ExternalEvidenceReceipt) -> None:

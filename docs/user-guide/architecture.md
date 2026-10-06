@@ -31,9 +31,9 @@ Adapters connect StateWake to storage, runtime evidence, attestations, operation
 
 Existing evaluation, testing, replay, telemetry, and runtime systems can remain authoritative producers. StateWake consumes their evidence through explicit boundaries rather than absorbing their entire product responsibilities.
 
-## Legacy boundary
+## Historical boundary
 
-Historical implementations that do not belong to the V1 product are retained in the `repository history` historical archive for reference only. They are not active runtime dependencies and must not become accidental public API.
+Superseded architectural decisions and prior release records are retained in their maintained historical locations under `docs/adr/historical/` and `docs/releases/`. Historical material is not an active runtime dependency and must not become accidental public API.
 
 ## Architecture principle
 

@@ -9,6 +9,7 @@ from typing import Any
 from uuid import uuid4
 
 from ..domain.data_lifecycle import DataLifecycleDecision, DataLifecyclePolicy
+from ..domain.governance import PrivacyGovernanceRuntimeConfig
 from ..services.persistence import atomic_write_text
 from .analytical import AnalyticalQueryResult
 from .backup import WorkspaceBackupResult, create_workspace_backup
@@ -68,15 +69,22 @@ class StateWakeWorkspace:
         configuration: WorkspaceConfiguration,
         identity: WorkspaceIdentity,
         repository: StateWakeRepository | None = None,
+        *,
+        read_only: bool = False,
+        privacy_governance: PrivacyGovernanceRuntimeConfig | None = None,
     ) -> None:
         """Initialize an already-created workspace from its validated identity."""
         self._configuration = configuration
         self._identity = identity
         self._repository = repository or SqliteWorkspaceRepository(
-            configuration.database_path
+            configuration.database_path, read_only=read_only
         )
+        self._read_only = read_only
+        self._privacy_governance = privacy_governance
         self._ingestion = WorkspaceIngestionAdapter(
-            configuration.root, self._repository
+            configuration.root,
+            self._repository,
+            privacy_governance=privacy_governance,
         )
         self._closed = False
         self._operation_lock_path = (
@@ -92,6 +100,8 @@ class StateWakeWorkspace:
         root: Path | str = Path("data/statewake"),
         *,
         repository: StateWakeRepository | None = None,
+        privacy_governance: PrivacyGovernanceRuntimeConfig | None = None,
+        privacy_governance_snapshot_path: Path | None = None,
     ) -> StateWakeWorkspace:
         """Create or reopen a workspace at the supplied filesystem root."""
         configuration = cls._configuration_for(root)
@@ -103,12 +113,52 @@ class StateWakeWorkspace:
             else:
                 identity = cls._create_identity(configuration)
                 cls._write_manifest(configuration, identity)
-            workspace = cls(configuration, identity, repository=repository)
+            workspace = cls(
+                configuration,
+                identity,
+                repository=repository,
+                privacy_governance=privacy_governance,
+            )
             workspace._repository.initialize()
             with workspace._repository.transaction() as transaction:
                 transaction.set_workspace_metadata(identity, _statewake_version())
             workspace.recover()
+            if privacy_governance_snapshot_path is not None:
+                if privacy_governance is None:
+                    raise ValueError(
+                        "privacy_governance_snapshot_path requires privacy_governance"
+                    )
+                from ..services.privacy_governance_runtime_service import (
+                    write_privacy_governance_runtime_snapshot,
+                )
+
+                write_privacy_governance_runtime_snapshot(
+                    privacy_governance_snapshot_path, privacy_governance
+                )
         return workspace
+
+    @classmethod
+    def open_read_only(
+        cls,
+        root: Path | str = Path("data/statewake"),
+    ) -> StateWakeWorkspace:
+        """Open an existing workspace without creating, repairing, or locking it."""
+        configuration = cls._configuration_for(root)
+        if not configuration.root.is_dir():
+            raise WorkspaceManifestError("workspace root does not exist.")
+        if not configuration.manifest_path.is_file():
+            raise WorkspaceManifestError("workspace manifest is missing.")
+        identity = cls._read_manifest(configuration)
+        repository = SqliteWorkspaceRepository(
+            configuration.database_path, read_only=True
+        )
+        repository.initialize()
+        return cls(
+            configuration,
+            identity,
+            repository=repository,
+            read_only=True,
+        )
 
     @classmethod
     def restore_backup(
@@ -152,6 +202,16 @@ class StateWakeWorkspace:
         return self._closed
 
     @property
+    def read_only(self) -> bool:
+        """Return whether this handle forbids every workspace mutation."""
+        return self._read_only
+
+    def _require_writable(self) -> None:
+        """Reject mutations through the read-only inspection boundary."""
+        if self._read_only:
+            raise WorkspaceError("workspace handle is read-only")
+
+    @property
     def repository(self) -> StateWakeRepository:
         """Return the durable operational-index repository."""
         return self._repository
@@ -160,6 +220,7 @@ class StateWakeWorkspace:
         """Return the bounded mutation lock for this workspace."""
         if self._closed:
             raise WorkspaceError("workspace is closed.")
+        self._require_writable()
         return WorkspaceOperationLock(self._operation_lock_path, timeout=timeout)
 
     def diagnostics(self) -> WorkspaceDiagnostics:
@@ -196,6 +257,7 @@ class StateWakeWorkspace:
         producer_version: str | None = None,
         run_id: str | None = None,
         metadata: dict[str, str] | None = None,
+        sensitivity: str = "internal",
     ) -> WorkspaceRecord:
         """Capture bytes through the existing StateWake ingestion contract."""
         if self._closed:
@@ -211,6 +273,7 @@ class StateWakeWorkspace:
                 producer_version=producer_version,
                 run_id=run_id,
                 metadata=metadata,
+                sensitivity=sensitivity,
             )
 
     def ingest_file(
@@ -224,6 +287,7 @@ class StateWakeWorkspace:
         producer_version: str | None = None,
         run_id: str | None = None,
         metadata: dict[str, str] | None = None,
+        sensitivity: str = "internal",
     ) -> WorkspaceRecord:
         """Capture a file through the existing StateWake ingestion contract."""
         if self._closed:
@@ -238,6 +302,7 @@ class StateWakeWorkspace:
                 producer_version=producer_version,
                 run_id=run_id,
                 metadata=metadata,
+                sensitivity=sensitivity,
             )
 
     def verify(
@@ -293,6 +358,7 @@ class StateWakeWorkspace:
         """Create an explicit analytical Parquet snapshot."""
         if self._closed:
             raise WorkspaceError("workspace is closed.")
+        self._require_writable()
         return self._ingestion.snapshot_parquet(
             parquet_path,
             output,

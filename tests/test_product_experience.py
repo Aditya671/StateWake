@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 
-from config.project_paths import PROJECT_ROOT
+from scripts.common.project_paths import EXAMPLES_PATH, PROJECT_ROOT
 
 ROOT = PROJECT_ROOT
 SCRIPT = ROOT / "scripts" / "release" / "verify_product_experience.py"
@@ -23,9 +23,7 @@ def test_required_product_documentation_exists_and_links_resolve() -> None:
 
 def test_first_evidence_example_is_executable() -> None:
     """Require the five-minute tutorial to prove verification and tamper rejection."""
-    elapsed, output = module.run_example(
-        ROOT / "docs" / "examples" / "first-evidence-chain.py"
-    )
+    elapsed, output = module.run_example(EXAMPLES_PATH / "first-evidence-chain.py")
     assert elapsed >= 0
     assert "verification: PASS" in output
     assert "deliberate tampering: REJECTED" in output

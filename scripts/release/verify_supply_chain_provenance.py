@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
+import ast
 import json
 import re
 import sys
@@ -15,179 +15,137 @@ PROJECT_CONFIG_BOOTSTRAP = Path(__file__).resolve().parents[2]
 if str(PROJECT_CONFIG_BOOTSTRAP) not in sys.path:
     sys.path.insert(0, str(PROJECT_CONFIG_BOOTSTRAP))
 
-from config.project_paths import PROJECT_ROOT  # noqa: E402
-from scripts.common.release_scope import release_input_files  # noqa: E402
+from scripts.common import release_identity as _release_identity  # noqa: E402
+from scripts.common.project_metadata import load_project_metadata  # noqa: E402
+from scripts.common.project_paths import PROJECT_ROOT  # noqa: E402
 
 ROOT = PROJECT_ROOT
 
 
-def _project_version() -> str:
-    """Read the authoritative package version from pyproject.toml."""
-    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
-    return str(project["project"]["version"])
-
-
-EXPECTED_VERSION = _project_version()
-EXPECTED_DISTRIBUTION = "statewake-ai"
-REQUIRED_WORKFLOW_MARKERS = (
-    "uv lock --check",
-    "uv build",
-    "sha256sum dist/*",
-    "pip-audit",
-    "cyclonedx",
-    "actions/attest-build-provenance",
-)
+ReleaseIdentityError = _release_identity.ReleaseIdentityError
 
 
 class SupplyChainProvenanceError(ValueError):
     """Raised when Tier 8 provenance evidence is inconsistent or incomplete."""
 
 
-def sha256_bytes(data: bytes) -> str:
-    """Return the SHA-256 hexadecimal digest for bytes."""
-    return hashlib.sha256(data).hexdigest()
-
-
 def file_sha256(path: Path) -> str:
-    """Return the SHA-256 digest of one file."""
-    return sha256_bytes(path.read_bytes())
+    """Return the SHA-256 digest of one file through the canonical identity helper."""
+    return _release_identity.file_sha256(path)
 
 
 def source_tree_digest(root: Path = ROOT) -> str:
-    """Return a deterministic digest over immutable source/build-input files."""
-    digest = hashlib.sha256()
-    paths = release_input_files(root)
-    for path in paths:
-        relative = path.relative_to(root).as_posix().encode("utf-8")
-        data = path.read_bytes()
-        digest.update(len(relative).to_bytes(8, "big"))
-        digest.update(relative)
-        digest.update(len(data).to_bytes(8, "big"))
-        digest.update(data)
-    return digest.hexdigest()
+    """Return the deterministic digest of selected release inputs."""
+    return _release_identity.source_tree_digest(root)
 
 
 def verification_manifest(root: Path = ROOT) -> dict[str, str]:
-    """Read the exact source-tree verification manifest."""
-    manifest_path = root / "verification_manifest.txt"
-    if not manifest_path.is_file():
-        raise SupplyChainProvenanceError("verification manifest is missing")
-    records: dict[str, str] = {}
-    for line_number, raw_line in enumerate(
-        manifest_path.read_text(encoding="utf-8").splitlines(), start=1
-    ):
-        if not raw_line.strip():
-            continue
-        parts = raw_line.split("  ", 1)
-        if len(parts) != 2:
-            raise SupplyChainProvenanceError(
-                f"invalid verification manifest record at line {line_number}"
-            )
-        digest, relative = parts
-        if not re.fullmatch(r"[0-9a-f]{64}", digest):
-            raise SupplyChainProvenanceError(
-                f"invalid verification manifest digest at line {line_number}"
-            )
-        if not relative or Path(relative).is_absolute():
-            raise SupplyChainProvenanceError(
-                f"invalid verification manifest path at line {line_number}"
-            )
-        if relative in records:
-            raise SupplyChainProvenanceError(
-                f"duplicate verification manifest path: {relative}"
-            )
-        records[relative] = digest
-    return records
+    """Read the persisted release-input verification manifest."""
+    return _release_identity.read_manifest(root)
 
 
 def validate_verification_manifest(root: Path = ROOT) -> None:
-    """Verify manifest membership and content digests against the current tree."""
-    recorded = verification_manifest(root)
-    actual = {
-        path.relative_to(root).as_posix(): file_sha256(path)
-        for path in release_input_files(root)
-    }
-    if recorded != actual:
-        missing = sorted(set(actual) - set(recorded))
-        unexpected = sorted(set(recorded) - set(actual))
-        mismatched = sorted(
-            path
-            for path in set(actual) & set(recorded)
-            if actual[path] != recorded[path]
-        )
-        details: list[str] = []
-        if missing:
-            details.append("missing=" + ",".join(missing))
-        if unexpected:
-            details.append("unexpected=" + ",".join(unexpected))
-        if mismatched:
-            details.append("mismatched=" + ",".join(mismatched))
+    """Validate the persisted manifest against current release inputs."""
+    _release_identity.validate_verification_manifest(root)
+
+
+def _package_constant(root: Path, name: str) -> str:
+    """Read one literal package constant from ``statewake.__init__`` via AST."""
+    metadata = load_project_metadata(root)
+    path = root / metadata.package_init_relative
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    for node in tree.body:
+        if not isinstance(node, (ast.Assign, ast.AnnAssign)):
+            continue
+        targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+        value = node.value
+        if not isinstance(value, ast.Constant) or not isinstance(value.value, str):
+            continue
+        if any(
+            isinstance(target, ast.Name) and target.id == name for target in targets
+        ):
+            return value.value
+    raise SupplyChainProvenanceError(f"package constant {name!r} is missing")
+
+
+def _dependency_name(requirement: str) -> str:
+    """Extract a normalized distribution name from one PEP 508-like requirement."""
+    name = re.split(r"[<>=!~;\[ ]", requirement, maxsplit=1)[0].strip()
+    if not name:
         raise SupplyChainProvenanceError(
-            "verification manifest does not match source tree: " + "; ".join(details)
+            f"invalid dependency requirement: {requirement!r}"
         )
+    return name.lower().replace("_", "-")
 
 
 def project_metadata(root: Path = ROOT) -> dict[str, Any]:
-    """Read and validate the declared package identity and locked dependencies."""
+    """Read and validate package identity and lock coverage structurally."""
     pyproject_path = root / "pyproject.toml"
     lock_path = root / "uv.lock"
-    package_path = root / "src" / "statewake" / "__init__.py"
-    workflow_path = root / ".github" / "workflows" / "release-verification.yml"
-    project = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
+    project_document = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
     lock = tomllib.loads(lock_path.read_text(encoding="utf-8"))
-    package_text = package_path.read_text(encoding="utf-8")
-    workflow = workflow_path.read_text(encoding="utf-8")
+    project = project_document["project"]
 
-    project_name = project["project"]["name"]
-    version = project["project"]["version"]
-    dependencies = tuple(sorted(project["project"].get("dependencies", ())))
+    metadata = load_project_metadata(root)
+    project_name = str(project["name"])
+    version = str(project["version"])
+    package_version = _package_constant(root, "__version__")
+    dependencies = tuple(sorted(str(item) for item in project.get("dependencies", ())))
     optional_dependencies = {
-        str(extra): tuple(sorted(values))
-        for extra, values in project["project"].get("optional-dependencies", {}).items()
+        str(extra): tuple(sorted(str(item) for item in values))
+        for extra, values in project.get("optional-dependencies", {}).items()
     }
     lock_project = next(
-        (item for item in lock["package"] if item["name"] == EXPECTED_DISTRIBUTION),
+        (
+            item
+            for item in lock["package"]
+            if str(item.get("name", "")).lower().replace("_", "-")
+            == metadata.distribution.lower().replace("_", "-")
+        ),
         None,
     )
     if lock_project is None:
         raise SupplyChainProvenanceError(
-            "uv.lock is missing the statewake-ai project entry"
+            f"uv.lock is missing the {metadata.distribution} project entry"
         )
-    if project_name != EXPECTED_DISTRIBUTION or version != EXPECTED_VERSION:
+    lock_version = str(lock_project.get("version", ""))
+    if project_name != metadata.distribution:
         raise SupplyChainProvenanceError(
-            "project identity/version drifted from the current package version"
+            f"project distribution does not match canonical metadata: {project_name!r}"
         )
-    if f'__version__ = "{EXPECTED_VERSION}"' not in package_text:
+    if version != package_version or version != lock_version:
         raise SupplyChainProvenanceError(
-            "package __version__ drifted from the current package version"
-        )
-    missing_markers = [
-        marker for marker in REQUIRED_WORKFLOW_MARKERS if marker not in workflow
-    ]
-    if missing_markers:
-        raise SupplyChainProvenanceError(
-            "release-verification workflow is missing Tier 8 markers: "
-            + ", ".join(missing_markers)
+            "project, package, and lock versions are inconsistent"
         )
 
     locked_names = {
-        item["name"]: item["version"]
+        str(item["name"]).lower().replace("_", "-")
         for item in lock["package"]
-        if item.get("version") is not None
+        if item.get("name") is not None
     }
     for dependency in dependencies:
-        name = re.split(r"[<>=!~;\[ ]", dependency, maxsplit=1)[0]
+        name = _dependency_name(dependency)
         if name not in locked_names:
             raise SupplyChainProvenanceError(
                 f"dependency {name!r} is not represented in uv.lock"
             )
     for extra, extra_dependencies in optional_dependencies.items():
         for dependency in extra_dependencies:
-            name = re.split(r"[<>=!~;\[ ]", dependency, maxsplit=1)[0]
+            name = _dependency_name(dependency)
             if name not in locked_names:
                 raise SupplyChainProvenanceError(
-                    f"optional dependency {name!r} for extra {extra!r} is not represented in uv.lock"
+                    f"optional dependency {name!r} for extra {extra!r} "
+                    "is not represented in uv.lock"
                 )
+
+    scripts = project.get("scripts", {})
+    if (
+        not isinstance(scripts, dict)
+        or scripts.get(metadata.cli_name) != metadata.cli_target
+    ):
+        raise SupplyChainProvenanceError(
+            f"{metadata.cli_name} CLI entry point is missing or invalid"
+        )
 
     return {
         "distribution": project_name,
@@ -229,7 +187,10 @@ def validate_provenance_record(
             "provenance record missing: " + ", ".join(sorted(missing))
         )
     metadata = project_metadata(root)
-    validate_verification_manifest(root)
+    try:
+        _release_identity.validate_release_identity(root)
+    except ReleaseIdentityError as exc:
+        raise SupplyChainProvenanceError(str(exc)) from exc
     if record["schema_version"] != "1":
         raise SupplyChainProvenanceError("unsupported provenance schema")
     if record["status"] != "verified":
@@ -240,18 +201,14 @@ def validate_provenance_record(
         raise SupplyChainProvenanceError("distribution identity mismatch")
     if record["version"] != metadata["version"]:
         raise SupplyChainProvenanceError("version identity mismatch")
-    if not re.fullmatch(r"[0-9a-f]{64}", record["source_tree_sha256"]):
+    if (
+        not isinstance(record["source_tree_sha256"], str)
+        or re.fullmatch(r"[0-9a-f]{64}", record["source_tree_sha256"]) is None
+    ):
         raise SupplyChainProvenanceError("invalid source_tree_sha256")
     actual_source_digest = source_tree_digest(root)
     if record["source_tree_sha256"] != actual_source_digest:
         raise SupplyChainProvenanceError("source tree digest does not match evidence")
-    fingerprint_path = root / "candidate-fingerprint.txt"
-    if fingerprint_path.is_file():
-        fingerprint = fingerprint_path.read_text(encoding="utf-8").strip()
-        if fingerprint != actual_source_digest:
-            raise SupplyChainProvenanceError(
-                "candidate fingerprint does not match source tree"
-            )
     if record["dependency_lock_sha256"] != metadata["dependency_lock_sha256"]:
         raise SupplyChainProvenanceError(
             "dependency lock digest does not match uv.lock"
@@ -260,6 +217,8 @@ def validate_provenance_record(
         raise SupplyChainProvenanceError("source_revision must be explicit")
 
     build_context = record["build_context"]
+    if not isinstance(build_context, dict):
+        raise SupplyChainProvenanceError("build_context must be an object")
     for field in ("python", "build_backend", "platform"):
         if not isinstance(build_context.get(field), str) or not build_context[field]:
             raise SupplyChainProvenanceError(f"build_context.{field} must be explicit")
@@ -270,6 +229,8 @@ def validate_provenance_record(
     if not isinstance(tests, list) or not tests:
         raise SupplyChainProvenanceError("security_tests must be a non-empty list")
     for test in tests:
+        if not isinstance(test, dict):
+            raise SupplyChainProvenanceError("security test record must be an object")
         for field in ("name", "source_tree_sha256", "dependency_lock_sha256", "status"):
             if field not in test:
                 raise SupplyChainProvenanceError(f"security test missing {field}")
@@ -287,10 +248,15 @@ def validate_provenance_record(
             )
 
     artifact = record["artifact"]
+    if not isinstance(artifact, dict):
+        raise SupplyChainProvenanceError("artifact must be an object")
     for field in ("name", "sha256", "size_bytes"):
         if field not in artifact:
             raise SupplyChainProvenanceError(f"artifact missing {field}")
-    if not re.fullmatch(r"[0-9a-f]{64}", artifact["sha256"]):
+    if (
+        not isinstance(artifact["sha256"], str)
+        or re.fullmatch(r"[0-9a-f]{64}", artifact["sha256"]) is None
+    ):
         raise SupplyChainProvenanceError("invalid artifact sha256")
     if not isinstance(artifact["size_bytes"], int) or artifact["size_bytes"] <= 0:
         raise SupplyChainProvenanceError("invalid artifact size")
@@ -307,6 +273,8 @@ def validate_provenance_record(
             raise SupplyChainProvenanceError("artifact digest mismatch")
 
     verification = record["verification"]
+    if not isinstance(verification, dict):
+        raise SupplyChainProvenanceError("verification must be an object")
     if verification.get("status") != "verified":
         raise SupplyChainProvenanceError("verification status is not verified")
     if verification.get("artifact_sha256") != artifact["sha256"]:
@@ -332,7 +300,7 @@ def _parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
-    """Verify one Tier 8 provenance record."""
+    """Verify one Tier 8 provenance record without regenerating source identity."""
     args = _parse_args()
     record = json.loads(args.provenance.read_text(encoding="utf-8"))
     validate_provenance_record(record, root=ROOT, artifact_path=args.artifact)

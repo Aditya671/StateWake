@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-"""Verify that Tier 12 containment evidence is present and internally consistent."""
+"""Verify Tier 12 runtime-containment assurance structure."""
 
 from __future__ import annotations
 
@@ -15,19 +14,6 @@ OPERATIONS = ROOT / "src/statewake/services/operations_service.py"
 PORTABLE = ROOT / "scripts/security/verify_reliability_proof_portability.py"
 TESTS = ROOT / "tests/security/test_runtime_containment.py"
 
-REQUIRED_DOC_PHRASES = (
-    "maximum input bytes",
-    "maximum archive members",
-    "maximum JSON nesting depth",
-    "maximum JSON node count",
-    "maximum cooperative verification time",
-    "external-reference scheme validation",
-    "Archive contents are data only",
-    "no unnecessary network egress",
-    "dedicated temporary root",
-    "not a release",
-)
-
 REQUIRED_SYMBOLS = (
     "ContainmentViolationError",
     "RuntimeContainmentLimits",
@@ -38,7 +24,6 @@ REQUIRED_SYMBOLS = (
     "validate_input_size",
     "validate_reference",
 )
-
 REQUIRED_TESTS = (
     "test_rejects_oversized_input",
     "test_rejects_deep_json",
@@ -50,7 +35,6 @@ REQUIRED_TESTS = (
     "test_rejects_archive_symlink",
     "test_rejects_external_reference",
     "test_deadline_is_bounded",
-    "test_server_uses_bounded_json_loader",
     "test_archive_verification_does_not_execute_members",
 )
 
@@ -63,65 +47,68 @@ class Finding:
     detail: str
 
 
-def _functions(path: Path) -> set[str]:
-    """Return top-level and class method names present in one Python file."""
-    tree = ast.parse(path.read_text(encoding="utf-8"))
+def _tree(path: Path) -> ast.AST:
+    return ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+
+
+def _defined_names(path: Path) -> set[str]:
+    return {
+        node.name
+        for node in ast.walk(_tree(path))
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+    }
+
+
+def _identifiers(path: Path) -> set[str]:
+    """Return identifiers/attribute names referenced by one Python source file."""
     names: set[str] = set()
-    for node in ast.walk(tree):
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            names.add(node.name)
+    for node in ast.walk(_tree(path)):
+        if isinstance(node, ast.Name):
+            names.add(node.id)
+        elif isinstance(node, ast.Attribute):
+            names.add(node.attr)
     return names
 
 
 def verify() -> list[Finding]:
-    """Return all missing Tier 12 evidence items."""
+    """Return missing Tier 12 structural evidence items."""
     findings: list[Finding] = []
     if not DOC.is_file():
-        return [Finding("missing-document", str(DOC))]
-    document = DOC.read_text(encoding="utf-8")
-    for phrase in REQUIRED_DOC_PHRASES:
-        if phrase not in document:
-            findings.append(Finding("missing-document-evidence", phrase))
+        findings.append(Finding("missing-document", str(DOC)))
+    elif DOC.stat().st_size == 0:
+        findings.append(Finding("empty-document", str(DOC)))
 
-    if not MODULE.is_file():
-        findings.append(Finding("missing-module", str(MODULE)))
-    else:
-        names = _functions(MODULE)
-        classes = {
-            node.name
-            for node in ast.walk(ast.parse(MODULE.read_text(encoding="utf-8")))
-            if isinstance(node, ast.ClassDef)
-        }
-        for symbol in REQUIRED_SYMBOLS:
-            if symbol not in names and symbol not in classes:
-                findings.append(Finding("missing-symbol", symbol))
+    for path in (MODULE, SERVER, OPERATIONS, PORTABLE, TESTS):
+        if not path.is_file():
+            findings.append(Finding("missing-file", str(path)))
+    if findings:
+        return findings
 
-    server_text = SERVER.read_text(encoding="utf-8") if SERVER.is_file() else ""
-    operations_text = (
-        OPERATIONS.read_text(encoding="utf-8") if OPERATIONS.is_file() else ""
-    )
-    portable_text = PORTABLE.read_text(encoding="utf-8") if PORTABLE.is_file() else ""
-    checks = {
-        "server-bounded-json": "load_bounded_json" in server_text
-        and "runtime_limits" in server_text,
-        "operations-archive-preflight": "validate_archive_envelope" in operations_text,
-        "portable-json-bound": "MAX_JSON_DEPTH" in portable_text
-        and "MAX_ARCHIVE_COMPRESSION_RATIO" in portable_text,
-        "portable-size-bound": "MAX_INPUT_BYTES" in portable_text,
-    }
+    module_names = _defined_names(MODULE)
     findings.extend(
-        Finding("missing-integration", name)
-        for name, present in checks.items()
-        if not present
+        Finding("missing-symbol", symbol)
+        for symbol in REQUIRED_SYMBOLS
+        if symbol not in module_names
     )
 
-    if not TESTS.is_file():
-        findings.append(Finding("missing-regression-suite", str(TESTS)))
-    else:
-        tests = _functions(TESTS)
-        for test in REQUIRED_TESTS:
-            if test not in tests:
-                findings.append(Finding("missing-regression", test))
+    integration_requirements = {
+        "server-bounded-json": (SERVER, {"load_bounded_json", "runtime_limits"}),
+        "operations-archive-preflight": (OPERATIONS, {"validate_archive_envelope"}),
+        "portable-json-bounds": (
+            PORTABLE,
+            {"MAX_JSON_DEPTH", "MAX_ARCHIVE_COMPRESSION_RATIO", "MAX_INPUT_BYTES"},
+        ),
+    }
+    for label, (path, required) in integration_requirements.items():
+        if not required <= _identifiers(path):
+            findings.append(Finding("missing-integration", label))
+
+    test_names = _defined_names(TESTS)
+    findings.extend(
+        Finding("missing-regression", test)
+        for test in REQUIRED_TESTS
+        if test not in test_names
+    )
     return findings
 
 

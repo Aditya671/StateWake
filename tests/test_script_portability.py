@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from config.project_paths import PROJECT_ROOT
+from scripts.common.project_paths import PROJECT_ROOT
 
 ROOT = PROJECT_ROOT
 SCRIPTS = (

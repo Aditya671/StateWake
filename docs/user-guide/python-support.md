@@ -1,6 +1,6 @@
 # Python support policy
 
-StateWake v0.4.1 supports CPython **3.11, 3.12, and 3.13**.
+StateWake v0.5.0 supports CPython **3.11, 3.12, and 3.13**.
 
 The authoritative package metadata is:
 
@@ -8,7 +8,7 @@ The authoritative package metadata is:
 Requires-Python: >=3.11,<3.14
 ```
 
-Python 3.14 is intentionally **outside the v0.4.1 supported runtime range**. A
+Python 3.14 is intentionally **outside the v0.5.0 supported runtime range**. A
 forced wheel installation or an import that happens to succeed on Python 3.14
 does not establish compatibility and must not be reported as supported.
 
@@ -32,7 +32,7 @@ Until those gates are completed on Python 3.14, `requires-python` must remain
 
 ## Host applications that require Python 3.14
 
-A host whose own package metadata requires Python 3.14 or newer is outside the StateWake v0.4.1 compatibility matrix. Do not bypass the StateWake
+A host whose own package metadata requires Python 3.14 or newer is outside the StateWake v0.5.0 compatibility matrix. Do not bypass the StateWake
 `Requires-Python` boundary and interpret a successful forced import as support.
 
 The 2026-09-25 public-repository trial encountered exactly this boundary with

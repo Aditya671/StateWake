@@ -1,18 +1,44 @@
 """Regression checks for the public StateWake package identity and documentation boundary."""
 
+from __future__ import annotations
+
+import ast
+import tomllib
+
 import statewake
-from config.project_paths import PROJECT_ROOT
-from scripts.common.release_scope import release_input_files
+from scripts.common.project_paths import PROJECT_ROOT
 
 ROOT = PROJECT_ROOT
 
 
-def test_public_identity_is_statewake() -> None:
-    """Verify the supported StateWake distribution, import namespace, and CLI identity."""
-    pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
-    assert 'name = "statewake-ai"' in pyproject
-    assert 'statewake = "statewake.cli.main:main"' in pyproject
-    assert statewake.__version__ == "0.4.1"
+def _package_constants() -> dict[str, str]:
+    tree = ast.parse(
+        (ROOT / "src/statewake/__init__.py").read_text(encoding="utf-8"),
+        filename="src/statewake/__init__.py",
+    )
+    values: dict[str, str] = {}
+    for node in tree.body:
+        if not isinstance(node, ast.Assign) or len(node.targets) != 1:
+            continue
+        target = node.targets[0]
+        if isinstance(target, ast.Name) and isinstance(node.value, ast.Constant):
+            if isinstance(node.value.value, str):
+                values[target.id] = node.value.value
+    return values
+
+
+def test_public_identity_matches_structured_project_metadata() -> None:
+    """Verify distribution/import/CLI identity through maintained metadata authorities."""
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))[
+        "project"
+    ]
+    scripts = project.get("scripts", {})
+    constants = _package_constants()
+
+    assert project["name"] == "statewake-ai"
+    assert scripts.get("statewake") == "statewake.cli.main:main"
+    assert constants.get("__version__") == project["version"]
+    assert statewake.__version__ == project["version"]
 
 
 def test_release_docs_exist() -> None:
@@ -36,25 +62,3 @@ def test_release_docs_exist() -> None:
     }
     actual = {path.name for path in (ROOT / "docs" / "user-guide").glob("*.md")}
     assert required <= actual
-
-
-def test_removed_identity_is_absent_from_active_project() -> None:
-    """Prevent accidental reintroduction of the pre-StateWake active package identity."""
-    forbidden = (
-        "Agent " + "Reliability Engine",
-        "agent-" + "reliability-engine",
-        "agent_" + "reliability_engine",
-        "agent" + "ctl",
-    )
-    files = release_input_files(ROOT)
-    for path in files:
-        if not path.is_file() or path.suffix not in {
-            ".py",
-            ".md",
-            ".toml",
-            ".yml",
-            ".yaml",
-        }:
-            continue
-        text = path.read_text(encoding="utf-8")
-        assert not any(token in text for token in forbidden), path

@@ -2,17 +2,19 @@
 
 ## Current package version
 
-**StateWake source: `v0.4.1`**
+**StateWake source: `v0.5.0`**
 
-The last recorded public release is `v0.4.0`. The v0.4.1 source version is being prepared for separate release qualification.
+The current source version is `v0.5.0`. The current published Production/Stable release remains `v0.4.1`; v0.5.0 requires its own release qualification and publication authorization.
 
 The public release sequence is:
 
 - `v0.1.1` — Production/Stable packaging promotion of the v0.1.0 public package baseline.
 - `v0.2.0` — cybersecurity capability release completing the V1/V2/V3 security progression through V3 Tier 15.
 - `v0.4.0` — AI Systems Seven-Phase Roadmap release completing AI evidence contracts, claim profiles, reports, workspace guarantees, integrations, release trust, and comparative validation.
+- `v0.4.1` — current published Production/Stable reliability, native-integration, and assurance-consistency update.
+- `v0.5.0` — current source version collecting the backward-compatible post-v0.4.1 approval/publication lifecycle, registry reconciliation, native-host qualification, and production cleanup; not yet published.
 
-Historical implementation identifiers remain provenance and do not override these public package versions. The current v0.4.1 source candidate is not listed as a published release.
+Historical implementation identifiers remain provenance and do not override these public package versions. The published v0.4.1 package remains the public release baseline while v0.5.0 is qualified.
 
 ## Version sources of truth
 
@@ -35,7 +37,7 @@ The public API contract version remains `1` across this release sequence because
 
 `v0.4.0` is a minor release because it introduces the completed StateWake AI Systems Seven-Phase Roadmap while preserving existing public contracts.
 
-`v0.4.1` is the requested patch candidate for the cumulative compatible changes after v0.4.0. Its changelog includes native SDK integration surfaces, which would ordinarily meet the MINOR criterion above. The v0.4.1 number is an explicit pre-1.0 exception for this candidate; it does not relax API compatibility or release qualification. Publication requires separate approval and artifact verification.
+`v0.4.1` is the published patch release for the cumulative compatible changes after v0.4.0. Its changelog includes native SDK integration surfaces, which would ordinarily meet the MINOR criterion above. The v0.4.1 number is an explicit pre-1.0 versioning exception retained for the published release; it does not relax API compatibility. The v0.5.0 source line follows the normal MINOR criterion for backward-compatible public capability growth. It remains un-published until its own approval and artifact verification complete.
 
 ## Release discipline
 

@@ -20,7 +20,7 @@ PROJECT_CONFIG_BOOTSTRAP = Path(__file__).resolve().parents[2]
 if str(PROJECT_CONFIG_BOOTSTRAP) not in sys.path:
     sys.path.insert(0, str(PROJECT_CONFIG_BOOTSTRAP))
 
-from config.project_paths import PROJECT_ROOT, SRC_PATH  # noqa: E402
+from scripts.common.project_paths import PROJECT_ROOT, SRC_PATH  # noqa: E402
 
 if str(SRC_PATH) not in sys.path:
     sys.path.insert(0, str(SRC_PATH))

@@ -2,9 +2,9 @@
 
 ## Source and public release versions
 
-**Current source version: StateWake v0.4.1 (release candidate)**
+**Current source version: StateWake v0.5.0**
 
-**Last recorded public release: StateWake v0.4.0**
+**Current published public release: StateWake v0.4.1**
 
 PyPI maturity classifier: `Development Status :: 5 - Production/Stable`.
 
@@ -14,17 +14,19 @@ Import package: `statewake`
 
 CLI: `statewake`
 
-The public release sequence represented by this repository is:
+The public release sequence represented by this repository includes:
 
-- **v0.1.1** — Production/Stable packaging promotion of the v0.1.0 public package baseline. The supplied released source candidate is retained under `docs/releases/v0.1.1/`.
+- **v0.1.1** — Production/Stable packaging promotion of the v0.1.0 public package baseline. The supplied released source record is retained under `docs/releases/v0.1.1/`.
 - **v0.2.0** — cybersecurity capability completion through V3 Tier 15.
 - **v0.4.0** — Persistence & Dataset Architecture completion through Tier 15.
+- **v0.4.1** — current published Production/Stable reliability and integration update.
+- **v0.5.0** — current source candidate; not yet publication-authorized or published.
 
 ## Current scope
 
-The v0.4.1 source preserves the v0.4.0 baseline, which combines the completed reliability lifecycle, cybersecurity architecture, and Persistence & Dataset Architecture. The workspace provides durable operational indexing, historical query/projection, tabular and portable exports, lifecycle/retention orchestration, integrity verification, analytical access, backend abstraction, and production workspace operations.
+The published v0.4.1 release preserves the v0.4.0 baseline and incorporates the v0.4.1 reliability, native integration, security-assurance, workspace, and release-evidence updates recorded in the changelog. The workspace provides durable operational indexing, historical query/projection, tabular and portable exports, lifecycle/retention orchestration, integrity verification, analytical access, backend abstraction, and production workspace operations.
 
-## Release boundary
+## Release boundary for future versions
 
 For a future package publication, verify:
 
@@ -40,7 +42,7 @@ For a future package publication, verify:
 10. repository-level and platform-specific release gates are externally verified;
 11. the exact source/distribution artifacts are checksum locked.
 
-A prior v0.4.0 source snapshot passed local quality gates on 2026-09-26: mypy checked 341 files; pytest passed 671 tests and 5 subtests; Ruff lint and formatting checks passed. Those results do not qualify the current v0.4.1 source candidate. Repository-host, multi-platform clean-consumer, and publication-approval gates remain separate release checks.
+Historical v0.4.0 local-gate results remain historical evidence and must not be substituted for the v0.4.1 release record. Likewise, a local verifier run against v0.4.1 proves only the boundary it actually checks; it does not retroactively establish PyPI provenance or independently authorize a later publication.
 
 ## Evidence flow
 
@@ -58,4 +60,4 @@ producer artifact
 
 ## Release evidence
 
-Release-specific records are organized under [`docs/releases/`](../releases/README.md). The executable local release-candidate coordinator remains `python scripts/release/verify_release_candidate.py` and does not authorize publication.
+Release-specific records are organized under [`docs/releases/`](../releases/README.md). The executable release-candidate coordinator remains `python scripts/release/verify_release_candidate.py`; it validates a candidate but does not independently authorize a future publication.

@@ -1,10 +1,10 @@
 # Release Readiness Decision
 
-**Current source candidate:** `v0.4.1`
+**Current source version:** `v0.5.0`
 
-**Last recorded public release:** `v0.4.0`
+**Current published public release:** `v0.4.1` — `Development Status :: 5 - Production/Stable`
 
-This document records the v0.4.1 source candidate and the evidence required before its publication. Each future publication remains a separate human authorization and platform gate.
+This document records the published v0.4.1 baseline and the evidence required to qualify the current v0.5.0 source candidate. Publication of v0.4.1 is an established package-release state; v0.5.0 is not treated as published or release-ready by a version change alone. Individual source/security verifiers remain bounded evidence checks and are not themselves publication authorities.
 
 ## Current architecture
 
@@ -14,7 +14,7 @@ The active product is a framework-neutral reliability-evidence infrastructure la
 
 The current release line preserves the completed cybersecurity architecture through V3 Tier 15 and the completed Persistence & Dataset Architecture through Tier 15.
 
-## Required release evidence
+## Required release evidence for subsequent releases
 
 - package metadata and `statewake.__version__` agree;
 - `uv.lock` project identity agrees with package metadata;
@@ -27,4 +27,4 @@ The current release line preserves the completed cybersecurity architecture thro
 
 ## Publication boundary
 
-For future releases, a successful local candidate does not by itself authorize publication. The exact tested candidate, external CI evidence, repository governance checks, and human publication approval remain separate controls.
+The v0.4.1 package is already published as Production/Stable. For v0.5.0 and later releases, a successful local candidate does not by itself authorize publication. The exact tested candidate, external CI evidence, repository governance checks, and human publication approval remain separate controls.

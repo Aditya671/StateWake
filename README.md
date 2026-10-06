@@ -1,107 +1,204 @@
-
-> **Package status:** StateWake is classified as `Development Status :: 5 - Production/Stable`.
-
 # StateWake
 
 > **Evidence-backed reliability infrastructure for AI systems.**
 
-StateWake helps AI systems establish a verifiable record of what happened, what produced it, whether the supporting evidence is trustworthy, what state the system reached, and whether that state was verified or recovered.
+StateWake provides a deterministic reliability layer around AI and software systems. It captures evidence, preserves provenance and integrity, tracks reliability state, supports verification and recovery, and produces auditable records that can be independently inspected instead of relying on a model, log stream, or dashboard to assert that a system behaved correctly.
 
-It is designed to integrate with existing AI runtimes, evaluation systems, telemetry, CI/CD, storage, and operational tooling. It does not replace them.
+StateWake is designed to integrate with existing agent runtimes, retrieval systems, evaluators, CI/CD pipelines, telemetry, storage, and release workflows. It does **not** replace those systems or become a second execution authority.
 
-**Project:** [GitHub repository](https://github.com/Aditya671/StateWake)  
-**Source version:** `v0.4.1`
+- **Source version:** `0.5.0`
+- **Public API contract:** `1`
+- **Distribution:** [`statewake-ai`](https://pypi.org/project/statewake-ai/)
+- **Import package:** `statewake`
+- **CLI:** `statewake`
+- **Supported Python:** `>=3.11,<3.14`
+- **License:** [Apache-2.0](https://github.com/Aditya671/StateWake/blob/main/LICENSE)
+- **Repository:** [github.com/Aditya671/StateWake](https://github.com/Aditya671/StateWake)
 
-**Package:** [statewake-ai on PyPI](https://pypi.org/project/statewake-ai/)
-**License:** Apache-2.0
+> **Release status:** the repository source is on the `v0.5.0` line. The latest published PyPI release remains `v0.4.1` until the v0.5.0 publication workflow, governance checks, and explicit publication authorization are completed.
 
-StateWake v0.4.1 supports Python `>=3.11,<3.14`. Python 3.14 is intentionally outside the supported release compatibility matrix; use a supported interpreter and avoid forced wheel installation on Python 3.14.
+---
 
-## Why StateWake
+## Why StateWake exists
 
-AI applications increasingly depend on multiple runtimes, tools, models, retrieval systems, policies, and external services. Logs and evaluation scores can show that something happened, but they do not by themselves establish a durable, independently verifiable reliability record.
+Modern AI systems can involve models, agents, retrieval, tools, policies, external services, human approval, telemetry, and deployment automation. A log or evaluation score can show an observation, but it does not by itself establish a durable reliability record.
 
-StateWake makes the reliability evidence lifecycle explicit:
+StateWake makes that record explicit:
 
 ```text
-AI-system execution
-       ↓
+System / agent execution
+        ↓
 Captured evidence
-       ↓
-Evidence admission + provenance
-       ↓
-Integrity verification
-       ↓
-State / behavioral comparison
-       ↓
-Verified reliability state
-       ↓
+        ↓
+Evidence admission + identity
+        ↓
+Provenance + integrity verification
+        ↓
+Reliability evaluation / comparison
+        ↓
+Reliability state
+        ↓
 Reconciliation / recovery evidence
-       ↓
-Attestation
-       ↓
-Evidence-backed decision
+        ↓
+Attestation / decision basis
+        ↓
+Durable workspace + query / export
+        ↓
+Human review / approval / release evidence
 ```
 
-The central product primitive is the `ReliabilityEvidenceChain`: a verifiable composition of authoritative evidence references rather than a second copy of the source system's data.
+The core idea is simple: **evidence and state transitions should remain verifiable outside the component that produced them.**
+
+---
 
 ## What StateWake provides
 
-- Evidence admission and provenance boundaries
-- Integrity verification and evidence-chain construction
-- Reliability state and state-transition management
-- Behavioral comparison and outcome verification
-- Reconciliation and recovery evidence
-- Attestation and reliability decision-basis support
-- Framework-neutral Python integration APIs
-- CLI and WSGI integration surfaces
-- Adapters for common evidence sources, including agent runs, CI/CD artifacts, evaluation output, files, incidents, and OpenTelemetry traces
+### Reliability evidence and state
+
+- Deterministic evidence admission and canonical external-evidence receipts.
+- `ReliabilityEvidenceChain` construction and integrity verification.
+- Reliability state snapshots and hash-linked state transitions.
+- Reliability outcome verification and verification reports.
+- Behavioral comparison, reconciliation, recovery evidence, and decision-basis construction.
+- Reliability outcome attestations and portable proof bundles.
+- Claim profiles with explicit missing-evidence and caveat handling.
+
+### Producer and application integration
+
+- Framework-neutral `StateWakeClient` integration API.
+- File, CI/CD, evaluation, incident/recovery, OpenTelemetry, webhook, queue, database, batch, and agent evidence adapters.
+- Distinct producer identity, run identity, source-event identity, artifact identity, and receipt identity.
+- Idempotent repeated evidence with conflict detection when an identity is reused for different content.
+
+### Native AI/framework integrations
+
+StateWake includes optional native integration surfaces for:
+
+- OpenAI Agents
+- LangChain Core
+- LangGraph
+- LlamaIndex Core
+- OpenTelemetry SDK
+
+The current v0.5.0 source includes independent-oracle, credential-free native-host qualification support for these five integration families. Host-owned truth and StateWake observations remain separate evidence streams.
+
+### Durable workspace and data access
+
+- Durable operational indexing and historical query surfaces.
+- JSON, CSV, XLSX, Parquet, SQLite, and portable dataset/export support where applicable.
+- Workspace integrity verification, retention/lifecycle state, backup/restore, and migration markers.
+- Analytical access through the maintained workspace adapters without turning an analytical projection into evidence authority.
+
+### Trust, security, and recovery
+
+- Content and evidence integrity verification.
+- Independent trust checkpoints and trust-anchor comparison.
+- External Ed25519 signing boundaries without passing private key material into StateWake.
+- Signing-key lifecycle, revocation, supersession, and historical trust interpretation.
+- Security-incident evidence, affected trust state, recovery evidence, and post-recovery verification.
+- Continuous security/release assurance records that preserve `UNKNOWN`, `STALE`, `CONFLICT`, and other non-success states rather than silently upgrading certainty.
+
+### Human review and approval
+
+- Append-only review statements bound to an exact report/candidate digest.
+- Canonical human-approval evidence with scoped action and authority boundaries.
+- Approval revocation and supersession lifecycle while preserving historical evidence.
+- Fresh reconciliation that consumes currently active approval evidence instead of treating a historical approval as permanently valid.
+
+### Release and registry evidence
+
+The v0.5.0 source extends the reliability model to software publication itself:
+
+- Release publication basis bound to exact source, verification evidence, target registry, and distribution digests.
+- Publication execution permits that fail closed if candidate bytes or approval state change.
+- PyPI/TestPyPI publication receipts.
+- Independent registry read-back of exact distribution files.
+- Digest-chained registry lifecycle observations for available, yanked, partially available, and unavailable states.
+- Separation between **verification**, **human authorization**, **publication execution**, and **post-publication registry evidence**.
+
+---
 
 ## Product boundary
 
-StateWake is **not** a generic agent-testing platform, chaos platform, observability dashboard, agent orchestration framework, distributed task queue, or hosted control plane.
+StateWake is **not**:
 
-Testing, replay, regression, contracts, assertions, telemetry, and external evaluations can remain valuable producers of evidence. StateWake's V1 role is to establish trustworthy reliability evidence and system-state management around those inputs.
+- an agent orchestration framework;
+- a general observability platform;
+- a hosted control plane;
+- a generic chaos-testing product;
+- an identity provider;
+- a replacement for CI/CD, telemetry, or model evaluation;
+- proof that an upstream model answer is factually correct;
+- proof that an external producer is honest merely because evidence is signed;
+- automatic authorization to publish, deploy, pay, message, delete, or perform another consequential action.
+
+StateWake records and verifies the boundaries it controls. External truth, permissions, business policy, infrastructure security, and independent trust roots remain explicit responsibilities of the integrating system.
+
+---
 
 ## Installation
 
-The package published to PyPI/TestPyPI is `statewake-ai`; the Python import package is `statewake`.
+The package distribution is named `statewake-ai`; Python code imports `statewake`.
+
+### Current public PyPI release
 
 ```bash
 python -m pip install statewake-ai
 ```
 
-Workspace dataset/export adapters are required runtime dependencies; native framework SDKs are optional extras. Install the relevant integration extra when using a native SDK.
+At the time of this source snapshot, PyPI still publishes the `v0.4.1` release.
 
-CSV, JSON, portable-bundle, and SQLite reference persistence use Python/SQLite standard-library capabilities and do not require additional packages.
-
-For the historical v0.1.1 package, use:
+### Install the v0.5.0 source candidate from this repository
 
 ```bash
-python -m pip install statewake-ai==0.1.1
+git clone https://github.com/Aditya671/StateWake.git
+cd StateWake
+python -m pip install .
 ```
 
-Release history and version-specific verification records are maintained under `docs/releases/`; see those records for historical gate outcomes. The [v0.4.0 technical white paper](docs/whitepaper/StateWake_Technical_White_Paper_v0.4.0.md) is available in Markdown and [PDF](docs/whitepaper/StateWake_Technical_White_Paper_v0.4.0.pdf), with a [source map](docs/whitepaper/Technical_Grounding_and_Source_Map.md).
+Or with `uv`:
 
-See `pyproject.toml` for the authoritative dependency declarations and `uv.lock` for the exact locked dependency state.
-
-## Python integration
-
-StateWake exposes its stabilized consumer API from the top-level `statewake` package. Consumers should prefer these public imports over internal implementation modules.
-
-```python
-from pathlib import Path
-
-from statewake import (
-    admit_evidence,
-    build_evidence_chain,
-    read_reliability_state,
-    verify_evidence_chain,
-    verify_outcome,
-)
+```bash
+uv sync
 ```
 
-A minimal persisted-chain verification flow is:
+### v0.5.0 PyPI installation after publication
+
+```bash
+python -m pip install statewake-ai==0.5.0
+```
+
+### Native integration extras
+
+Install one integration family:
+
+```bash
+python -m pip install "statewake-ai[integrations-openai-agents]"
+python -m pip install "statewake-ai[integrations-langchain]"
+python -m pip install "statewake-ai[integrations-langgraph]"
+python -m pip install "statewake-ai[integrations-llamaindex]"
+python -m pip install "statewake-ai[integrations-opentelemetry]"
+```
+
+Or all maintained integration extras:
+
+```bash
+python -m pip install "statewake-ai[integrations]"
+```
+
+For the checked-out v0.5.0 source, use the equivalent local extras, for example:
+
+```bash
+python -m pip install ".[integrations]"
+```
+
+`pyproject.toml` is the authority for dependency declarations and `uv.lock` records the repository's locked Python dependency state.
+
+---
+
+## Quick start
+
+### Verify an existing evidence chain
 
 ```python
 from pathlib import Path
@@ -112,74 +209,323 @@ chain = load_evidence_chain(Path("./evidence/chain.json"))
 verify_evidence_chain(chain, root=Path("./evidence"))
 ```
 
-The public API contract and SDK integration documentation are maintained in the repository:
+### Integrate an application with `StateWakeClient`
 
-- [API contract](https://github.com/Aditya671/StateWake/blob/main/docs/reference/API_CONTRACT.md)
-- [Python integration](https://github.com/Aditya671/StateWake/blob/main/docs/user-guide/python-integration.md)
-- [SDK integration](https://github.com/Aditya671/StateWake/blob/main/docs/reference/SDK_INTEGRATION.md)
+```python
+from statewake import IntegrationContext, StateWakeClient
+
+client = StateWakeClient.for_root(
+    IntegrationContext(
+        producer_id="orders-service",
+        run_id="run-123",
+    )
+)
+
+receipt = client.ingest_bytes(
+    b"event payload",
+    producer_type="application",
+    source_ref="event-123",
+    source_event_id="event-123",
+)
+
+client.verify_receipt(receipt)
+```
+
+The SDK is intentionally thin: it captures producer evidence and delegates persistence and verification to StateWake's canonical authorities rather than creating a parallel evidence model.
+
+### Public Python API
+
+The stable consumer surface is exported from the top-level `statewake` package. Prefer:
+
+```python
+from statewake import (
+    admit_evidence,
+    build_evidence_chain,
+    read_reliability_state,
+    verify_evidence_chain,
+    verify_outcome,
+)
+```
+
+over imports from internal implementation modules.
+
+See the complete [public API contract](https://github.com/Aditya671/StateWake/blob/main/docs/reference/API_CONTRACT.md).
+
+---
 
 ## CLI
 
-The package provides the `statewake` command-line interface.
+StateWake installs the `statewake` command:
 
 ```bash
 statewake version
 statewake --help
 ```
 
-The CLI exposes evidence ingestion and verification, evidence-chain construction, reliability-state operations, attestation, recovery verification, reconciliation, proof-bundle, decision-basis, and release-proof workflows.
+The CLI exposes the maintained evidence, verification, reliability-state, attestation, recovery, reconciliation, proof-bundle, decision-basis, release-proof, and related operational workflows.
 
-## HTTP integration
+Discover the current command surface with:
 
-StateWake's core has no HTTP-framework dependency. A small WSGI adapter is available when an application wants an HTTP boundary without making FastAPI or Flask a core dependency.
+```bash
+statewake --help
+statewake <command> --help
+```
 
-The supported WSGI application object is:
+See the [CLI reference](https://github.com/Aditya671/StateWake/blob/main/docs/user-guide/cli.md).
+
+---
+
+## HTTP and service boundaries
+
+StateWake's core does not require FastAPI or Flask.
+
+### Verification WSGI boundary
 
 ```text
 statewake.server:app
 ```
 
-Production deployments remain responsible for authentication, authorization, TLS, request limits, filesystem isolation, and network policy.
+The WSGI boundary exposes bounded verification endpoints such as health/version, evidence verification, and proof verification. It is designed as an internal/trusted integration edge rather than a ready-made public multi-tenant service.
+
+Authentication, authorization, TLS termination, tenant isolation, request limits, network policy, and monitoring remain deployment responsibilities.
+
+### Read and review services
+
+The optional workspace UI uses separate Python boundaries:
+
+- `statewake.read_api` for bounded, read-only projections of canonical workspace evidence.
+- `statewake.review_api` for separately authenticated and authorized human review/approval operations.
+
+The split is intentional: reading evidence and creating approval/review evidence are different authorities.
+
+---
+
+## Optional web UI
+
+The repository includes an optional Next.js UI under [`ui/`](https://github.com/Aditya671/StateWake/tree/main/ui).
+
+It provides human-facing inspection surfaces for areas such as:
+
+- workspace overview and claim/report discovery;
+- evidence and verification detail;
+- reliability-state history and report comparison;
+- incident and recovery investigation;
+- producer capture-health/failure-journal inspection;
+- portable proof-bundle verification;
+- decision basis, reconciliation, and lineage inspection;
+- operational trust and assurance projections;
+- review statements and scoped human approvals.
+
+The UI is **not** a second verifier or control plane. Verification and authority remain in the Python services and canonical evidence stores.
+
+The UI has its own dependency-backed TypeScript/test/build qualification boundary. See [`ui/README.md`](https://github.com/Aditya671/StateWake/blob/main/ui/README.md) before treating the frontend as deployment-qualified.
+
+---
+
+## Native integration model
+
+```text
+Host framework / SDK
+        ↓
+Native StateWake integration adapter
+        ↓
+Canonical evidence admission
+        ↓
+Durable receipt / workspace
+        ↓
+Reliability evidence lifecycle
+```
+
+Native adapters must preserve host/framework semantics rather than inventing missing events or treating a callback as proof that an external action succeeded.
+
+The v0.5.0 source includes a local independent-oracle qualification harness that exercises actual installed SDK APIs without requiring paid model calls. This evidence qualifies the tested local SDK/host boundary only; it does not claim external public repositories or live providers were independently qualified.
+
+See:
+
+- [Native framework capabilities](https://github.com/Aditya671/StateWake/blob/main/docs/integrations/native-framework-capabilities.md)
+- [Native integration verification](https://github.com/Aditya671/StateWake/blob/main/docs/integrations/native-integration-verification.md)
+- [SDK integration](https://github.com/Aditya671/StateWake/blob/main/docs/reference/SDK_INTEGRATION.md)
+
+---
+
+## Workspace model
+
+StateWake keeps canonical reliability evidence separate from derived views and analytical projections.
+
+```text
+Canonical evidence / receipts
+          ↓
+Durable workspace
+          ├── query / history
+          ├── deterministic projections
+          ├── exports / portable datasets
+          ├── operational diagnostics
+          └── optional analytics
+```
+
+A query result, spreadsheet, Parquet dataset, UI card, or analytical database is not automatically promoted into canonical evidence. Derived surfaces must preserve their source identity and limitations.
+
+See:
+
+- [Workspace production operations](https://github.com/Aditya671/StateWake/blob/main/docs/operations/workspace-production-operations.md)
+- [Workspace backend migration](https://github.com/Aditya671/StateWake/blob/main/docs/operations/workspace-backend-migration.md)
+- [Backup and restore](https://github.com/Aditya671/StateWake/blob/main/docs/operations/workspace-backup-restore.md)
+
+---
+
+## Human approval and release publication
+
+StateWake treats approval as evidence with a lifecycle, not as a mutable boolean.
+
+```text
+verification evidence
+       ↓
+human approval
+       ↓
+active / revoked / superseded lifecycle
+       ↓
+release publication basis
+       ↓
+execution permit
+       ↓
+registry publication
+       ↓
+registry read-back / reconciliation
+       ↓
+continuing registry lifecycle
+```
+
+Important invariants include:
+
+- historical approvals remain immutable evidence;
+- only currently active approval can satisfy a fresh authorization boundary;
+- publication authority is bound to exact candidate/distribution digests;
+- an uploader reporting success is not equivalent to registry proof;
+- registry state may later become yanked, partially available, or unavailable without rewriting historical publication evidence.
+
+See:
+
+- [Human approval lifecycle](https://github.com/Aditya671/StateWake/blob/main/docs/architecture/human-approval-lifecycle.md)
+- [Release publication authorization](https://github.com/Aditya671/StateWake/blob/main/docs/architecture/release-publication-authorization.md)
+- [Registry publication reconciliation](https://github.com/Aditya671/StateWake/blob/main/docs/architecture/release-registry-publication-reconciliation.md)
+
+---
+
+## Security model
+
+StateWake's security model follows several separation rules:
+
+- **Integrity is not truth.** A digest can prove bytes are unchanged without proving their claim is factually correct.
+- **A signature is not authorization.** Cryptographic verification and permission are separate decisions.
+- **Authentication is not application approval.** A verified identity does not automatically gain authority for every action.
+- **Recovery is not silent success.** Recovery evidence and post-recovery verification remain explicit.
+- **Unknown stays unknown.** Missing or failed evidence is not converted into a positive result.
+- **Private keys remain external.** Signing providers are referenced through host-managed custody boundaries.
+
+Security policy and reporting information:
+
+- [SECURITY.md](https://github.com/Aditya671/StateWake/blob/main/SECURITY.md)
+- [Security documentation](https://github.com/Aditya671/StateWake/tree/main/docs/security)
+
+---
+
+## Repository structure
+
+```text
+StateWake/
+├── src/statewake/          # Python package
+├── tests/                  # behavioral, integration, security, release tests
+├── scripts/                # development, testing, security, release tooling
+├── examples/               # executable public examples and reference applications
+├── docs/                   # user, architecture, security, release documentation
+├── ui/                     # optional Next.js inspection/review UI
+├── benchmarks/             # bounded benchmark assets
+├── data/                   # local runtime-data boundary; generated workspace content is ignored
+├── pyproject.toml          # package + tool configuration
+├── uv.lock                 # locked Python dependency graph
+├── verification_manifest.txt
+└── candidate-fingerprint.txt
+```
+
+`pyproject.toml` explicitly maps distribution `statewake-ai` to the `src/statewake` import package through the configured `uv_build` backend.
+
+---
+
+## Development
+
+StateWake uses Python `3.11` through `3.13`.
+
+Create/sync the development environment:
+
+```bash
+uv sync --all-extras --group dev
+```
+
+Common local gates:
+
+```bash
+uv run pytest
+uv run ruff check src tests scripts examples
+uv run ruff format --check src tests scripts examples
+uv run mypy
+uv build
+```
+
+Release-specific verification is intentionally stricter than ordinary development testing. See:
+
+- [SDLC](https://github.com/Aditya671/StateWake/blob/main/docs/SDLC.md)
+- [Quality gates](https://github.com/Aditya671/StateWake/blob/main/docs/QUALITY_GATES.md)
+- [Definition of Done](https://github.com/Aditya671/StateWake/blob/main/docs/DEFINITION_OF_DONE.md)
+- [Contributing](https://github.com/Aditya671/StateWake/blob/main/CONTRIBUTING.md)
+
+---
+
+## Release status and evidence
+
+Release records are versioned under [`docs/releases/`](https://github.com/Aditya671/StateWake/tree/main/docs/releases).
+
+For the v0.5.0 source line:
+
+- package version is `0.5.0`;
+- public API contract remains `1`;
+- v0.4.1 release records remain historical and are not rewritten;
+- verification and publication authorization remain separate gates;
+- external public-host qualification remains separate from local native-SDK qualification;
+- publication must be proven by registry evidence rather than inferred from an upload command.
+
+See the current [v0.5.0 release notes](https://github.com/Aditya671/StateWake/blob/main/docs/releases/v0.5.0/RELEASE_NOTES.md) and [CHANGELOG](https://github.com/Aditya671/StateWake/blob/main/CHANGELOG.md).
+
+---
 
 ## Documentation
 
-The canonical documentation lives in the GitHub repository:
+- [Documentation index](https://github.com/Aditya671/StateWake/tree/main/docs)
+- [User guide](https://github.com/Aditya671/StateWake/tree/main/docs/user-guide)
+- [API/reference](https://github.com/Aditya671/StateWake/tree/main/docs/reference)
+- [Architecture](https://github.com/Aditya671/StateWake/tree/main/docs/architecture)
+- [Integrations](https://github.com/Aditya671/StateWake/tree/main/docs/integrations)
+- [Security](https://github.com/Aditya671/StateWake/tree/main/docs/security)
+- [Operations](https://github.com/Aditya671/StateWake/tree/main/docs/operations)
+- [Testing](https://github.com/Aditya671/StateWake/tree/main/docs/testing)
+- [Governance](https://github.com/Aditya671/StateWake/tree/main/docs/governance)
+- [Release history](https://github.com/Aditya671/StateWake/tree/main/docs/releases)
+- [v0.5.0 technical white paper (Markdown)](https://github.com/Aditya671/StateWake/blob/main/docs/whitepaper/StateWake_Technical_White_Paper_v0.5.0.md)
+- [v0.5.0 technical white paper (PDF)](https://github.com/Aditya671/StateWake/blob/main/docs/whitepaper/StateWake_Technical_White_Paper_v0.5.0.pdf)
 
-- **User guide:** [GitHub](https://github.com/Aditya671/StateWake/tree/main/docs/user-guide)
-- **API reference:** [GitHub](https://github.com/Aditya671/StateWake/tree/main/docs/reference)
-- **Architecture:** [GitHub](https://github.com/Aditya671/StateWake/tree/main/docs/architecture)
-- **Specifications:** [GitHub](https://github.com/Aditya671/StateWake/tree/main/docs/specifications)
-- **Integrations:** [GitHub](https://github.com/Aditya671/StateWake/tree/main/docs/integrations)
-- **Security:** [GitHub](https://github.com/Aditya671/StateWake/tree/main/docs/security)
-- **Operations:** [GitHub](https://github.com/Aditya671/StateWake/tree/main/docs/operations)
-- **Testing:** [GitHub](https://github.com/Aditya671/StateWake/tree/main/docs/testing)
-- **Governance:** [GitHub](https://github.com/Aditya671/StateWake/tree/main/docs/governance)
-- **Development:** [GitHub](https://github.com/Aditya671/StateWake/tree/main/docs/development)
+---
 
-Project-level documents:
+## Support and project links
 
-- **Changelog:** [CHANGELOG.md](https://github.com/Aditya671/StateWake/blob/main/CHANGELOG.md)
-- **Contributing:** [CONTRIBUTING.md](https://github.com/Aditya671/StateWake/blob/main/CONTRIBUTING.md)
-- **Security policy:** [SECURITY.md](https://github.com/Aditya671/StateWake/blob/main/SECURITY.md)
-- **Code of Conduct:** [CODE_OF_CONDUCT.md](https://github.com/Aditya671/StateWake/blob/main/CODE_OF_CONDUCT.md)
-- **Third-party notices:** [THIRD_PARTY_NOTICES.md](https://github.com/Aditya671/StateWake/blob/main/THIRD_PARTY_NOTICES.md)
+- [GitHub repository](https://github.com/Aditya671/StateWake)
+- [PyPI package](https://pypi.org/project/statewake-ai/)
+- [Issue tracker](https://github.com/Aditya671/StateWake/issues)
+- [Security advisories](https://github.com/Aditya671/StateWake/security/advisories/new)
+- [Changelog](https://github.com/Aditya671/StateWake/blob/main/CHANGELOG.md)
+- [Code of Conduct](https://github.com/Aditya671/StateWake/blob/main/CODE_OF_CONDUCT.md)
+- [Third-party notices](https://github.com/Aditya671/StateWake/blob/main/THIRD_PARTY_NOTICES.md)
 
-## Source and support
-
-- **Source repository:** [GitHub](https://github.com/Aditya671/StateWake)
-- **Issues:** [GitHub Issues](https://github.com/Aditya671/StateWake/issues)
-- **Security reports:** [GitHub Security Advisories](https://github.com/Aditya671/StateWake/security/advisories/new)
-
-## Versioning
-
-The current source package version is **v0.4.1**. The repository records **v0.4.0** as its latest public release; v0.4.1 publication requires the release gates. Historical implementation identifiers remain development provenance.
-
-See the project's versioning policy in the repository documentation:
-
-[VERSIONING.md](https://github.com/Aditya671/StateWake/blob/main/docs/governance/VERSIONING.md)
+---
 
 ## License
 
-StateWake is released under the Apache License 2.0.
-
-[LICENSE](https://github.com/Aditya671/StateWake/blob/main/LICENSE)
+StateWake is released under the [Apache License 2.0](https://github.com/Aditya671/StateWake/blob/main/LICENSE).

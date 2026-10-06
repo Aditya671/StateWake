@@ -8,6 +8,7 @@ from .attestation_trust import (
     apply_attestation_trust_state,
     attestation_signing_key_status,
     create_signed_attestation_trust_state,
+    validate_attestation_trust_transition,
 )
 from .cryptographic_trust import (
     CryptographicAlgorithm,
@@ -42,6 +43,7 @@ from .evidence_receipt import ExternalEvidenceReceipt
 from .governance import (
     EvidenceGovernanceDecision,
     EvidenceGovernancePolicy,
+    PrivacyGovernanceRuntimeConfig,
     evaluate_evidence_governance,
     project_manifest_for_telemetry,
 )
@@ -147,6 +149,7 @@ __all__ = [
     "BehavioralDiff",
     "EvidenceGovernanceDecision",
     "EvidenceGovernancePolicy",
+    "PrivacyGovernanceRuntimeConfig",
     "EvidenceItem",
     "EvidenceManifest",
     "EvidenceReference",
@@ -205,6 +208,7 @@ __all__ = [
     "inherit_sensitivity",
     "filter_disclosable_ids",
     "create_signed_attestation_trust_state",
+    "validate_attestation_trust_transition",
     "evaluate_evidence_governance",
     "project_manifest_for_telemetry",
     "public_key_digest",

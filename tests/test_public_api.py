@@ -5,6 +5,8 @@ The active test suite protects the public package behavior and integration bound
 
 from pathlib import Path
 
+from scripts.common.project_metadata import load_project_metadata
+from scripts.common.project_paths import PROJECT_ROOT
 from statewake import __version__, read_reliability_state
 
 
@@ -13,7 +15,7 @@ def test_public_version_and_state_api(tmp_path: Path) -> None:
     Verify the `test_public_version_and_state_api` behavior
     and its expected invariants.
     """
-    assert __version__ == "0.4.1"
+    assert __version__ == load_project_metadata(PROJECT_ROOT).version
     snapshot = read_reliability_state(
         "subject-1", history_path=tmp_path / "state.jsonl"
     )

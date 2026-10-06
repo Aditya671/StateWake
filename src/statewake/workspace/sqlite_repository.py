@@ -11,6 +11,7 @@ from ..domain.governance import SENSITIVITY_ORDER
 from ..utils.time import parse_datetime
 from .errors import (
     CorruptWorkspaceDatabaseError,
+    ReadOnlyWorkspaceError,
     UnsupportedWorkspaceSchemaError,
     WorkspaceRecordConflictError,
 )
@@ -33,14 +34,26 @@ from .schema import EXPECTED_INDEXES, EXPECTED_TABLES, SCHEMA_SQL, SCHEMA_VERSIO
 class SqliteWorkspaceRepository(StateWakeRepository):
     """Persist the workspace operational index in a local SQLite database."""
 
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, *, read_only: bool = False) -> None:
         """Initialize a repository bound to the supplied database path."""
         self.path = path
+        self.read_only = read_only
+
+    def _require_writable(self) -> None:
+        """Reject repository mutations when opened through the inspection boundary."""
+        if self.read_only:
+            raise ReadOnlyWorkspaceError("workspace repository is read-only")
 
     def initialize(self) -> None:
         """Create the versioned schema or validate an existing schema."""
         try:
-            self.path.parent.mkdir(parents=True, exist_ok=True)
+            if self.read_only:
+                if not self.path.is_file():
+                    raise ReadOnlyWorkspaceError(
+                        "read-only workspace database does not exist"
+                    )
+            else:
+                self.path.parent.mkdir(parents=True, exist_ok=True)
             self._validate_file_header()
             with self.connect() as database:
                 version = int(database.execute("PRAGMA user_version").fetchone()[0])
@@ -52,6 +65,10 @@ class SqliteWorkspaceRepository(StateWakeRepository):
                 tables = self._table_names(database)
                 indexes = self._index_names(database)
                 if version == 0:
+                    if self.read_only:
+                        raise UnsupportedWorkspaceSchemaError(
+                            "read-only workspace database is not initialized"
+                        )
                     if tables:
                         raise CorruptWorkspaceDatabaseError(
                             "workspace database has unversioned tables"
@@ -89,10 +106,12 @@ class SqliteWorkspaceRepository(StateWakeRepository):
 
     def transaction(self) -> WorkspaceTransaction:
         """Return a transaction context for atomic workspace metadata writes."""
+        self._require_writable()
         return _SqliteWorkspaceTransaction(self)
 
     def index_record(self, record: WorkspaceRecord) -> None:
         """Atomically register one receipt while preserving receipt identity semantics."""
+        self._require_writable()
         try:
             with self.connect() as database:
                 database.execute("BEGIN IMMEDIATE")
@@ -306,6 +325,7 @@ class SqliteWorkspaceRepository(StateWakeRepository):
         legal_hold: bool,
     ) -> None:
         """Persist or replace one durable retention requirement."""
+        self._require_writable()
         try:
             with self.connect() as database:
                 database.execute(
@@ -347,6 +367,7 @@ class SqliteWorkspaceRepository(StateWakeRepository):
 
     def record_deletion(self, deletion: DeletionRecord) -> None:
         """Persist one payload-free deletion tombstone."""
+        self._require_writable()
         try:
             with self.connect() as database:
                 database.execute(
@@ -569,6 +590,7 @@ class SqliteWorkspaceRepository(StateWakeRepository):
         row_count: int,
     ) -> None:
         """Persist metadata for a successfully verified analytical export."""
+        self._require_writable()
         try:
             with self.connect() as database:
                 database.execute(
@@ -621,7 +643,26 @@ class SqliteWorkspaceRepository(StateWakeRepository):
         )
 
     def connect(self) -> sqlite3.Connection:
-        """Open a configured SQLite connection."""
+        """Open a configured SQLite connection without weakening read-only mode."""
+        if self.read_only:
+            resolved = self.path.expanduser().resolve()
+            wal_path = Path(f"{resolved}-wal")
+            shm_path = Path(f"{resolved}-shm")
+            journal_path = Path(f"{resolved}-journal")
+            if journal_path.exists():
+                raise ReadOnlyWorkspaceError(
+                    "read-only workspace cannot inspect a database with a rollback journal"
+                )
+            if wal_path.exists() != shm_path.exists():
+                raise ReadOnlyWorkspaceError(
+                    "read-only workspace has incomplete WAL sidecar state"
+                )
+            query = "mode=ro" if wal_path.exists() else "mode=ro&immutable=1"
+            uri = f"{resolved.as_uri()}?{query}"
+            database = sqlite3.connect(uri, timeout=30.0, uri=True)
+            database.execute("PRAGMA foreign_keys=ON")
+            database.execute("PRAGMA query_only=ON")
+            return database
         database = sqlite3.connect(self.path, timeout=30.0)
         database.execute("PRAGMA foreign_keys=ON")
         database.execute("PRAGMA journal_mode=WAL")
@@ -648,7 +689,7 @@ class SqliteWorkspaceRepository(StateWakeRepository):
 
     @staticmethod
     def _check_integrity(database: sqlite3.Connection) -> None:
-        """Raise a classified error when SQLite integrity checking fails."""
+        """Raise a classified error for structural or referential corruption."""
         result = database.execute("PRAGMA integrity_check").fetchone()
         if result is None or result[0] != "ok":
             detail = (
@@ -656,6 +697,13 @@ class SqliteWorkspaceRepository(StateWakeRepository):
             )
             raise CorruptWorkspaceDatabaseError(
                 f"workspace database integrity check failed: {detail}"
+            )
+        foreign_key_failure = database.execute("PRAGMA foreign_key_check").fetchone()
+        if foreign_key_failure is not None:
+            table, rowid, parent, constraint = foreign_key_failure
+            raise CorruptWorkspaceDatabaseError(
+                "workspace database foreign-key check failed: "
+                f"table={table}, rowid={rowid}, parent={parent}, constraint={constraint}"
             )
 
 

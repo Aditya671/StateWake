@@ -14,6 +14,7 @@ from statewake.workspace.configuration import WorkspaceConfiguration
 from statewake.workspace.csv_export import CsvExportError, CsvExportResult
 from statewake.workspace.errors import (
     CorruptWorkspaceDatabaseError,
+    ReadOnlyWorkspaceError,
     UnsupportedWorkspaceSchemaError,
     WorkspaceRepositoryError,
 )
@@ -105,6 +106,7 @@ __all__ = [
     "WorkspaceRepositoryError",
     "UnsupportedWorkspaceSchemaError",
     "CorruptWorkspaceDatabaseError",
+    "ReadOnlyWorkspaceError",
     "SqliteWorkspaceRepository",
     "SqlAlchemyWorkspaceRepository",
     "WorkspaceManifestError",

@@ -49,8 +49,27 @@ Run the complete release workflow and require human approval before publication.
 
 ## Public-trial regression gate
 
-Run `python scripts/testing/run_public_trial_regressions.py --mode source` on every release candidate. This validates the source regressions derived from the frozen 2026-09-25 public-repository trial. A source-mode PASS does not qualify real SDKs or public hosts; inspect each case's `qualification_status`. Before resuming large-host trials, run the same command with `--mode qualification` in an environment containing the advertised native integration extras. Qualification mode treats required SDK skips as `BLOCKED_ENV`, never as a pass.
+Run `python scripts/testing/run_public_trial_regressions.py --mode source` on every release candidate. This validates the source regressions derived from the frozen 2026-09-25 public-repository trial. A source-mode PASS does not qualify real SDKs or public hosts; inspect each case's `qualification_status`. Before resuming large-host trials, run the same command with `--mode qualification` in an environment containing the advertised native integration extras. Qualification mode reads those extras from `pyproject.toml`, records the installed distribution versions, and executes dedicated credential-free real-SDK probes. Missing SDKs are `BLOCKED_ENV`; an installed SDK whose required probe skips, cannot collect, or times out is `FAIL_INTEGRATION`; a failed native assertion is `FAIL_STATEWAKE`. See `docs/testing/NATIVE_INTEGRATION_QUALIFICATION.md`.
+
+## Real-system validation evidence harness
+
+`python scripts/testing/system_trial.py` is the repository-side coordinator for measured system trials. Its generated datasets, workspaces, host truth ledgers, StateWake event ledgers, and reports must be written outside the release source tree. The deterministic local controls validate the harness itself. `system_trial.py qualify-native-hosts` additionally composes the existing native qualification coordinator with real credential-free SDK host exercises, durable restart/read-back, and privacy-marker checks; PASS qualifies only the installed SDK/local-host boundary. It still does **not** qualify external public hosts. A scenario configured for an external host without a supplied result envelope is `BLOCKED_ENV`, never `PASS`.
+
+The harness must preserve the campaign outcome vocabulary and keep host truth, StateWake capture, verification, and operator interpretation distinct. StateWake output must never be used as the oracle for StateWake.
 
 ### License metadata / PEP 639
 
-Release packaging must retain `project.license = "Apache-2.0"` and `project.license-files = ["LICENSE"]`. Deprecated `License :: ...` Trove classifiers are not part of the StateWake v0.4.1 package metadata. `tests/release/test_license_metadata_policy.py` protects this boundary, and release builds should inspect wheel metadata and build output for license-metadata deprecation warnings.
+Release packaging must retain `project.license = "Apache-2.0"` and `project.license-files = ["LICENSE"]`. Deprecated `License :: ...` Trove classifiers are not part of the current StateWake package metadata. `tests/release/test_license_metadata_policy.py` protects this boundary, and release builds should inspect wheel metadata and build output for license-metadata deprecation warnings.
+## Deterministic validation-state preflight
+
+Development changes are expected to change source digests. Therefore ordinary regression tests must not fail solely because a previously generated `verification_manifest.txt` or `candidate-fingerprint.txt` is stale. The supported candidate flow is:
+
+1. run `scripts/release/prepare_sdlc_validation.py`; it refreshes only the derived release identity, immediately verifies it, checks `uv.lock` freshness, and executes continuous-security assurance without baseline promotion;
+2. run the remaining behavioral/static gates;
+3. verify release identity again after the check profile so an unexpected test/tool mutation cannot be hidden;
+4. for the release profile, promote the continuous-security baseline only after successful affected security re-verification, then refresh and verify release identity one final time before candidate finalization.
+
+The preflight deliberately does **not** regenerate `uv.lock`, `ui/package-lock.json`, current source/documentation, or `docs/security/security_assurance_baseline_manifest.txt`. Those are governed inputs, not disposable caches. A stale lock, stale source file, or failed security re-verification remains a failure instead of being rewritten merely to make the SDLC green.
+
+Release and supply-chain checks should validate structured metadata, executable behavior, file/content digests, and real interfaces. They must not depend on incidental README wording, prose sentences, CLI display phrases, or raw YAML substrings when an executable/structured authority exists.
+

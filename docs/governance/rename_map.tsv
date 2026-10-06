@@ -35,3 +35,17 @@ tests/test_tier12_runtime_containment.py	tests/security/test_runtime_containment
 tests/test_tier13_data_lifecycle.py	tests/security/test_data_lifecycle_confidentiality.py	test	medium
 tests/test_tier14_security_incident.py	tests/security/test_security_incident_continuity.py	test	medium
 tests/test_tier15_cryptographic_trust.py	tests/security/test_cryptographic_trust_migration.py	test	medium
+config/project_paths.py	scripts/common/project_paths.py	repository tooling	medium
+docs/examples/	examples/	executable examples	medium
+docs/workspace-backend-migration.md	docs/operations/workspace-backend-migration.md	documentation	low
+docs/workspace-production-operations.md	docs/operations/workspace-production-operations.md	documentation	low
+docs/integrations/phase5-producer-integrations.md	docs/integrations/producer-integrations.md	documentation	medium
+tests/unit/integrations/test_phase5_integrations.py	tests/unit/integrations/test_producer_integrations.py	test	low
+tests/workspace/integrations/test_phase5_integration_workspace.py	tests/workspace/integrations/test_producer_integration_workspace.py	test	low
+tests/benchmarks/test_phase7_comparative_validation.py	tests/benchmarks/test_comparative_validation.py	test	low
+tests/benchmarks/test_phase7_workspace.py	tests/benchmarks/test_validation_study_workspace.py	test	low
+docs/testing/CHAOS_VALIDATION_REPORT_0.1.0.md	docs/releases/v0.1.0/validation/CHAOS_VALIDATION_REPORT_0.1.0.md	historical validation evidence	low
+docs/testing/EXTREME_VALIDATION_REPORT_0.1.0.md	docs/releases/v0.1.0/validation/EXTREME_VALIDATION_REPORT_0.1.0.md	historical validation evidence	low
+docs/testing/FAILURE_LAB_REPORT_0.1.0.md	docs/releases/v0.1.0/validation/FAILURE_LAB_REPORT_0.1.0.md	historical validation evidence	low
+docs/testing/PROPERTY_STATE_MACHINE_VALIDATION_0.1.0.md	docs/releases/v0.1.0/validation/PROPERTY_STATE_MACHINE_VALIDATION_0.1.0.md	historical validation evidence	low
+docs/testing/REAL_WORLD_VALIDATION_REPORT_0.1.0.md	docs/releases/v0.1.0/validation/REAL_WORLD_VALIDATION_REPORT_0.1.0.md	historical validation evidence	low

@@ -14,6 +14,7 @@ from pathlib import Path
 
 from ..adapters.evidence_ingestion import LocalEvidenceIngestionAdapter
 from ..domain.evidence_receipt import ExternalEvidenceReceipt
+from ..domain.governance import PrivacyGovernanceRuntimeConfig
 
 
 def _empty_metadata() -> dict[str, str]:
@@ -30,6 +31,7 @@ class EvidenceAdapterContext:
     source_event_id: str | None = None
     run_id: str | None = None
     metadata: Mapping[str, str] = field(default_factory=_empty_metadata)
+    sensitivity: str = "internal"
 
 
 class FileEvidenceAdapter:
@@ -48,7 +50,11 @@ class FileEvidenceAdapter:
 
     @classmethod
     def for_root(
-        cls, context: EvidenceAdapterContext, *, root: Path = Path(".statewake")
+        cls,
+        context: EvidenceAdapterContext,
+        *,
+        root: Path = Path(".statewake"),
+        privacy_governance: PrivacyGovernanceRuntimeConfig | None = None,
     ) -> FileEvidenceAdapter:
         """Create a first-party adapter with local receipt and content stores."""
         from ..adapters.content_store import ContentAddressedArtifactStore
@@ -57,6 +63,7 @@ class FileEvidenceAdapter:
         ingestion = LocalEvidenceIngestionAdapter(
             ContentAddressedArtifactStore(root / "artifacts"),
             JsonEvidenceReceiptStore(root / "receipts"),
+            privacy_governance=privacy_governance,
         )
         return cls(ingestion, context)
 
@@ -82,6 +89,7 @@ class FileEvidenceAdapter:
             run_id=self.context.run_id,
             captured_at=captured_at,
             metadata=dict(self.context.metadata),
+            sensitivity=self.context.sensitivity,
         )
 
 

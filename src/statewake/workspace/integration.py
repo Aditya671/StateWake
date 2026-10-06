@@ -14,6 +14,7 @@ from ..adapters.evidence_ingestion import (
 )
 from ..domain.data_lifecycle import DataLifecycleDecision, DataLifecyclePolicy
 from ..domain.evidence_receipt import ExternalEvidenceReceipt
+from ..domain.governance import PrivacyGovernanceRuntimeConfig
 from .analytical import AnalyticalQueryResult, DuckDBAnalyticalAdapter
 from .csv_export import CsvExportResult, verify_csv, write_csv
 from .errors import CorruptWorkspaceDatabaseError, UnsupportedWorkspaceSchemaError
@@ -42,16 +43,24 @@ from .xlsx_export import XlsxExportResult, verify_xlsx, write_xlsx
 class WorkspaceIngestionAdapter:
     """Delegate evidence capture to StateWake and index the resulting receipt."""
 
-    def __init__(self, workspace_root: Path, repository: StateWakeRepository) -> None:
+    def __init__(
+        self,
+        workspace_root: Path,
+        repository: StateWakeRepository,
+        *,
+        privacy_governance: PrivacyGovernanceRuntimeConfig | None = None,
+    ) -> None:
         """Initialize the binding over existing canonical persistence components."""
         self._repository = repository
         self._receipt_store = JsonEvidenceReceiptStore(workspace_root / "receipts")
         self._lifecycle = WorkspaceLifecycle(workspace_root, repository)
         self._verifier = WorkspaceVerifier(workspace_root)
         self._analytical = DuckDBAnalyticalAdapter()
+        self._privacy_governance = privacy_governance
         self._ingestion = LocalEvidenceIngestionAdapter(
             ContentAddressedArtifactStore(workspace_root / "artifacts"),
             self._receipt_store,
+            privacy_governance=privacy_governance,
         )
 
     def ingest_bytes(
@@ -66,6 +75,7 @@ class WorkspaceIngestionAdapter:
         producer_version: str | None = None,
         run_id: str | None = None,
         metadata: Mapping[str, str] | None = None,
+        sensitivity: str = "internal",
     ) -> WorkspaceRecord:
         """Capture bytes through StateWake and register the canonical receipt."""
         receipt = self._ingestion.ingest_bytes(
@@ -78,8 +88,9 @@ class WorkspaceIngestionAdapter:
             producer_version=producer_version,
             run_id=run_id,
             metadata=dict(metadata or {}),
+            sensitivity=sensitivity,
         )
-        return self._index_receipt(receipt)
+        return self._index_receipt(receipt, sensitivity=sensitivity)
 
     def ingest_file(
         self,
@@ -92,6 +103,7 @@ class WorkspaceIngestionAdapter:
         producer_version: str | None = None,
         run_id: str | None = None,
         metadata: Mapping[str, str] | None = None,
+        sensitivity: str = "internal",
     ) -> WorkspaceRecord:
         """Capture a file through StateWake and register the canonical receipt."""
         receipt = self._ingestion.ingest_file(
@@ -103,8 +115,9 @@ class WorkspaceIngestionAdapter:
             producer_version=producer_version,
             run_id=run_id,
             metadata=dict(metadata or {}),
+            sensitivity=sensitivity,
         )
-        return self._index_receipt(receipt)
+        return self._index_receipt(receipt, sensitivity=sensitivity)
 
     def verify(self, record: WorkspaceRecord) -> None:
         """Verify the canonical receipt and content through StateWake."""
@@ -480,12 +493,24 @@ class WorkspaceIngestionAdapter:
             )
         )
 
-    def _index_receipt(self, receipt: ExternalEvidenceReceipt) -> WorkspaceRecord:
-        """Project one existing receipt into the workspace's operational index."""
+    def _index_receipt(
+        self,
+        receipt: ExternalEvidenceReceipt,
+        *,
+        sensitivity: str,
+    ) -> WorkspaceRecord:
+        """Project one governed receipt into the workspace's operational index."""
+        policy_id = (
+            self._privacy_governance.evidence_policy.policy_id
+            if self._privacy_governance is not None
+            else "default"
+        )
         record = WorkspaceRecord(
             record_id=receipt.receipt_id,
             receipt=receipt,
             created_at=receipt.captured_at,
+            sensitivity=sensitivity,
+            policy_id=policy_id,
         )
         self._repository.index_record(record)
         return record

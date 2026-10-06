@@ -232,6 +232,84 @@ def apply_attestation_trust_state(
     return {anchor.key_id: anchor.status for anchor in state.anchors}
 
 
+def validate_attestation_trust_transition(
+    previous: SignedAttestationTrustState | None,
+    current: SignedAttestationTrustState,
+) -> None:
+    """Validate one append-only attestation trust-state transition.
+
+    The transition preserves key identity and prevents reactivation of revoked or
+    superseded signing keys.  It intentionally validates only StateWake's recorded
+    trust-state semantics; external authority/key-custody policy remains outside
+    this contract.
+    """
+    from datetime import datetime
+
+    def issued(value: str) -> datetime:
+        """Parse one timezone-aware trust-state issuance timestamp."""
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise ValueError(
+                "attestation trust-state issued_at must be ISO-8601."
+            ) from exc
+        if parsed.tzinfo is None:
+            raise ValueError(
+                "attestation trust-state issued_at must include a timezone."
+            )
+        return parsed
+
+    if previous is None:
+        if current.previous_digest is not None:
+            raise ValueError(
+                "initial attestation trust state must not name a predecessor."
+            )
+        return
+
+    if current.version != previous.version + 1:
+        raise ValueError(
+            "attestation trust-state versions must advance by exactly one."
+        )
+    if current.previous_digest != previous.digest():
+        raise ValueError(
+            "attestation trust-state previous_digest does not match history tip."
+        )
+    if issued(current.issued_at) <= issued(previous.issued_at):
+        raise ValueError(
+            "attestation trust-state issued_at must increase monotonically."
+        )
+
+    previous_by_id = {anchor.key_id: anchor for anchor in previous.anchors}
+    current_by_id = {anchor.key_id: anchor for anchor in current.anchors}
+    for key_id, old in previous_by_id.items():
+        new = current_by_id.get(key_id)
+        if new is None:
+            continue
+        if new.public_key != old.public_key:
+            raise ValueError(f"attestation trust key material changed for {key_id}.")
+        if old.status == "revoked" and new.status != "revoked":
+            raise ValueError(
+                f"revoked attestation trust key cannot be reactivated: {key_id}."
+            )
+        if old.status == "superseded":
+            if new.status != "superseded" or new.superseded_by != old.superseded_by:
+                raise ValueError(
+                    f"superseded attestation trust key cannot be reactivated or retargeted: {key_id}."
+                )
+
+    for key_id, new in current_by_id.items():
+        if key_id not in previous_by_id and new.status != "active":
+            raise ValueError(
+                f"new attestation trust key must first appear active: {key_id}."
+            )
+        if new.status == "superseded":
+            successor = current_by_id.get(new.superseded_by or "")
+            if successor is None or successor.status != "active":
+                raise ValueError(
+                    f"superseded attestation trust key requires an active successor: {key_id}."
+                )
+
+
 def attestation_signing_key_status(
     state: SignedAttestationTrustState, key_id: str
 ) -> AttestationTrustAnchor:

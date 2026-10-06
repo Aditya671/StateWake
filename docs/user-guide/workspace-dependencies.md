@@ -34,4 +34,4 @@ The packages above are installed as runtime dependencies, while adapters are con
 - XLSX requires openpyxl only when XLSX operations are invoked.
 - SQLAlchemy is loaded lazily only when the alternative repository backend is constructed.
 
-This keeps adapter execution explicit while making the v0.4.1 workspace capabilities available through the standard installation.
+This keeps adapter execution explicit while making the v0.5.0 workspace capabilities available through the standard installation.

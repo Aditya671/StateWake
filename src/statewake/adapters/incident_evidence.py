@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from hashlib import sha256
@@ -112,48 +113,8 @@ class JsonlIncidentEvidenceStore:
         """Read and verify records while holding the store lock."""
         if not self.path.exists():
             return []
-        records: list[StoredIncidentRecord] = []
         with self.path.open(encoding="utf-8") as handle:
-            for line_number, line in enumerate(handle, start=1):
-                if not line.strip():
-                    continue
-                try:
-                    payload = json.loads(line)
-                    if not isinstance(payload, dict):
-                        raise ValueError("incident evidence record must be an object")
-                    incident_payload = payload["incident"]
-                    if not isinstance(incident_payload, dict):
-                        raise ValueError("incident must be an object")
-                    incident_digest = str(incident_payload.get("incident_digest", ""))
-                    if not incident_digest:
-                        raise ValueError("incident_digest is required")
-                    format_version = incident_payload.get("format_version", "1")
-                    if str(format_version) != "1":
-                        raise ValueError("unsupported incident evidence format version")
-                    incident = _incident_from_dict(incident_payload)
-                    recorded_at = datetime.fromisoformat(str(payload["recorded_at"]))
-                    if recorded_at.tzinfo is None:
-                        raise ValueError("recorded_at must be timezone-aware")
-                    previous = payload.get("previous_digest")
-                    digest = str(payload["digest"])
-                    record = StoredIncidentRecord(
-                        sequence=_require_int(payload, "sequence"),
-                        recorded_at=recorded_at,
-                        incident=incident,
-                        previous_digest=None if previous is None else str(previous),
-                        digest=digest,
-                    )
-                    record.verify(
-                        expected_previous=records[-1].digest if records else None
-                    )
-                except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
-                    raise ValueError(
-                        f"invalid incident evidence record at line {line_number}: {exc}"
-                    ) from exc
-                if record.sequence != len(records):
-                    raise ValueError("incident evidence sequence is not contiguous")
-                records.append(record)
-        return records
+            return _parse_incident_records(handle)
 
     class _Lock:
         """Represent the process-shared lock for the incident store."""
@@ -185,6 +146,85 @@ class JsonlIncidentEvidenceStore:
     def _lock(self) -> JsonlIncidentEvidenceStore._Lock:
         """Return the process-shared lock context."""
         return self._Lock(self)
+
+
+def _parse_incident_records(
+    lines: Iterable[str], *, max_records: int | None = None
+) -> list[StoredIncidentRecord]:
+    """Parse and verify one canonical incident-evidence JSONL chain."""
+    if max_records is not None and max_records <= 0:
+        raise ValueError("max_records must be positive when provided")
+    records: list[StoredIncidentRecord] = []
+    for line_number, line in enumerate(lines, start=1):
+        if not line.strip():
+            continue
+        if max_records is not None and len(records) >= max_records:
+            raise OverflowError("incident evidence record count exceeds read limit")
+        try:
+            payload = json.loads(line)
+            if not isinstance(payload, dict):
+                raise ValueError("incident evidence record must be an object")
+            incident_payload = payload["incident"]
+            if not isinstance(incident_payload, dict):
+                raise ValueError("incident must be an object")
+            incident_digest = str(incident_payload.get("incident_digest", ""))
+            if not incident_digest:
+                raise ValueError("incident_digest is required")
+            format_version = incident_payload.get("format_version", "1")
+            if str(format_version) != "1":
+                raise ValueError("unsupported incident evidence format version")
+            incident = _incident_from_dict(incident_payload)
+            recorded_at = datetime.fromisoformat(str(payload["recorded_at"]))
+            if recorded_at.tzinfo is None:
+                raise ValueError("recorded_at must be timezone-aware")
+            previous = payload.get("previous_digest")
+            digest = str(payload["digest"])
+            record = StoredIncidentRecord(
+                sequence=_require_int(payload, "sequence"),
+                recorded_at=recorded_at,
+                incident=incident,
+                previous_digest=None if previous is None else str(previous),
+                digest=digest,
+            )
+            record.verify(expected_previous=records[-1].digest if records else None)
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+            raise ValueError(
+                f"invalid incident evidence record at line {line_number}: {exc}"
+            ) from exc
+        if record.sequence != len(records):
+            raise ValueError("incident evidence sequence is not contiguous")
+        records.append(record)
+    return records
+
+
+def read_incident_evidence_snapshot(
+    path: Path, *, max_bytes: int, max_records: int
+) -> tuple[StoredIncidentRecord, ...]:
+    """Read a verified incident chain without creating locks or mutating the store."""
+    if max_bytes <= 0:
+        raise ValueError("max_bytes must be positive")
+    if max_records <= 0:
+        raise ValueError("max_records must be positive")
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        fd = os.open(path, flags)
+    except OSError:
+        raise
+    try:
+        chunks: list[bytes] = []
+        total = 0
+        while True:
+            chunk = os.read(fd, min(65_536, max_bytes + 1 - total))
+            if not chunk:
+                break
+            chunks.append(chunk)
+            total += len(chunk)
+            if total > max_bytes:
+                raise OverflowError("incident evidence source exceeds read limit")
+        text = b"".join(chunks).decode("utf-8", errors="strict")
+    finally:
+        os.close(fd)
+    return tuple(_parse_incident_records(text.splitlines(), max_records=max_records))
 
 
 def _require_int(payload: dict[str, object], field: str) -> int:

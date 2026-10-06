@@ -1,9 +1,64 @@
 # Changelog
 
+## [v0.5.0] - Unreleased
+
+- Hardened Windows validation and SDLC preflight: security-audit snapshots now use binary descriptor I/O with physical-byte accounting, POSIX permission assertions are platform-bounded, the current white-paper check derives from project metadata, and `prepare_sdlc_validation.py` refreshes only safe generated identity while checking locks/security without silently promoting governed baselines.
+
+This entry records source changes present after the published v0.4.1 release. The 0.5.0 version update does not by itself establish release readiness or publication authorization.
+
+### Human approval and release publication lifecycle
+
+- Added immutable canonical approval revocation evidence and fail-closed `active` / `revoked` / `superseded` lifecycle projection.
+- Added separately authorized revocation and supersession API operations with exact-basis, CSRF, idempotency, and authority checks.
+- Made fresh release-proof reconciliation consume only currently active canonical approval evidence while preserving historical verification reports as immutable snapshots.
+- Added an immutable `ReleasePublicationBasis` binding publication authority to the exact target registry, source identity, verification-evidence digest, and distribution digests.
+- Reused the canonical HumanApprovalContract revocation/supersession lifecycle for publication authority and added fresh execution-permit verification that re-hashes exact distribution bytes and fails closed on missing, extra, changed, revoked, or superseded publication state.
+- Integrated the authority/permit gate into the protected GitHub Environment → PyPI/TestPyPI Trusted Publishing workflow while preserving `release_published: false` until registry evidence exists.
+
+### Registry publication reconciliation
+
+- Added a digest-bound `RegistryPublicationReceipt` tied to the exact `ReleasePublicationBasis` and `PublicationExecutionPermit`.
+- Added fail-closed PyPI/TestPyPI read-back that verifies the exact registry file set, registry-reported sizes/SHA-256 values, yanked state, and independently downloaded public distribution bytes.
+- Added separate post-publication reconciliation jobs without OIDC publication permission; a successful uploader step is not treated as registry proof.
+- Added an immutable, digest-chained registry lifecycle over the canonical publication receipt, preserving publication history while recording later `available`, `yanked`, `partially_available`, and `unavailable` states.
+- Added reversible yank/unyank handling, exact missing-file accounting, fail-closed lifecycle reconciliation, canonical JSONL persistence, continuous-security classification, and read-only operational-trust projection.
+
+### Independent-oracle native-host qualification
+
+- Unified the existing native-SDK qualification authority with the independent-oracle system-trial harness instead of creating a second compatibility runner.
+- Added OpenTelemetry to the real-SDK qualification matrix so all five advertised integration extras are qualified through installed SDK APIs.
+- Added credential-free real host exercises for OpenAI Agents, LangChain, LangGraph, LlamaIndex, and OpenTelemetry with host-owned truth ledgers kept separate from StateWake observations.
+- Added durable native capture/restart read-back, synthetic-secret leakage checks, fail-closed missing/broken SDK status, bounded operator reports, and one digest-bound qualification summary recording exact Python and SDK versions.
+- Preserved external public-host qualification as a separate evidence boundary; local native-host PASS does not claim that external repositories were qualified.
+
+### Production cleanup
+
+- Replaced the current v0.4.0 white-paper package with the supplied StateWake v0.5.0 Markdown/PDF editions, removed the v0.4.0-only companion grounding map from the current white-paper boundary, and updated current documentation/release-scope references while preserving historical release notes.
+- Set the source package version to `0.5.0` while preserving public API contract version `1` and the historical v0.4.1 release records.
+- Removed the unused project-level TestPyPI resolver index; TestPyPI/PyPI publication remains owned by the protected release workflow.
+- Removed stale Ruff/mypy exclusions for the nonexistent `repository history` directory.
+- Kept explicit uv package discovery for distribution `statewake-ai` → import package `statewake`, and tightened the uv build-backend compatibility range to the current 0.10.x line.
+- Replaced UI `latest` dependency declarations with the exact direct versions evidenced by the supplied StateWake UI package bundle.
+- Removed the empty generated `verification/` directory from the source artifact and regenerated maintained release/security identity manifests after the source changes.
+- Replaced the directory-scoped `.github/README.md` with the root `README.md` as the single repository landing README and refreshed installation, capability, integration, trust, UI, workspace, and release-lifecycle guidance for the v0.5.0 source line.
+- Removed brittle current-release literals from release/verification tooling: versioned release-note selection, distribution/import-package discovery, CLI module discovery, package-root checks, lock lookup, GitHub repository identity, and default-branch governance now derive from `pyproject.toml` or live repository metadata; fixed security/schema invariants remain explicit verification contracts.
+- Rehydrated the repository around purpose-owned homes without changing the `src/statewake` runtime architecture: executable examples now live under `examples/`, repository-path helpers under `scripts/common/`, workspace runbooks under `docs/operations/`, generated runtime data is excluded under `data/statewake/`, and historical v0.1.0 validation snapshots are isolated under their release-history boundary.
+- Replaced active phase-number filenames with purpose-based names where the names were development-sequence residue, preserved frozen benchmark/study identities and historical release evidence, corrected the architecture-decision index to reference only retained ADRs, and strengthened structure verification against executable code in documentation, placeholder directories, and retired paths.
+- Aligned contributor/development commands and Makefile synchronization/build commands with the committed lockfile and source-independent package build path, while preserving existing pytest/Ruff/mypy and release-validation authorities.
+- Corrected strict frontend TypeScript qualification failures without weakening compiler settings: claim comparison now narrows selected record IDs before URL encoding, and workspace-operation requests use an explicitly typed Axios request configuration compatible with `exactOptionalPropertyTypes`.
+- Corrected the attestation-trust frontend regression so it rejects actual raw signature/key fields without falsely rejecting safe metadata such as `signature_envelope_recorded` or public-key digests.
+- Corrected the Next.js App Router/Ant Design server-component boundary by routing Typography subcomponents through an explicit client wrapper across all server-rendered pages; pinned Turbopack to the `ui/` package root so unrelated repository-level lockfiles cannot change workspace inference.
+- Corrected repository verification so local/generated dependency trees such as `.venv`, `node_modules`, `.next`, and build/cache directories are pruned before structural placeholder checks and release-input enumeration; installed dependency marker files can no longer cause false repository-structure failures.
+- Corrected Windows static-type portability for attestation trust-history permission hardening by using a `sys.platform` guard around the POSIX-only `os.fchmod` call while preserving descriptor-based mode hardening on POSIX.
+- Corrected Windows reliability-attestation byte accounting by forcing descriptor I/O into binary mode, dynamically counting the exact physical bytes scanned, rejecting concurrent size changes, and constructing LF/CRLF regression fixtures from explicit bytes so newline translation cannot alter expected sizes.
+
 ## [v0.4.1] - Reliability and integration updates
 
-This section describes the v0.4.1 source candidate after the v0.4.0 release. It records source changes; publication and artifact qualification require their own release gates.
+This section records the changes shipped in the published Production/Stable v0.4.1 release. Future versions and replacement artifacts require their own qualification and publication gates.
 
+- Integrated the optional StateWake reliability/evidence workspace UI source: deterministic claim inspection, history/comparison, bounded review statements, scoped HumanApprovalContract evidence, real report-backed overview cards, secured read/review APIs, and frontend release-scope governance. This source integration does not retroactively change the identity of an already-published PyPI artifact; replacement artifacts require their own qualification.
+
+- Reconciled Tier 6/7/11/12/13 security-assurance documentation with the deterministic verifier contracts, and added a regression that executes the complete deterministic security-verifier suite so documentation/verifier drift fails closed.
 - Added the dated v0.4.0 technical white paper in Markdown and PDF with its grounding map and dependency errata; indexed these documents and included them in the current release-input fingerprint.
 - Synchronized the v0.4.1 package, lockfile, public API documentation, active release guidance, and version regressions while preserving v0.4.0 historical records.
 - Improved Phase 7 negative-trial findings: `broken_provenance_edge` and `invalid_reliability_transition` now exercise their distinct existing domain validators instead of inheriting detection from a generic failed-profile fixture. Preserved structural profile and underlying evidence verification as separate results; added positive/negative control regressions.
@@ -13,7 +68,7 @@ This section describes the v0.4.1 source candidate after the v0.4.0 release. It 
 - Improved prior-release design findings through opt-in independently pinned Ed25519 producer-receipt and release-signature verification; kept structural claims, observed content, signer authentication and human publication approval separate.
 - Bounded native failure-journal disk use, rejected symlinked journal paths and malformed records, and restricted native metadata to printable bounded scalars without arbitrary SDK stringification.
 - Restored the missing design-gap implementation record; explicitly documented machine-dependent gates and noncooperative-writer/privacy/producer-honesty limits.
-- Improved prior-release design gaps D11/D12/D14/D16: fail-closed missing mapping observations, bounded native capture with optional durable failures and workspace persistence, distinct point-in-time checkpoint/event contracts, and candidate-only maturity labeling. D07 and external trust boundaries remain open.
+- Improved prior-release design gaps D11/D12/D14/D16: fail-closed missing mapping observations, bounded native capture with optional durable failures and workspace persistence, distinct point-in-time checkpoint/event contracts, and release-status maturity labeling. D07 and external trust boundaries remain open.
 
 
 - Improved prior-release design-gap findings D11, D13 and D15: fail-closed persisted capture timestamps and payload digest binding, GenAI-only native span admission, and Markdown-safe human-report field rendering; added reproducible negative tests and recorded remaining audit findings in `docs/verification/design-audit-pending-defects-followup.md`.
@@ -151,7 +206,7 @@ StateWake v0.1.1 promotes the verified v0.1.0 public package baseline to the `De
 - Preserved the v0.1.0 public API contract version (`1`).
 - Preserved v0.1.0 as the immutable preceding public release; no historical release artifact is overwritten.
 
-All notable StateWake changes are recorded here. Historical implementation records remain in `repository history` and are not current release authority.
+All notable StateWake changes are recorded here. Historical implementation records are retained separately from the current source/release authority.
 
 ## [v0.1.0] — Strict quality and reliability hardening
 
@@ -199,7 +254,7 @@ All notable StateWake changes are recorded here. Historical implementation recor
 - Revalidated public documentation, executable examples, package identity, package boundaries, compatibility fixtures, script portability, property/state-machine validation, real-world scenarios, chaos validation, extreme validation, deep chaos, failure laboratory, and external integration fixtures.
 - Native Ruff, mypy, and PyNaCl remain environment-dependent verification gates when unavailable in an isolated sandbox.
 
-## [v0.1.0] — Packaging and documentation correction
+### Packaging and documentation correction
 
 StateWake v0.1.0 is a backward-compatible patch release following the initial TestPyPI publication.
 
@@ -211,7 +266,7 @@ StateWake v0.1.0 is a backward-compatible patch release following the initial Te
 - Added canonical GitHub project, repository, issue, documentation, changelog, and security metadata to package configuration.
 - Preserved the StateWake v0.1.0 runtime/API baseline; this patch changes packaging and documentation presentation only.
 
-## [v0.1.0] — StateWake initial public package baseline
+### StateWake initial public package baseline
 
 At the time of the v0.1.0 entry, it was the package baseline. Its release process required deterministic automated verification followed by explicit human release approval.
 
@@ -231,7 +286,7 @@ At the time of the v0.1.0 entry, it was the package baseline. Its release proces
 
 ### Historical provenance
 
-Earlier implementation records are preserved under `repository historyhistorical-evaluations/` for engineering archaeology only. They do not define the current StateWake architecture, API, roadmap, or release identity.
+Earlier implementation records are historical engineering evidence only. They do not define the current StateWake architecture, API, roadmap, or release identity.
 ## Native integration SDK import compatibility audit — 2026-09-23
 
 - Updated OpenAI Agents and LangChain callback imports to the officially documented defining modules rather than assuming top-level re-exports.

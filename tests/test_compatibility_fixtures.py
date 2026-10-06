@@ -1,7 +1,7 @@
 import json
 from typing import Any
 
-from config.project_paths import TESTS_PATH
+from scripts.common.project_paths import TESTS_PATH
 from statewake.domain.evidence_receipt import ExternalEvidenceReceipt
 from statewake.domain.reliability_attestation import ReliabilityOutcomeAttestation
 from statewake.domain.reliability_decision_basis import ReliabilityDecisionBasis

@@ -29,10 +29,24 @@ Tier 7 does not create parallel trust or key-management subsystems. It reuses:
 
 - `TrustCheckpoint` and `compare_local_tip()` for checkpoint verification/discrepancy detection;
 - `JsonTrustAnchorStore` for non-overwriting checkpoint persistence;
-- `ExternalSigningAdapter` and lifecycle-provider protocols for external private-key custody;
+- `ExternalSigningAdapter`, `ExternalCommandSigningProvider`, and lifecycle-provider protocols for external private-key custody;
 - `SignedAttestationTrustState` and its separately supplied authority verifier for attestation-key lifecycle;
 - recovery authority and non-invention semantics from Tier 6;
 - security audit and provenance controls already mapped by the Tier 4/Tier 5 assurance layers.
+
+## Operational external-signing boundary
+
+StateWake can operationalize the existing signing protocol through `ExternalCommandSigningProvider` without importing private key material. The provider command is executed directly with `shell=False` semantics; StateWake sends a bounded `statewake-external-signing.v1` JSON request containing only canonical payload bytes and a `SigningKeyReference`, and accepts only a strict JSON response matching the requested Ed25519 algorithm and key identity. The returned signature must be exactly 64 bytes. Provider stderr is not reflected into StateWake error text.
+
+The exact signed attestation trust-state snapshot is authenticated against the independently supplied authority store **before** the external provider is invoked. The key must be active in that authenticated state, and the returned signature is cryptographically verified again before the canonical signed binding is persisted. This means an unauthenticated trust document, revoked/superseded key, substituted provider key identity, malformed provider response, failed signer process, or invalid signature cannot become a persisted signed reliability-attestation binding.
+
+The signer executable, its KMS/HSM credentials, its administrative ownership, and the trustworthiness of the external provider process remain deployment responsibilities. The subprocess boundary establishes protocol and custody separation; it does not by itself prove organizational or infrastructure independence.
+
+## Operational signed-verification boundary
+
+Canonical signed reliability attestations are verified through the same trust authorities used for persistence and read-only investigation. `verify_persisted_signed_reliability_outcome(...)` locates the unique canonical `signed-reliability-outcome-binding.v1` for the supplied attestation, and `resolve_reliability_attestation_trust_state(...)` requires an exact match on both the persisted trust-state version and digest. `verify_reliability_attestation_trust_context(...)` then authenticates the independent authority key, signing-key digest/status, and Ed25519 envelope before the CLI reports signed verification success.
+
+Historical verification never substitutes the latest trust state for the exact recorded signing state. This preserves the distinction between “the key is revoked now” and “the signature was created under an authenticated historical state in which the key was active.” Missing historical state, authority mismatch, key mismatch, tampered bindings, invalid signatures, or a supplied attestation that differs from the canonical envelope all fail closed. The verification response is privacy-bounded and does not emit raw signatures or key bytes.
 
 ## Key-purpose separation
 
@@ -112,4 +126,4 @@ This tier does not create separate hosts, external registries, KMS/HSM systems, 
 
 ## Relationship to package release
 
-Tier 7 describes trust-domain and anchor controls in the v0.4.1 package. It does not itself perform release tagging, package upload, or publication.
+Tier 7 describes trust-domain and anchor controls shipped in the published Production/Stable v0.4.1 package. This assurance does not independently authorize a future publication, tag, package upload, or replacement release.

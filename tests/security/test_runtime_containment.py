@@ -120,14 +120,6 @@ def test_deadline_is_bounded() -> None:
         deadline.check()
 
 
-def test_server_uses_bounded_json_loader() -> None:
-    """Confirm the HTTP adapter uses the containment loader at its JSON boundary."""
-    source = Path(__file__).resolve().parents[2] / "src/statewake/server.py"
-    text = source.read_text(encoding="utf-8")
-    assert "load_bounded_json(raw" in text
-    assert "runtime_limits" in text
-
-
 def test_archive_verification_does_not_execute_members(tmp_path: Path) -> None:
     """Verify an archive containing executable-looking data is treated only as bytes."""
     from statewake.services.operations_service import verify_bundle
@@ -185,3 +177,75 @@ def test_server_rejects_malformed_json_with_bad_request() -> None:
         body = b"".join(application(environ, start_response))  # type: ignore
         assert captured["status"] == "400 Bad Request"
         assert json.loads(body)["error"]["code"] == "INVALID_JSON"
+
+
+def test_server_emits_effective_runtime_containment_snapshot(tmp_path: Path) -> None:
+    """Persist the actual VerificationServiceConfig without exposing artifact roots."""
+    from statewake.server import VerificationServiceConfig, create_application
+    from statewake.services.runtime_containment_snapshot_service import (
+        load_runtime_containment_snapshot,
+    )
+
+    root = tmp_path / "private-evidence-root"
+    root.mkdir()
+    snapshot_path = tmp_path / "runtime-containment.json"
+    limits = RuntimeContainmentLimits(
+        max_input_bytes=4096,
+        max_json_depth=9,
+        max_concurrency=7,
+        max_temporary_bytes=123_456,
+    )
+    create_application(
+        VerificationServiceConfig(
+            artifact_roots=(root,),
+            max_request_bytes=2048,
+            runtime_limits=limits,
+            runtime_snapshot_path=snapshot_path,
+        )
+    )
+
+    snapshot = load_runtime_containment_snapshot(snapshot_path, max_bytes=64_000)
+    assert snapshot.max_request_bytes == 2048
+    assert snapshot.artifact_root_count == 1
+    assert snapshot.runtime_limits == limits
+    encoded = snapshot_path.read_text(encoding="utf-8")
+    assert str(root) not in encoded
+    assert '"artifact_roots_exposed":false' in encoded
+    assert snapshot.configuration_digest in encoded
+
+
+def test_runtime_containment_snapshot_rejects_tamper_and_symlink(
+    tmp_path: Path,
+) -> None:
+    """Fail closed when effective runtime configuration evidence is modified or redirected."""
+    from statewake.services.runtime_containment_snapshot_service import (
+        RuntimeContainmentConfigSnapshot,
+        load_runtime_containment_snapshot,
+        write_runtime_containment_snapshot,
+    )
+
+    path = tmp_path / "runtime.json"
+    snapshot = RuntimeContainmentConfigSnapshot.capture(
+        max_request_bytes=1024,
+        read_only=True,
+        require_https=True,
+        allow_insecure_http=False,
+        artifact_root_count=2,
+        runtime_limits=RuntimeContainmentLimits(),
+    )
+    write_runtime_containment_snapshot(path, snapshot)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["runtime_limits"]["max_json_depth"] = 999
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="digest mismatch"):
+        load_runtime_containment_snapshot(path, max_bytes=64_000)
+
+    target = tmp_path / "target.json"
+    write_runtime_containment_snapshot(target, snapshot)
+    link = tmp_path / "link.json"
+    try:
+        link.symlink_to(target)
+    except (OSError, NotImplementedError):
+        pytest.skip("symlinks unavailable")
+    with pytest.raises(ValueError, match="symlink"):
+        load_runtime_containment_snapshot(link, max_bytes=64_000)

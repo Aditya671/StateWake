@@ -71,4 +71,4 @@ Tier 12 validation requires the inherited end-to-end suite in addition to its fo
 
 ## Exit condition
 
-Tier 12 is satisfied when untrusted-input boundaries have explicit validation, resource envelopes, containment/isolation requirements, safe archive processing, no implicit execution, no arbitrary external network dependency, and executable tests demonstrating bounded failure behavior.
+Tier 12 is satisfied when untrusted-input boundaries have explicit validation, resource envelopes, containment/isolation requirements, safe archive processing, no implicit execution, no arbitrary external network dependency, and executable tests demonstrating bounded failure behavior. These controls are part of the published Production/Stable v0.4.1 release; this assurance does not independently authorize publication of a future or replacement release.
