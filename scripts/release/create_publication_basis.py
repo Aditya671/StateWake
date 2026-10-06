@@ -87,7 +87,16 @@ def main() -> int:
     parser.add_argument("--target", choices=("testpypi", "pypi"), required=True)
     parser.add_argument("--dist", type=Path, required=True)
     parser.add_argument("--verification-evidence", type=Path, required=True)
-    parser.add_argument("--source-revision", required=True)
+    parser.add_argument(
+        "--source-revision",
+        "--expected-source-revision",
+        dest="source_revision",
+        required=True,
+        help=(
+            "exact source revision for the publication basis; "
+            "--expected-source-revision is retained as a backwards-compatible alias"
+        ),
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
