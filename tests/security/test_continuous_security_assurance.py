@@ -72,6 +72,15 @@ class ContinuousSecurityAssuranceTests(unittest.TestCase):
         self.assertFalse(result.changed_files)
         self.assertFalse(result.impacted_invariants)
 
+    def test_snapshot_can_exclude_baseline_by_file_identity(self) -> None:
+        """Baseline exclusion does not depend on string-prefix path spelling."""
+        snapshot = ASSURANCE_VERIFIER.snapshot(
+            self.root, exclude_paths={self.baseline_path}
+        )
+        self.assertNotIn(
+            "docs/security/security_assurance_baseline_manifest.txt", snapshot
+        )
+
     def test_change_impact_classifies_signing_boundary(self) -> None:
         """A signing adapter change reopens cryptographic assurance."""
         change = ASSURANCE_VERIFIER.classify_change(
