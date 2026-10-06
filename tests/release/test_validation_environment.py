@@ -75,9 +75,9 @@ def test_publication_workflow_installs_full_validation_profile() -> None:
 
 def test_ci_uses_one_os_python_quality_matrix() -> None:
     """Linux and Windows quality checks must share one authoritative job definition."""
-    workflow = (
-        validation_environment.ROOT / ".github/workflows/ci.yml"
-    ).read_text(encoding="utf-8")
+    workflow = (validation_environment.ROOT / ".github/workflows/ci.yml").read_text(
+        encoding="utf-8"
+    )
     assert re.search(r"^  quality-and-tests:", workflow, re.MULTILINE)
     assert "windows-quality-and-tests:" not in workflow
     assert "fail-fast: false" in workflow

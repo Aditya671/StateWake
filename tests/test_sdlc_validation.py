@@ -57,4 +57,3 @@ def test_failure_output_prefers_pytest_failure_section() -> None:
     assert excerpt.startswith("=================================== FAILURES")
     assert "expected clear failure evidence" in excerpt
     assert "progress" not in excerpt
-
