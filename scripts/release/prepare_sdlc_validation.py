@@ -71,7 +71,11 @@ def prepare_validation_state(*, timeout: int = 180) -> dict[str, object]:
     identity = refresh_release_identity(ROOT)
     validate_release_identity(ROOT)
     checks = [
-        _run_check("uv-lock-check", ["uv", "lock", "--check"], timeout=timeout),
+        _run_check(
+            "uv-lock-check",
+            ["uv", "lock", "--check", "--python", sys.executable],
+            timeout=timeout,
+        ),
         _run_check(
             "validation-environment-sync",
             [

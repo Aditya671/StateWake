@@ -39,7 +39,11 @@ def test_preparation_refreshes_only_release_identity_and_verifies_other_authorit
     refresh.assert_called_once_with(preparation.ROOT)
     validate.assert_called_once_with(preparation.ROOT)
     assert run_check.call_args_list == [
-        call("uv-lock-check", ["uv", "lock", "--check"], timeout=17),
+        call(
+            "uv-lock-check",
+            ["uv", "lock", "--check", "--python", sys.executable],
+            timeout=17,
+        ),
         call(
             "validation-environment-sync",
             [

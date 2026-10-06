@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from hashlib import sha256
 from pathlib import Path
 
 import pytest
@@ -11,22 +12,33 @@ from statewake.workspace import StateWakeWorkspace, WorkspaceError
 from statewake.workspace.errors import ReadOnlyWorkspaceError
 
 
-def _snapshot(root: Path) -> dict[str, tuple[int, int]]:
-    """Return file size and nanosecond mtime for every regular workspace file."""
-    return {
-        path.relative_to(root).as_posix(): (
-            path.stat().st_size,
-            path.stat().st_mtime_ns,
+def _snapshot(root: Path) -> dict[str, tuple[int, str | None]]:
+    """Return durable file content plus bounded SQLite SHM sidecar state.
+
+    SQLite's ``-shm`` file is transient shared-memory coordination state for WAL
+    readers. Opening a database read-only may legitimately update lock/header bytes
+    in that sidecar without mutating any durable workspace record. All other files
+    are compared by exact content digest rather than filesystem mtimes.
+    """
+    snapshot: dict[str, tuple[int, str | None]] = {}
+    for path in sorted(root.rglob("*")):
+        if not path.is_file():
+            continue
+        relative = path.relative_to(root).as_posix()
+        size = path.stat().st_size
+        digest = (
+            None
+            if relative == "statewake.db-shm"
+            else sha256(path.read_bytes()).hexdigest()
         )
-        for path in sorted(root.rglob("*"))
-        if path.is_file()
-    }
+        snapshot[relative] = (size, digest)
+    return snapshot
 
 
 def test_read_only_open_does_not_create_or_modify_workspace_files(
     tmp_path: Path,
 ) -> None:
-    """Opening and querying must not create locks, WAL state, or repaired files."""
+    """Opening and querying must not change durable workspace content."""
     root = tmp_path / ".statewake"
     writable = StateWakeWorkspace.open(root)
     record = writable.ingest(
@@ -114,10 +126,10 @@ def test_read_only_open_rejects_foreign_key_corruption(tmp_path: Path) -> None:
         StateWakeWorkspace.open_read_only(root)
 
 
-def test_read_only_open_reads_existing_wal_without_mutating_sidecars(
+def test_read_only_open_reads_existing_wal_without_mutating_durable_content(
     tmp_path: Path,
 ) -> None:
-    """Read committed WAL state through existing sidecars without changing them."""
+    """Read committed WAL state without changing durable workspace content."""
     import sqlite3
 
     root = tmp_path / ".statewake"

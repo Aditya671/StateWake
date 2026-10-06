@@ -73,7 +73,7 @@ def command_plan(profile: str) -> list[tuple[str, list[str]]]:
                 "examples",
             ],
         ),
-        ("strict-typecheck", ["uv", "run", "--no-sync", "mypy"]),
+        ("strict-typecheck", [python, "-m", "mypy"]),
         (
             "source-compilation",
             [python, "-m", "compileall", "-q", "src", "tests", "scripts", "examples"],

@@ -73,13 +73,17 @@ def test_publication_workflow_installs_full_validation_profile() -> None:
 
 
 def test_sdlc_workflows_preserve_the_prepared_environment() -> None:
-    """Workflow invocation must not let uv prune extras before SDLC gates run."""
-    for relative, profile in (
-        (".github/workflows/ci.yml", "check"),
-        (".github/workflows/python-publish.yml", "release"),
-    ):
+    """Workflow invocation must preserve extras and the explicitly synced Python."""
+    expected = {
+        ".github/workflows/ci.yml": (
+            "uv run --no-sync --python ${{ matrix.python-version }} python "
+            "scripts/release/run_sdlc_validation.py --profile check"
+        ),
+        ".github/workflows/python-publish.yml": (
+            "uv run --no-sync --python 3.13 python "
+            "scripts/release/run_sdlc_validation.py --profile release"
+        ),
+    }
+    for relative, command in expected.items():
         workflow = (validation_environment.ROOT / relative).read_text(encoding="utf-8")
-        assert (
-            "uv run --no-sync python scripts/release/run_sdlc_validation.py "
-            f"--profile {profile}"
-        ) in workflow
+        assert command in workflow

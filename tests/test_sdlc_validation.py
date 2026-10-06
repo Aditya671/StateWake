@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+import sys
+
 import scripts.release.run_sdlc_validation as sdlc
 
 
 def test_typecheck_uses_the_prepared_locked_environment() -> None:
     """SDLC validation must not trigger dependency resolution during type checking."""
     commands = dict(sdlc.command_plan("check"))
-    assert commands["strict-typecheck"] == ["uv", "run", "--no-sync", "mypy"]
+    assert commands["strict-typecheck"] == [sys.executable, "-m", "mypy"]
 
 
 def test_check_profile_stabilizes_identity_before_verification() -> None:
