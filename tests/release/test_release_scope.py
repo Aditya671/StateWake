@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from unittest.mock import patch
 
@@ -36,8 +37,7 @@ def test_release_scope_is_explicit() -> None:
         "docs/governance/RELEASE_SCOPE.md",
         "docs/releases/README.md",
         metadata.current_release_notes_relative.as_posix(),
-        f"docs/whitepaper/StateWake_Technical_White_Paper_v{metadata.version}.md",
-        f"docs/whitepaper/StateWake_Technical_White_Paper_v{metadata.version}.pdf",
+        "docs/whitepaper/README.md",
         ".github/workflows/python-publish.yml",
     )
     excluded = (
@@ -61,20 +61,24 @@ def test_release_scope_is_explicit() -> None:
     assert all(not is_release_input(Path(name)) for name in excluded)
 
 
-def test_current_whitepaper_matches_project_version_only() -> None:
-    """The current white-paper boundary contains only the configured project version."""
-    metadata = load_project_metadata(PROJECT_ROOT)
+def test_current_whitepaper_matches_indexed_architecture_pair() -> None:
+    """The white-paper index must name the one preserved architecture paper pair."""
     whitepaper = PROJECT_ROOT / "docs/whitepaper"
-    expected = {
-        f"StateWake_Technical_White_Paper_v{metadata.version}.md",
-        f"StateWake_Technical_White_Paper_v{metadata.version}.pdf",
-    }
+    index = (whitepaper / "README.md").read_text(encoding="utf-8")
+    indexed = set(
+        re.findall(
+            r"\((StateWake_Technical_White_Paper_v[^)]+\.(?:md|pdf))\)",
+            index,
+        )
+    )
     actual = {
         path.name
         for path in whitepaper.glob("StateWake_Technical_White_Paper_v*.*")
         if path.suffix in {".md", ".pdf"}
     }
-    assert actual == expected
+    assert len(indexed) == 2
+    assert actual == indexed
+    assert {Path(name).suffix for name in indexed} == {".md", ".pdf"}
     assert not (whitepaper / "Technical_Grounding_and_Source_Map.md").exists()
 
 
@@ -94,7 +98,6 @@ def test_local_dependency_trees_are_pruned_before_repository_enumeration(
     local_env = tmp_path / "ui/.env.local"
     local_env.parent.mkdir(parents=True, exist_ok=True)
     local_env.write_text("TOKEN=local-only", encoding="utf-8")
-
     assert is_ignored_repository_path(venv_placeholder.relative_to(tmp_path))
     assert is_ignored_repository_path(node_file.relative_to(tmp_path))
     assert is_ignored_repository_path(local_env.relative_to(tmp_path))

@@ -23,6 +23,7 @@ REQUIRED_SECURITY_TESTS = (
 )
 REQUIRED_SECURITY_SCRIPTS = (
     "scripts/security/verify_continuous_security_assurance.py",
+    "scripts/security/promote_security_assurance_baseline.py",
     "scripts/security/verify_cryptographic_trust_migration.py",
     "scripts/security/verify_data_lifecycle_confidentiality.py",
     "scripts/security/verify_identity_access_controls.py",

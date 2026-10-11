@@ -64,7 +64,7 @@ StateWake does **not** automatically secure the host operating system, Python ru
 | T12 | Privacy | sensitive metadata | persist secrets/PII unnecessarily | explicit redaction policy | redact before persistence/transport | reissue redacted evidence where possible | `tests/unit/test_privacy.py::PrivacyTests::test_key_and_regex_redaction_are_deterministic` | opaque payloads are not inspected |
 | T13 | Key material | signing key | compromise or misuse | external signer boundary + lifecycle provider | revoke/rotate | re-attest under replacement key | `tests/test_key_management.py::TestKeyManagement::test_external_signing_does_not_accept_private_material` | provider/KMS security |
 | T14 | Availability | verification service | resource exhaustion | explicit HTTP request cap; deployment limits for deeper archive/JSON workloads | rate-limit/isolate externally | restart/scale/quarantine | `tests/test_http_api.py::test_http_rejects_oversized_request` | no universal memory/CPU budget in core |
-| T15 | Supply chain | build/dependency path | malicious dependency/artifact | lockfile/build verification; external CI/repository controls | quarantine release | rebuild from trusted source | `tests/test_release_governance.py` | native CI/repository settings required |
+| T15 | Supply chain | build/dependency path | malicious dependency/artifact | lockfile/build verification; external CI/repository controls | quarantine release | rebuild from trusted source | `tests/release/test_supply_chain_provenance.py` | native CI/repository settings required |
 
 ## Cryptography policy
 

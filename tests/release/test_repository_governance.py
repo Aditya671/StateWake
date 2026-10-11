@@ -16,7 +16,12 @@ def test_ruleset_uses_runtime_default_branch(monkeypatch) -> None:
             {
                 "type": "required_status_checks",
                 "parameters": {
-                    "required_status_checks": [{"context": "release-verification"}]
+                    "required_status_checks": [
+                        {"context": "quality"},
+                        {"context": "tests-linux"},
+                        {"context": "portability-windows"},
+                        {"context": "package"},
+                    ]
                 },
             },
             {"type": "required_linear_history"},
@@ -44,7 +49,14 @@ def test_legacy_protection_path_uses_runtime_branch_and_url_encoding(
         return (
             200,
             {
-                "required_status_checks": {"contexts": ["ci"]},
+                "required_status_checks": {
+                    "contexts": [
+                        "quality",
+                        "tests-linux",
+                        "portability-windows",
+                        "package",
+                    ]
+                },
                 "enforce_admins": {"enabled": True},
                 "required_pull_request_reviews": {},
             },
@@ -58,3 +70,34 @@ def test_legacy_protection_path_uses_runtime_branch_and_url_encoding(
     )
     assert requested == ["/branches/release%2Fstable/protection"]
     assert failures == []
+
+
+def test_ruleset_reports_missing_stable_required_check(monkeypatch) -> None:
+    """Governance must fail when any stable required CI context is absent."""
+    detail: dict[str, Any] = {
+        "conditions": {"ref_name": {"include": ["refs/heads/main"]}},
+        "rules": [
+            {"type": "pull_request"},
+            {
+                "type": "required_status_checks",
+                "parameters": {
+                    "required_status_checks": [
+                        {"context": "quality"},
+                        {"context": "tests-linux"},
+                        {"context": "package"},
+                    ]
+                },
+            },
+            {"type": "required_linear_history"},
+            {"type": "deletion"},
+        ],
+    }
+    monkeypatch.setattr(governance, "get", lambda _path: (200, detail))
+    failures: list[str] = []
+
+    assert governance.verify_default_branch_ruleset(
+        [{"id": 9, "target": "branch"}], failures, branch="main"
+    )
+    assert failures == [
+        "main ruleset is missing required status checks: portability-windows"
+    ]

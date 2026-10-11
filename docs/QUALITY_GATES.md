@@ -20,6 +20,21 @@
 | Governance | branch/tag/review controls are verified | governance evidence |
 | Approval | authorized human approves publication | release record |
 
+## Required pull-request CI topology
+
+The required GitHub checks are stable by design:
+
+| Check | Platform | Authority |
+| --- | --- | --- |
+| `quality` | Ubuntu 24.04 / Python 3.13 | lock + validation-environment identity, release/repository/version identity, source policy, Ruff, formatting, strict mypy, compilation, zero-drift security baseline |
+| `tests-linux` | Ubuntu 24.04 / Python 3.13 | complete behavioral pytest suite, product-experience verifier, CLI verifier |
+| `portability-windows` | Windows Server 2025 / Python 3.13 | targeted filesystem/path/archive/SQLite/recovery/containment regressions and failure lab |
+| `package` | Ubuntu 24.04 / Python 3.13 | single source-independent package build and package-boundary verification |
+
+Supported Python/OS release compatibility is intentionally moved to the exact built-artifact matrix in Release Verification. `ubuntu-latest`/`windows-latest` are not used by required gates; explicit runner images prevent an upstream `*-latest` migration from silently changing the required baseline. A separate scheduled `Platform Canary` exercises Ubuntu 26.04 without becoming a merge requirement.
+
+Third-party GitHub Actions are pinned to full commit SHAs. `setup-uv` also pins the uv executable version; Dependabot monitors both `github-actions` and `uv` ecosystems and proposes reviewable upgrade PRs.
+
 ## Status semantics
 
 - **PASS** — the gate executed and met its contract.
@@ -60,16 +75,17 @@ The harness must preserve the campaign outcome vocabulary and keep host truth, S
 ### License metadata / PEP 639
 
 Release packaging must retain `project.license = "Apache-2.0"` and `project.license-files = ["LICENSE"]`. Deprecated `License :: ...` Trove classifiers are not part of the current StateWake package metadata. `tests/release/test_license_metadata_policy.py` protects this boundary, and release builds should inspect wheel metadata and build output for license-metadata deprecation warnings.
-## Deterministic validation-state preflight
+## Deterministic validation-state lifecycle
 
-Development changes are expected to change source digests. Therefore ordinary regression tests must not fail solely because a previously generated `verification_manifest.txt` or `candidate-fingerprint.txt` is stale. The supported candidate flow is:
+Verification and state mutation are separate operations:
 
-1. run `scripts/release/prepare_sdlc_validation.py`; it refreshes only the derived release identity, immediately verifies it, checks `uv.lock` freshness, and executes continuous-security assurance without baseline promotion;
-2. run the remaining behavioral/static gates;
-3. verify release identity again after the check profile so an unexpected test/tool mutation cannot be hidden;
-4. for the release profile, promote the continuous-security baseline only after successful affected security re-verification, then refresh and verify release identity one final time before candidate finalization.
+1. prepare the environment explicitly with `uv sync --locked --group dev --extra integrations` when needed;
+2. run ordinary quality/tests or `run_sdlc_validation.py --profile check`; the SDLC verifier checks lock freshness, exact installed validation versions, release identity, and security assurance without synchronizing dependencies or rewriting maintained state;
+3. if a reviewed candidate intentionally changes the security-assurance snapshot, promote it explicitly with `scripts/security/promote_security_assurance_baseline.py`;
+4. refresh generated release identity explicitly with `scripts/release/refresh_release_identity.py` after all maintained inputs, including a promoted security baseline, are final;
+5. run `run_sdlc_validation.py --profile release`; release verification requires zero security-baseline drift and a current persisted release identity.
 
-The preflight deliberately does **not** regenerate `uv.lock`, `ui/package-lock.json`, current source/documentation, or `docs/security/security_assurance_baseline_manifest.txt`. Those are governed inputs, not disposable caches. A stale lock, stale source file, or failed security re-verification remains a failure instead of being rewritten merely to make the SDLC green.
+`uv.lock`, `ui/package-lock.json`, maintained source/documentation, the promoted security baseline, and persisted release identity are never rewritten merely to make a verification command pass. A stale or inconsistent authority remains a failure until the appropriate explicit maintenance action is performed.
 
 Release and supply-chain checks should validate structured metadata, executable behavior, file/content digests, and real interfaces. They must not depend on incidental README wording, prose sentences, CLI display phrases, or raw YAML substrings when an executable/structured authority exists.
 

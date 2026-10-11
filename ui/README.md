@@ -1,6 +1,6 @@
 # StateWake UI — evidence inspection, operational trust, review, and scoped approval
 
-This optional UI extends the StateWake v0.5.0 human-inspection surface, originally designed from the v0.4.0 UI package, without becoming a second verifier, identity provider, or publication control plane.
+This optional UI extends the StateWake v0.5.1 human-inspection surface, originally designed from the v0.4.0 UI package, without becoming a second verifier, identity provider, or publication control plane.
 
 Implemented tasks:
 

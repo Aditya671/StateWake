@@ -30,6 +30,8 @@ from .repository import (
 )
 from .schema import EXPECTED_INDEXES, EXPECTED_TABLES, SCHEMA_SQL, SCHEMA_VERSION
 
+_SQLITE_DATABASE_HEADER = b"SQLite format 3\x00"
+
 
 class SqliteWorkspaceRepository(StateWakeRepository):
     """Persist the workspace operational index in a local SQLite database."""
@@ -94,12 +96,32 @@ class SqliteWorkspaceRepository(StateWakeRepository):
             ) from exc
 
     def _validate_file_header(self) -> None:
-        """Reject a non-SQLite file before SQLite can reinterpret it as a database."""
-        if not self.path.exists() or self.path.stat().st_size == 0:
+        """Reject non-SQLite bytes before SQLite can recover from WAL sidecars.
+
+        SQLite can sometimes satisfy reads from existing ``-wal``/``-shm``
+        sidecars even after the main database file has been replaced with
+        invalid bytes.  StateWake must classify that as workspace corruption
+        before opening SQLite, not allow a sidecar recovery path to mask the
+        damaged durable database file.
+        """
+        try:
+            size = self.path.stat().st_size
+        except FileNotFoundError:
             return
-        with self.path.open("rb") as handle:
-            header = handle.read(16)
-        if header != b"SQLite format 3\x00":
+        except OSError as exc:
+            raise CorruptWorkspaceDatabaseError(
+                f"workspace database file could not be inspected: {exc}"
+            ) from exc
+        if size == 0:
+            return
+        try:
+            with self.path.open("rb") as handle:
+                header = handle.read(len(_SQLITE_DATABASE_HEADER))
+        except OSError as exc:
+            raise CorruptWorkspaceDatabaseError(
+                f"workspace database file could not be inspected: {exc}"
+            ) from exc
+        if header != _SQLITE_DATABASE_HEADER:
             raise CorruptWorkspaceDatabaseError(
                 "workspace database file has an invalid SQLite header"
             )

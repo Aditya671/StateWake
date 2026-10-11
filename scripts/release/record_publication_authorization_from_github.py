@@ -44,7 +44,7 @@ def _mapping(value: object, field: str) -> dict[str, object]:
 
 def _github_actor(
     event: dict[str, object], *, event_name: str, fallback_actor: str
-) -> tuple[str, str, str]:
+) -> tuple[str, str, str, str]:
     if event_name == "release":
         if event.get("action") != "published":
             raise PermissionError("production publication requires release.published")
@@ -63,12 +63,23 @@ def _github_actor(
         tag = release.get("tag_name")
         if not isinstance(tag, str) or not tag.strip():
             raise ValueError("release.tag_name is required")
-        return login, "github-release-publisher", tag
+        return login, "github-release-publisher", tag, ""
     if event_name == "workflow_dispatch":
         inputs = _mapping(event.get("inputs", {}), "inputs")
         if inputs.get("repository") != "testpypi":
             raise PermissionError("manual publication is limited to TestPyPI")
-        return fallback_actor, "github-workflow-dispatcher", ""
+        verification_run_id = inputs.get("verification_run_id")
+        if (
+            not isinstance(verification_run_id, str)
+            or not verification_run_id.isdigit()
+        ):
+            raise ValueError("workflow_dispatch verification_run_id must be numeric")
+        return (
+            fallback_actor,
+            "github-workflow-dispatcher",
+            "",
+            verification_run_id,
+        )
     raise PermissionError("unsupported GitHub event for publication authorization")
 
 
@@ -88,16 +99,16 @@ def main() -> int:
     repository = _required_env("GITHUB_REPOSITORY")
     run_id = _required_env("GITHUB_RUN_ID")
     run_attempt = _required_env("GITHUB_RUN_ATTEMPT")
-    source_revision = _required_env("GITHUB_SHA")
-    if source_revision != basis.source_revision:
-        raise PermissionError(
-            "GitHub source revision does not match the canonical basis"
-        )
     event = _event(Path(_required_env("GITHUB_EVENT_PATH")))
-    actor_identity, actor_role, release_tag = _github_actor(
+    actor_identity, actor_role, release_tag, verification_run_id = _github_actor(
         event, event_name=event_name, fallback_actor=actor
     )
     if args.target == "pypi":
+        source_revision = _required_env("GITHUB_SHA")
+        if source_revision != basis.source_revision:
+            raise PermissionError(
+                "GitHub release source revision does not match the canonical basis"
+            )
         if event_name != "release" or release_tag != f"v{basis.version}":
             raise PermissionError(
                 "production publication requires the exact versioned GitHub Release"
@@ -121,7 +132,12 @@ def main() -> int:
         run_id=canonical_run_id,
         reason=(
             f"Authorize {basis.distribution} {basis.version} for {args.target} from "
-            f"GitHub {event_name} event {event_identity}."
+            f"GitHub {event_name} event {event_identity}"
+            + (
+                f" selecting Release Verification run {verification_run_id}."
+                if verification_run_id
+                else "."
+            )
         ),
         idempotency_key=f"publication:{args.target}:{run_id}:{run_attempt}",
     )

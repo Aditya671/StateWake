@@ -1,57 +1,28 @@
 # Changelog
 
-## [v0.5.0] - Unreleased
+## [v0.5.1] - Unreleased
 
-- Hardened Windows validation and SDLC preflight: security-audit snapshots now use binary descriptor I/O with physical-byte accounting, POSIX permission assertions are platform-bounded, the current white-paper check derives from project metadata, and `prepare_sdlc_validation.py` refreshes only safe generated identity while checking locks/security without silently promoting governed baselines.
+The exact `0.5.1` source version is approved for the current candidate. This version change does not itself authorize a tag, GitHub Release, TestPyPI/PyPI publication, or registry reconciliation. The existing `v0.5.0` GitHub tag/release remains immutable at its historical revision.
 
-This entry records source changes present after the published v0.4.1 release. The 0.5.0 version update does not by itself establish release readiness or publication authorization.
+### Reliability and release hardening
 
-### Human approval and release publication lifecycle
+- Rationalized the default regression suite by removing implementation-choreography/source-text locks and duplicate verifier wrappers while retaining behavioral, security, persistence, portability, corruption, tamper, archive/path, and public-API regressions.
+- Made SDLC verification read-only with explicit environment synchronization, security-baseline promotion, and release-identity refresh boundaries.
+- Corrected Windows path/physical-byte behavior and replaced time-sensitive deadline sleeps with deterministic deadline checks.
+- Replaced the duplicated six-cell source-quality matrix with four stable required CI checks: `quality`, `tests-linux`, `portability-windows`, and `package`.
+- Pinned runner/action/uv inputs and added controlled update streams to prevent silent CI toolchain drift.
+- Made Release Verification the sole release-distribution build authority and publication a consumer of exact verified artifacts.
+- Hardened publication against release-event races with bounded verification resolution and split preparation, protected OIDC upload, and post-publication reconciliation into least-privilege jobs.
+- Added bounded workflow timeouts and explicit production-activation governance for live GitHub rulesets, environments, tagging, TestPyPI, PyPI, and registry evidence.
+- Made registry HTTP User-Agent identity derive from `statewake.__version__` rather than a stale hard-coded version.
+- Synchronized the approved `0.5.1` version across package metadata, lockfile, import package, API/reference manifests, release docs, README/UI source-line labels, and governance while preserving public API contract `1`.
+- Reclassified `docs/releases/v0.5.0/RELEASE_NOTES.md` as the historical GitHub release boundary and created a separate v0.5.1 release-notes authority so post-tag work is no longer attributed to an immutable predecessor.
 
-- Added immutable canonical approval revocation evidence and fail-closed `active` / `revoked` / `superseded` lifecycle projection.
-- Added separately authorized revocation and supersession API operations with exact-basis, CSRF, idempotency, and authority checks.
-- Made fresh release-proof reconciliation consume only currently active canonical approval evidence while preserving historical verification reports as immutable snapshots.
-- Added an immutable `ReleasePublicationBasis` binding publication authority to the exact target registry, source identity, verification-evidence digest, and distribution digests.
-- Reused the canonical HumanApprovalContract revocation/supersession lifecycle for publication authority and added fresh execution-permit verification that re-hashes exact distribution bytes and fails closed on missing, extra, changed, revoked, or superseded publication state.
-- Integrated the authority/permit gate into the protected GitHub Environment → PyPI/TestPyPI Trusted Publishing workflow while preserving `release_published: false` until registry evidence exists.
+## [v0.5.0] - 2026-10-06 (historical GitHub release)
 
-### Registry publication reconciliation
-
-- Added a digest-bound `RegistryPublicationReceipt` tied to the exact `ReleasePublicationBasis` and `PublicationExecutionPermit`.
-- Added fail-closed PyPI/TestPyPI read-back that verifies the exact registry file set, registry-reported sizes/SHA-256 values, yanked state, and independently downloaded public distribution bytes.
-- Added separate post-publication reconciliation jobs without OIDC publication permission; a successful uploader step is not treated as registry proof.
-- Added an immutable, digest-chained registry lifecycle over the canonical publication receipt, preserving publication history while recording later `available`, `yanked`, `partially_available`, and `unavailable` states.
-- Added reversible yank/unyank handling, exact missing-file accounting, fail-closed lifecycle reconciliation, canonical JSONL persistence, continuous-security classification, and read-only operational-trust projection.
-
-### Independent-oracle native-host qualification
-
-- Unified the existing native-SDK qualification authority with the independent-oracle system-trial harness instead of creating a second compatibility runner.
-- Added OpenTelemetry to the real-SDK qualification matrix so all five advertised integration extras are qualified through installed SDK APIs.
-- Added credential-free real host exercises for OpenAI Agents, LangChain, LangGraph, LlamaIndex, and OpenTelemetry with host-owned truth ledgers kept separate from StateWake observations.
-- Added durable native capture/restart read-back, synthetic-secret leakage checks, fail-closed missing/broken SDK status, bounded operator reports, and one digest-bound qualification summary recording exact Python and SDK versions.
-- Preserved external public-host qualification as a separate evidence boundary; local native-host PASS does not claim that external repositories were qualified.
-
-### Production cleanup
-
-- Replaced the current v0.4.0 white-paper package with the supplied StateWake v0.5.0 Markdown/PDF editions, removed the v0.4.0-only companion grounding map from the current white-paper boundary, and updated current documentation/release-scope references while preserving historical release notes.
-- Set the source package version to `0.5.0` while preserving public API contract version `1` and the historical v0.4.1 release records.
-- Removed the unused project-level TestPyPI resolver index; TestPyPI/PyPI publication remains owned by the protected release workflow.
-- Removed stale Ruff/mypy exclusions for the nonexistent `repository history` directory.
-- Kept explicit uv package discovery for distribution `statewake-ai` → import package `statewake`, and tightened the uv build-backend compatibility range to the current 0.10.x line.
-- Replaced UI `latest` dependency declarations with the exact direct versions evidenced by the supplied StateWake UI package bundle.
-- Removed the empty generated `verification/` directory from the source artifact and regenerated maintained release/security identity manifests after the source changes.
-- Replaced the directory-scoped `.github/README.md` with the root `README.md` as the single repository landing README and refreshed installation, capability, integration, trust, UI, workspace, and release-lifecycle guidance for the v0.5.0 source line.
-- Removed brittle current-release literals from release/verification tooling: versioned release-note selection, distribution/import-package discovery, CLI module discovery, package-root checks, lock lookup, GitHub repository identity, and default-branch governance now derive from `pyproject.toml` or live repository metadata; fixed security/schema invariants remain explicit verification contracts.
-- Rehydrated the repository around purpose-owned homes without changing the `src/statewake` runtime architecture: executable examples now live under `examples/`, repository-path helpers under `scripts/common/`, workspace runbooks under `docs/operations/`, generated runtime data is excluded under `data/statewake/`, and historical v0.1.0 validation snapshots are isolated under their release-history boundary.
-- Replaced active phase-number filenames with purpose-based names where the names were development-sequence residue, preserved frozen benchmark/study identities and historical release evidence, corrected the architecture-decision index to reference only retained ADRs, and strengthened structure verification against executable code in documentation, placeholder directories, and retired paths.
-- Aligned contributor/development commands and Makefile synchronization/build commands with the committed lockfile and source-independent package build path, while preserving existing pytest/Ruff/mypy and release-validation authorities.
-- Corrected strict frontend TypeScript qualification failures without weakening compiler settings: claim comparison now narrows selected record IDs before URL encoding, and workspace-operation requests use an explicitly typed Axios request configuration compatible with `exactOptionalPropertyTypes`.
-- Corrected the attestation-trust frontend regression so it rejects actual raw signature/key fields without falsely rejecting safe metadata such as `signature_envelope_recorded` or public-key digests.
-- Corrected the Next.js App Router/Ant Design server-component boundary by routing Typography subcomponents through an explicit client wrapper across all server-rendered pages; pinned Turbopack to the `ui/` package root so unrelated repository-level lockfiles cannot change workspace inference.
-- Corrected repository verification so local/generated dependency trees such as `.venv`, `node_modules`, `.next`, and build/cache directories are pruned before structural placeholder checks and release-input enumeration; installed dependency marker files can no longer cause false repository-structure failures.
-- Corrected Windows static-type portability for attestation trust-history permission hardening by using a `sys.platform` guard around the POSIX-only `os.fchmod` call while preserving descriptor-based mode hardening on POSIX.
-- Corrected Windows reliability-attestation byte accounting by forcing descriptor I/O into binary mode, dynamically counting the exact physical bytes scanned, rejecting concurrent size changes, and constructing LF/CRLF regression fixtures from explicit bytes so newline translation cannot alter expected sizes.
-- Consolidated Linux and Windows CI quality validation into one OS/Python matrix job with one SDLC command contract, and expanded SDLC failure excerpts so pytest assertion details are preserved when a long gate fails.
+- Extended StateWake into operational trust with privacy-aware admission, historical signing trust, human approval lifecycle, exact publication authorization, registry byte reconciliation/lifecycle evidence, native SDK qualification, bounded read/review surfaces, optional UI support, and expanded release-trust evidence.
+- Preserved public API contract version `1` and Python `>=3.11,<3.14`.
+- This historical tag/release is retained at its original source revision and is not reused by the v0.5.1 candidate.
 
 ## [v0.4.1] - Reliability and integration updates
 

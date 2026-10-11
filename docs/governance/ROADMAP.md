@@ -2,9 +2,9 @@
 
 ## Current position
 
-**Current source: v0.5.0. Current published Production/Stable release: v0.4.1.**
+**Current source: v0.5.1. Current published Production/Stable PyPI release: v0.4.1. Historical GitHub release: v0.5.0.**
 
-The published release sequence records four deliberate boundaries: packaging stabilization at v0.1.1, cybersecurity completion at v0.2.0, Persistence & Dataset completion at v0.4.0, and the published v0.4.1 reliability/integration update. The v0.5.0 source line is the next candidate and is not yet a published release.
+The published release sequence records four deliberate boundaries: packaging stabilization at v0.1.1, cybersecurity completion at v0.2.0, Persistence & Dataset completion at v0.4.0, and the published v0.4.1 reliability/integration update. The v0.5.0 GitHub release is historical. The approved v0.5.1 patch line is the current source candidate and is not yet published to PyPI.
 
 ## Completed product progression
 
@@ -13,7 +13,8 @@ v0.1.1  →  Production/Stable packaging promotion
 v0.2.0  →  Cybersecurity progression through V3 Tier 15
 v0.4.0  →  Persistence & Dataset Architecture through Tier 15
 v0.4.1  →  Production/Stable reliability, integration, and assurance update
-v0.5.0  →  Current source candidate; release/publication gates still pending
+v0.5.0  →  Historical GitHub operational-trust release/tag
+v0.5.1  →  Current approved patch candidate; external CI/release/publication gates still pending
 ```
 
 The underlying reliability lifecycle remains:
