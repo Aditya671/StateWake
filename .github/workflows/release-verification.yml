@@ -233,6 +233,8 @@ jobs:
           path: dist
           format: cyclonedx-json
           output-file: sbom.cdx.json
+          upload-artifact: false
+          upload-release-assets: false
 
       - name: Upload SBOM evidence
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
