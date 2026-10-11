@@ -80,7 +80,7 @@ jobs:
           sha256sum dist/* > release-metadata/SHA256SUMS
 
       - name: Upload immutable release distributions
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ env.RELEASE_DIST_ARTIFACT }}
           path: dist/
@@ -88,7 +88,7 @@ jobs:
           retention-days: 90
 
       - name: Upload immutable release evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ env.RELEASE_EVIDENCE_ARTIFACT }}
           path: release-metadata/
@@ -208,7 +208,7 @@ jobs:
         run: pip-audit --format=json --output=pip-audit.json
 
       - name: Upload dependency audit evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: statewake-release-dependency-audit
           path: pip-audit.json
@@ -235,7 +235,7 @@ jobs:
           output-file: sbom.cdx.json
 
       - name: Upload SBOM evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: statewake-release-sbom
           path: sbom.cdx.json
