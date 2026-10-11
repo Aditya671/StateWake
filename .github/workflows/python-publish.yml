@@ -85,7 +85,7 @@ jobs:
           fi
 
       - name: Download verification evidence from resolved run
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: ${{ env.RELEASE_EVIDENCE_ARTIFACT }}
           path: release-metadata
@@ -161,7 +161,7 @@ jobs:
           uv sync --locked --python 3.13 --no-install-project
 
       - name: Download exact verified distributions
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: ${{ env.RELEASE_DIST_ARTIFACT }}
           path: dist
@@ -170,7 +170,7 @@ jobs:
           run-id: ${{ needs.resolve-release.outputs.run-id }}
 
       - name: Download verification evidence
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: ${{ env.RELEASE_EVIDENCE_ARTIFACT }}
           path: release-metadata
@@ -245,7 +245,7 @@ jobs:
       url: ${{ needs.resolve-release.outputs.registry-project-url }}
     steps:
       - name: Download authorized publication-ready distributions
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: ${{ env.PUBLICATION_READY_ARTIFACT }}
           path: publication-ready
@@ -284,7 +284,7 @@ jobs:
           uv sync --locked --python 3.13 --no-install-project
 
       - name: Download publication-ready evidence
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: ${{ env.PUBLICATION_READY_ARTIFACT }}
           path: publication-ready
