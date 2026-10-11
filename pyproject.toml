@@ -72,7 +72,7 @@ Security = "https://github.com/Aditya671/StateWake/blob/main/SECURITY.md"
 
 [dependency-groups]
 dev = [
-    "ruff==0.16.5",
+    "ruff==0.16.10",
     "pytest==9.1.1",
     "mypy==2.3.1",
 ]
