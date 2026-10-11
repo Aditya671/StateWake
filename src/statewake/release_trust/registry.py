@@ -20,6 +20,7 @@ from urllib.request import Request, urlopen
 
 from filelock import FileLock, Timeout
 
+from statewake import __version__
 from statewake.release_trust.publication import (
     PublicationExecutionPermit,
     PublicationTarget,
@@ -912,13 +913,22 @@ def reconcile_registry_publication_lifecycle(
     return observation
 
 
+def _registry_request(url: str) -> Request:
+    """Build a version-accurate request for the official Python package registries."""
+    return Request(
+        url,
+        headers={
+            "Accept": "application/json",
+            "User-Agent": f"StateWake/{__version__}",
+        },
+    )
+
+
 def _read_registry_release_url(
     url: str, *, timeout: float, max_bytes: int
 ) -> bytes | None:
     """Read the official release endpoint, distinguishing a real 404 from transport failure."""
-    request = Request(
-        url, headers={"Accept": "application/json", "User-Agent": "StateWake/0.5.0"}
-    )
+    request = _registry_request(url)
     try:
         with urlopen(request, timeout=timeout) as response:  # noqa: S310 - URL is generated from a fixed registry allowlist.
             data = cast(bytes, response.read(max_bytes + 1))
@@ -1132,9 +1142,7 @@ class RegistryPublicationLifecycleStore:
 
 
 def _read_url(url: str, *, timeout: float, max_bytes: int) -> bytes:
-    request = Request(
-        url, headers={"Accept": "application/json", "User-Agent": "StateWake/0.5.0"}
-    )
+    request = _registry_request(url)
     try:
         with urlopen(request, timeout=timeout) as response:  # noqa: S310 - URL is validated by caller/registry model.
             data = cast(bytes, response.read(max_bytes + 1))

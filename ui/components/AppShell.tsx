@@ -46,7 +46,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <Sider className="sw-sidebar" width={248} breakpoint="lg" collapsedWidth={0}>
         <div className="sw-brand">
           <div className="sw-brand-name">StateWake</div>
-          <div className="sw-brand-subtitle">v0.5.0 · evidence + operational trust</div>
+          <div className="sw-brand-subtitle">v0.5.1 · evidence + operational trust</div>
         </div>
         <Menu
           theme="dark"

@@ -49,7 +49,7 @@ The model is deliberately conservative where the existing architecture does not 
 - final assurance state;
 - residual-risk and limitation context.
 
-A successful result can then be promoted by replacing the Tier 5 baseline snapshot with the verified candidate snapshot. This changes the assurance baseline only; it does not change the package version or publish a release.
+The verifier never writes the promoted baseline. Promotion is a separate explicit action implemented by `scripts/security/promote_security_assurance_baseline.py`; that command re-verifies a changed candidate before writing the baseline and then proves that the promoted snapshot converges to zero drift. Promotion changes the assurance baseline only; it does not change the package version or publish a release.
 
 ## Stale-result handling
 

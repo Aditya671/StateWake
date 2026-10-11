@@ -17,7 +17,6 @@ if str(PROJECT_CONFIG_BOOTSTRAP) not in sys.path:
 
 from scripts.common.project_paths import PROJECT_ROOT, VERIFICATION_PATH  # noqa: E402
 from scripts.common.release_identity import (  # noqa: E402
-    refresh_release_identity,
     source_tree_digest,
     validate_release_identity,
 )
@@ -124,14 +123,10 @@ def _timeout(value: int) -> int | None:
 
 
 def main() -> int:
-    """Refresh identity, execute release gates, and persist provenance evidence."""
+    """Verify existing identity, execute release gates, and persist provenance evidence."""
     args = _parse_args()
     gates: list[dict[str, object]] = []
     try:
-        identity = refresh_release_identity(ROOT)
-        gates.append(
-            {"name": "release-identity-refresh", "status": "passed", **identity}
-        )
         validate_release_identity(ROOT)
         gates.append({"name": "release-identity-verify", "status": "passed"})
         gates.append(static_contract())
@@ -175,7 +170,7 @@ def main() -> int:
         ),
     ]
     if not args.skip_build:
-        commands.append(("build", ["uv", "build", "--wheel"]))
+        commands.append(("build", ["uv", "build", "--wheel", "--no-sources"]))
         commands.append(
             (
                 "package-boundary",

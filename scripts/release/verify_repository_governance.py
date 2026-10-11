@@ -32,6 +32,9 @@ METADATA = load_project_metadata(PROJECT_ROOT)
 OWNER, REPO = METADATA.github_repository
 API = f"https://api.github.com/repos/{OWNER}/{REPO}"
 RELEASE_TAG_PATTERN = "refs/tags/v*"
+REQUIRED_DEFAULT_BRANCH_STATUS_CHECKS = frozenset(
+    {"quality", "tests-linux", "portability-windows", "package"}
+)
 
 
 def get(path: str) -> tuple[int, Any]:
@@ -103,11 +106,27 @@ def ruleset_has_rule(ruleset: Mapping[str, Any], rule_type: str) -> bool:
     )
 
 
-def ruleset_has_required_status_checks(ruleset: Mapping[str, Any]) -> bool:
-    """Return whether a ruleset configures at least one required status check."""
+def _status_check_contexts(checks: object) -> set[str]:
+    """Return normalized required-check contexts from GitHub API payloads."""
+    if not isinstance(checks, Sequence) or isinstance(checks, (str, bytes)):
+        return set()
+    contexts: set[str] = set()
+    for check in checks:
+        if isinstance(check, str):
+            contexts.add(check)
+            continue
+        if isinstance(check, Mapping):
+            context = check.get("context")
+            if isinstance(context, str) and context:
+                contexts.add(context)
+    return contexts
+
+
+def ruleset_required_status_checks(ruleset: Mapping[str, Any]) -> set[str]:
+    """Return configured status-check contexts from a repository ruleset."""
     rules = ruleset.get("rules")
     if not isinstance(rules, list):
-        return False
+        return set()
     for rule in rules:
         if (
             not isinstance(rule, Mapping)
@@ -116,14 +135,9 @@ def ruleset_has_required_status_checks(ruleset: Mapping[str, Any]) -> bool:
             continue
         parameters = rule.get("parameters")
         if not isinstance(parameters, Mapping):
-            return False
-        checks = parameters.get("required_status_checks")
-        return (
-            isinstance(checks, Sequence)
-            and not isinstance(checks, (str, bytes))
-            and bool(checks)
-        )
-    return False
+            return set()
+        return _status_check_contexts(parameters.get("required_status_checks"))
+    return set()
 
 
 def verify_default_branch_ruleset(
@@ -147,9 +161,14 @@ def verify_default_branch_ruleset(
             continue
         if not ruleset_has_rule(detail, "pull_request"):
             failures.append(f"{branch} ruleset does not require pull-request review")
-        if not ruleset_has_required_status_checks(detail):
+        configured_checks = ruleset_required_status_checks(detail)
+        missing_checks = sorted(
+            REQUIRED_DEFAULT_BRANCH_STATUS_CHECKS - configured_checks
+        )
+        if missing_checks:
             failures.append(
-                f"{branch} ruleset does not configure required status checks"
+                f"{branch} ruleset is missing required status checks: "
+                + ", ".join(missing_checks)
             )
         if not ruleset_has_rule(detail, "required_linear_history"):
             failures.append(f"{branch} ruleset does not require linear history")
@@ -198,10 +217,16 @@ def verify_legacy_default_branch_protection(
         failures.append(f"{branch} branch protection response is invalid")
         return False
     required = protection.get("required_status_checks")
-    if not isinstance(required, Mapping) or not (
-        required.get("contexts") or required.get("checks")
-    ):
-        failures.append(f"{branch} has no required status checks")
+    configured_checks: set[str] = set()
+    if isinstance(required, Mapping):
+        configured_checks |= _status_check_contexts(required.get("contexts"))
+        configured_checks |= _status_check_contexts(required.get("checks"))
+    missing_checks = sorted(REQUIRED_DEFAULT_BRANCH_STATUS_CHECKS - configured_checks)
+    if missing_checks:
+        failures.append(
+            f"{branch} branch protection is missing required status checks: "
+            + ", ".join(missing_checks)
+        )
     enforce_admins = protection.get("enforce_admins")
     if not isinstance(enforce_admins, Mapping) or not enforce_admins.get(
         "enabled", False

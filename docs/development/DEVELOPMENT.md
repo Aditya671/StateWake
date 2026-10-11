@@ -53,9 +53,10 @@ Ruff and mypy are repository quality gates. Their configuration is stored in `py
 
 ```bash
 make check
-make prepare-validation
 make sdlc-check
 ```
+
+`make sync` is the explicit environment-installation step. Candidate-state mutation is also explicit: use `make promote-security-baseline` only after security re-verification is acceptable, then `make refresh-release-identity` after maintained inputs are final. Verification targets never perform those mutations implicitly.
 
 Before a release candidate is evaluated, use the release profile and package verifiers documented under `docs/governance/`.
 

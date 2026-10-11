@@ -8,41 +8,164 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_VERSION: "0.12.23"
+  PRIMARY_PYTHON: "3.13"
+
 jobs:
-  quality-and-tests:
-    name: quality-and-tests (${{ matrix.os }}, py${{ matrix.python-version }})
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-        python-version: ["3.11", "3.12", "3.13"]
-    runs-on: ${{ matrix.os }}
+  quality:
+    name: quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v5
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: astral-sh/setup-uv@v7
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
+          version: ${{ env.UV_VERSION }}
           enable-cache: true
+          cache-dependency-glob: uv.lock
 
-      - run: uv python install ${{ matrix.python-version }}
-      - run: uv lock --check --python ${{ matrix.python-version }}
-      - run: uv sync --locked --python ${{ matrix.python-version }} --group dev --extra integrations
+      - name: Install Python
+        run: uv python install ${{ env.PRIMARY_PYTHON }}
 
-      - name: Execute SDLC check profile
-        run: uv run --no-sync --python ${{ matrix.python-version }} python scripts/release/run_sdlc_validation.py --profile check
+      - name: Install locked validation environment
+        run: uv sync --locked --python ${{ env.PRIMARY_PYTHON }} --group dev --extra integrations
 
-      - name: Verify CLI version
-        run: uv run --no-sync --python ${{ matrix.python-version }} statewake version
+      - name: Verify dependency lock
+        run: uv lock --check --python ${{ env.PRIMARY_PYTHON }}
 
-      - name: Run first evidence-chain example
-        run: uv run --no-sync --python ${{ matrix.python-version }} python examples/first-evidence-chain.py
+      - name: Verify validation environment
+        run: uv run --no-sync python scripts/release/verify_validation_environment.py
 
-      - name: Build package
+      - name: Verify release identity
+        run: uv run --no-sync python scripts/release/verify_release_identity.py
+
+      - name: Verify repository structure
+        run: uv run --no-sync python scripts/release/verify_repository_structure.py
+
+      - name: Verify package version identity
+        run: uv run --no-sync python scripts/release/verify_versioning.py
+
+      - name: Verify source-quality policy
+        run: uv run --no-sync python scripts/development/verify_source_quality.py
+
+      - name: Lint
+        run: uv run --no-sync ruff check src tests scripts examples
+
+      - name: Verify formatting
+        run: uv run --no-sync ruff format --check src tests scripts examples
+
+      - name: Strict type check
+        run: uv run --no-sync mypy
+
+      - name: Compile Python sources
+        run: uv run --no-sync python -m compileall -q src tests scripts examples
+
+      - name: Verify promoted security baseline without mutation
+        run: >-
+          uv run --no-sync python scripts/security/verify_continuous_security_assurance.py
+          --no-reverify --require-zero-drift
+
+  tests-linux:
+    name: tests-linux
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install Python
+        run: uv python install ${{ env.PRIMARY_PYTHON }}
+
+      - name: Install locked validation environment
+        run: uv sync --locked --python ${{ env.PRIMARY_PYTHON }} --group dev --extra integrations
+
+      - name: Run behavioral test suite once
+        run: uv run --no-sync python -m pytest
+
+      - name: Verify product examples and documentation surface
+        run: uv run --no-sync python scripts/release/verify_product_experience.py
+
+      - name: Verify CLI surface
+        run: uv run --no-sync python scripts/release/verify_cli_surface.py
+
+  portability-windows:
+    name: portability-windows
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install Python
+        run: uv python install ${{ env.PRIMARY_PYTHON }}
+
+      - name: Install locked validation environment
+        run: uv sync --locked --python ${{ env.PRIMARY_PYTHON }} --group dev --extra integrations
+
+      - name: Verify dependency lock
+        run: uv lock --check --python ${{ env.PRIMARY_PYTHON }}
+
+      - name: Run Windows portability regressions
+        run: >-
+          uv run --no-sync python -m pytest -q
+          tests/test_atomic_persistence.py
+          tests/test_hardening_archives.py
+          tests/test_script_portability.py
+          tests/security/test_continuous_security_assurance.py
+          tests/security/test_runtime_containment.py
+          tests/workspace/test_sqlite_repository.py
+          tests/workspace/test_workspace_backup_restore.py
+          tests/workspace/test_workspace_recovery.py
+
+      - name: Run failure lab on Windows
+        run: uv run --no-sync python scripts/testing/failure_lab.py --ci
+
+  package:
+    name: package
+    needs: [quality, tests-linux, portability-windows]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install Python
+        run: uv python install ${{ env.PRIMARY_PYTHON }}
+
+      - name: Install locked base environment
+        run: uv sync --locked --python ${{ env.PRIMARY_PYTHON }}
+
+      - name: Build package once
         run: uv build --no-sources
 
       - name: Verify package boundary
-        run: uv run --no-sync --python ${{ matrix.python-version }} python scripts/release/verify_package_boundary.py dist
-
-      - name: Run failure lab on Windows
-        if: matrix.os == 'windows-latest'
-        run: uv run --no-sync --python ${{ matrix.python-version }} python scripts/testing/failure_lab.py --ci
+        run: uv run --no-sync python scripts/release/verify_package_boundary.py dist

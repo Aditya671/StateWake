@@ -7,14 +7,14 @@ Default branch: `main`
 
 ## Gate 1 — Protect `main`
 
-Open the repository on GitHub, then:
+Open the repository on GitHub, then use the existing repository ruleset:
 
-`Settings` → `Branches` → `Branch protection rules` → `Add classic branch protection rule`
+`Settings` → `Rules` → `Rulesets` → `StateWake Release Branch Rules`
 
-Use branch pattern:
+The ruleset must target:
 
 ```text
-main
+refs/heads/main
 ```
 
 Enable at minimum:
@@ -23,7 +23,7 @@ Enable at minimum:
 - **Require approvals**: 1 approval is the recommended minimum for this repository
 - **Dismiss stale pull request approvals when new commits are pushed**
 - **Require status checks to pass before merging**
-- Select the release CI checks that must pass. The important repository gate is the CI workflow's status check(s), not a hard-coded job name in documentation.
+- Select these four stable required status checks: `quality`, `tests-linux`, `portability-windows`, and `package`. They are deliberately non-matrix check names so ruleset configuration does not drift when Python/OS release-consumer coverage changes.
 - **Include administrators / enforce branch protection for administrators**
 - **Restrict force pushes** / do not allow force pushes
 - **Restrict deletions** / do not allow branch deletion
@@ -34,7 +34,7 @@ Recommended additional controls:
 - Require branches to be up to date before merging
 - Require signed commits only if the maintainer workflow is ready to enforce them consistently
 
-GitHub documents branch protection as the mechanism for requiring reviews and status checks and for preventing deletion/force-push behavior on protected branches.
+GitHub repository rulesets are the canonical StateWake mechanism for requiring reviews and status checks and for preventing deletion/non-fast-forward updates on `main`; the verifier falls back to legacy branch protection only when no applicable ruleset exists.
 
 ## Gate 2 — Protect release tags
 

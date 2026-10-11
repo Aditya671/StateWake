@@ -18,6 +18,7 @@ from scripts.common.project_paths import PROJECT_ROOT  # noqa: E402
 
 ROOT: Final[Path] = PROJECT_ROOT
 _REQUIREMENT_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*")
+_NORMALIZE_NAME = re.compile(r"[-_.]+")
 
 
 def _requirement_name(requirement: str) -> str:
@@ -28,6 +29,11 @@ def _requirement_name(requirement: str) -> str:
             f"cannot determine distribution name from requirement: {requirement!r}"
         )
     return match.group(0)
+
+
+def _canonical_name(name: str) -> str:
+    """Return a PEP 503-style canonical distribution name without extra dependencies."""
+    return _NORMALIZE_NAME.sub("-", name).lower()
 
 
 def required_validation_distributions(root: Path = ROOT) -> tuple[str, ...]:
@@ -55,23 +61,62 @@ def required_validation_distributions(root: Path = ROOT) -> tuple[str, ...]:
     )
 
 
+def locked_distribution_versions(root: Path = ROOT) -> dict[str, tuple[str, ...]]:
+    """Return exact locked versions keyed by canonical distribution name."""
+    lock_path = root / "uv.lock"
+    if not lock_path.is_file():
+        raise ValueError("uv.lock is missing")
+    data = tomllib.loads(lock_path.read_text(encoding="utf-8"))
+    packages = data.get("package")
+    if not isinstance(packages, list):
+        raise ValueError("uv.lock must contain package records")
+    versions: dict[str, set[str]] = {}
+    for record in packages:
+        if not isinstance(record, dict):
+            raise ValueError("uv.lock contains an invalid package record")
+        name = record.get("name")
+        version = record.get("version")
+        if not isinstance(name, str) or not isinstance(version, str):
+            raise ValueError("uv.lock package records must contain name and version")
+        versions.setdefault(_canonical_name(name), set()).add(version)
+    return {name: tuple(sorted(values)) for name, values in versions.items()}
+
+
 def validation_environment_status(root: Path = ROOT) -> dict[str, object]:
-    """Return installed-version evidence for the canonical validation profile."""
+    """Return installed-version evidence for the locked validation profile."""
     required = required_validation_distributions(root)
+    locked = locked_distribution_versions(root)
     installed: dict[str, str] = {}
+    locked_versions: dict[str, list[str]] = {}
     missing: list[str] = []
+    missing_from_lock: list[str] = []
+    mismatched: dict[str, dict[str, object]] = {}
     for name in required:
+        canonical = _canonical_name(name)
+        expected = locked.get(canonical)
+        if expected is None:
+            missing_from_lock.append(name)
+        else:
+            locked_versions[name] = list(expected)
         try:
-            installed[name] = importlib.metadata.version(name)
+            version = importlib.metadata.version(name)
         except importlib.metadata.PackageNotFoundError:
             missing.append(name)
+            continue
+        installed[name] = version
+        if expected is not None and version not in expected:
+            mismatched[name] = {"installed": version, "locked": list(expected)}
+    verified = not missing and not missing_from_lock and not mismatched
     return {
-        "status": "verified" if not missing else "missing_dependencies",
+        "status": "verified" if verified else "invalid_environment",
         "python": sys.version.split()[0],
         "python_executable": sys.executable,
         "required_distributions": list(required),
         "installed_versions": installed,
+        "locked_versions": locked_versions,
         "missing_distributions": missing,
+        "missing_from_lock": missing_from_lock,
+        "version_mismatches": mismatched,
     }
 
 

@@ -6,7 +6,7 @@ StateWake provides a deterministic reliability layer around AI and software syst
 
 StateWake is designed to integrate with existing agent runtimes, retrieval systems, evaluators, CI/CD pipelines, telemetry, storage, and release workflows. It does **not** replace those systems or become a second execution authority.
 
-- **Source version:** `0.5.0`
+- **Source version:** `0.5.1`
 - **Public API contract:** `1`
 - **Distribution:** [`statewake-ai`](https://pypi.org/project/statewake-ai/)
 - **Import package:** `statewake`
@@ -15,7 +15,7 @@ StateWake is designed to integrate with existing agent runtimes, retrieval syste
 - **License:** [Apache-2.0](https://github.com/Aditya671/StateWake/blob/main/LICENSE)
 - **Repository:** [github.com/Aditya671/StateWake](https://github.com/Aditya671/StateWake)
 
-> **Release status:** the repository source is on the `v0.5.0` line. The latest published PyPI release remains `v0.4.1` until the v0.5.0 publication workflow, governance checks, and explicit publication authorization are completed.
+> **Release status:** the repository source is the approved `v0.5.1` release candidate. The latest published PyPI release remains `v0.4.1` until the v0.5.1 publication workflow, governance checks, and explicit publication authorization are completed. The historical GitHub `v0.5.0` tag/release is immutable and is not reused for this candidate.
 
 ---
 
@@ -80,7 +80,7 @@ StateWake includes optional native integration surfaces for:
 - LlamaIndex Core
 - OpenTelemetry SDK
 
-The current v0.5.0 source includes independent-oracle, credential-free native-host qualification support for these five integration families. Host-owned truth and StateWake observations remain separate evidence streams.
+The current v0.5.1 source includes independent-oracle, credential-free native-host qualification support for these five integration families. Host-owned truth and StateWake observations remain separate evidence streams.
 
 ### Durable workspace and data access
 
@@ -107,7 +107,7 @@ The current v0.5.0 source includes independent-oracle, credential-free native-ho
 
 ### Release and registry evidence
 
-The v0.5.0 source extends the reliability model to software publication itself:
+The v0.5.1 source extends the reliability model to software publication itself:
 
 - Release publication basis bound to exact source, verification evidence, target registry, and distribution digests.
 - Publication execution permits that fail closed if candidate bytes or approval state change.
@@ -148,7 +148,7 @@ python -m pip install statewake-ai
 
 At the time of this source snapshot, PyPI still publishes the `v0.4.1` release.
 
-### Install the v0.5.0 source candidate from this repository
+### Install the v0.5.1 source candidate from this repository
 
 ```bash
 git clone https://github.com/Aditya671/StateWake.git
@@ -162,10 +162,10 @@ Or with `uv`:
 uv sync
 ```
 
-### v0.5.0 PyPI installation after publication
+### v0.5.1 PyPI installation after publication
 
 ```bash
-python -m pip install statewake-ai==0.5.0
+python -m pip install statewake-ai==0.5.1
 ```
 
 ### Native integration extras
@@ -186,7 +186,7 @@ Or all maintained integration extras:
 python -m pip install "statewake-ai[integrations]"
 ```
 
-For the checked-out v0.5.0 source, use the equivalent local extras, for example:
+For the checked-out v0.5.1 source, use the equivalent local extras, for example:
 
 ```bash
 python -m pip install ".[integrations]"
@@ -338,7 +338,7 @@ Reliability evidence lifecycle
 
 Native adapters must preserve host/framework semantics rather than inventing missing events or treating a callback as proof that an external action succeeded.
 
-The v0.5.0 source includes a local independent-oracle qualification harness that exercises actual installed SDK APIs without requiring paid model calls. This evidence qualifies the tested local SDK/host boundary only; it does not claim external public repositories or live providers were independently qualified.
+The v0.5.1 source includes a local independent-oracle qualification harness that exercises actual installed SDK APIs without requiring paid model calls. This evidence qualifies the tested local SDK/host boundary only; it does not claim external public repositories or live providers were independently qualified.
 
 See:
 
@@ -484,16 +484,16 @@ Release-specific verification is intentionally stricter than ordinary developmen
 
 Release records are versioned under [`docs/releases/`](https://github.com/Aditya671/StateWake/tree/main/docs/releases).
 
-For the v0.5.0 source line:
+For the v0.5.1 source line:
 
-- package version is `0.5.0`;
+- package version is `0.5.1`;
 - public API contract remains `1`;
 - v0.4.1 release records remain historical and are not rewritten;
 - verification and publication authorization remain separate gates;
 - external public-host qualification remains separate from local native-SDK qualification;
 - publication must be proven by registry evidence rather than inferred from an upload command.
 
-See the current [v0.5.0 release notes](https://github.com/Aditya671/StateWake/blob/main/docs/releases/v0.5.0/RELEASE_NOTES.md) and [CHANGELOG](https://github.com/Aditya671/StateWake/blob/main/CHANGELOG.md).
+See the current [v0.5.1 release notes](https://github.com/Aditya671/StateWake/blob/main/docs/releases/v0.5.1/RELEASE_NOTES.md) and [CHANGELOG](https://github.com/Aditya671/StateWake/blob/main/CHANGELOG.md).
 
 ---
 

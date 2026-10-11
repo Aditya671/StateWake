@@ -9,7 +9,8 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import ModuleType
-from unittest.mock import patch
+
+from scripts.security import promote_security_assurance_baseline as assurance_promoter
 
 ROOT = Path(__file__).resolve().parents[2]
 MODULE_PATH = ROOT / "scripts/security/verify_continuous_security_assurance.py"
@@ -148,23 +149,18 @@ class ContinuousSecurityAssuranceTests(unittest.TestCase):
         self.assertTrue(result.reverified is False)
         self.assertNotEqual(result.reverify_returncode, 0)
 
-    def test_promote_on_success_reverifies_then_converges_to_zero_drift(self) -> None:
-        """The SDLC promotion option cannot bless drift without Tier 4 re-verification."""
+    def test_explicit_promotion_reverifies_then_converges_to_zero_drift(self) -> None:
+        """Promotion cannot bless drift without Tier 4 re-verification."""
         target = self.root / "src/statewake/adapters/key_management.py"
         target.write_text(target.read_text(encoding="utf-8") + "\n", encoding="utf-8")
-        with patch.object(
-            sys,
-            "argv",
-            [
-                str(MODULE_PATH),
-                "--root",
-                str(self.root),
-                "--baseline",
-                str(self.baseline_path),
-                "--promote-on-success",
-            ],
-        ):
-            self.assertEqual(ASSURANCE_VERIFIER.main(), 0)
+        promoted = assurance_promoter.promote_security_assurance_baseline(
+            self.root, self.baseline_path
+        )
+        self.assertEqual(promoted.assurance.state, "VERIFIED")
+        self.assertFalse(promoted.assurance.changed_files)
+        self.assertTrue(promoted.baseline_updated)
+        self.assertTrue(promoted.reverification_performed)
+        self.assertEqual(promoted.reverification_returncode, 0)
         converged = ASSURANCE_VERIFIER.assess(
             self.root, self.baseline_path, reverify=False
         )

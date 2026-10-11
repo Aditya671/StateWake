@@ -338,45 +338,29 @@ def main() -> int:
     )
     parser.add_argument("--no-reverify", action="store_true")
     parser.add_argument(
-        "--promote-on-success",
+        "--require-zero-drift",
         action="store_true",
-        help="promote the current security snapshot only after successful re-verification",
+        help="fail unless the current candidate exactly matches the promoted baseline",
     )
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     root = args.root.resolve()
     baseline = args.baseline if args.baseline.is_absolute() else root / args.baseline
     result = assess(root, baseline, reverify=not args.no_reverify)
-    if args.promote_on_success and result.changed_files:
-        if args.no_reverify:
-            raise ValueError(
-                "cannot promote a changed security snapshot with --no-reverify"
-            )
-        if not result.reverified:
-            verified, returncode = run_security_assurance_reverification(root)
-            if not verified:
-                raise RuntimeError(
-                    "security assurance re-verification failed before baseline promotion "
-                    f"with exit code {returncode}"
-                )
-        if result.state != "VERIFIED":
-            raise RuntimeError(
-                "cannot promote a security snapshot that is not VERIFIED"
-            )
-        current = snapshot(root, exclude_paths={baseline})
-        write_snapshot_manifest(baseline, current)
-        result = assess(root, baseline, reverify=False)
-        if result.changed_files or result.state != "VERIFIED":
-            raise RuntimeError(
-                "promoted security snapshot did not converge to zero drift"
-            )
-    payload = json.dumps(asdict(result), indent=2, sort_keys=True) + "\n"
+    payload_data = {
+        **asdict(result),
+        "baseline_current": not result.changed_files,
+    }
+    payload = json.dumps(payload_data, indent=2, sort_keys=True) + "\n"
     if args.output:
         output = args.output if args.output.is_absolute() else root / args.output
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(payload, encoding="utf-8")
     print(payload, end="")
-    return 0 if result.state == "VERIFIED" else 1
+    passed = result.state == "VERIFIED" and (
+        not args.require_zero_drift or not result.changed_files
+    )
+    return 0 if passed else 1
 
 
 if __name__ == "__main__":

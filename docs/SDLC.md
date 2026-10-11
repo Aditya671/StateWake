@@ -55,7 +55,7 @@ Implementation rules:
 
 ## 5. Verify
 
-Before the gate sequence, `scripts/release/prepare_sdlc_validation.py` stabilizes only deterministic generated release identity and verifies governed prerequisites. It refreshes `verification_manifest.txt` and `candidate-fingerprint.txt`, checks the committed `uv.lock`, and runs continuous-security assurance without promoting the security baseline. It never rewrites source files, dependency locks, or the promoted security baseline to manufacture a pass.
+SDLC verification is intentionally read-only with respect to maintained candidate state. `run_sdlc_validation.py` checks `uv.lock` with `uv lock --check`, verifies that the current interpreter already contains the exact locked `dev` + `integrations` validation profile, verifies persisted release identity, and evaluates continuous-security assurance without promoting any baseline. Dependency installation, security-baseline promotion, and release-identity refresh are explicit maintenance actions outside the verifier.
 
 Verification proceeds from cheapest deterministic checks to broader system checks:
 
@@ -73,6 +73,12 @@ Verification proceeds from cheapest deterministic checks to broader system check
 12. release provenance and governance checks.
 
 A missing tool or unavailable environment is recorded as **not verified**, never silently converted into a pass.
+
+### CI execution ownership
+
+Ordinary pull-request CI does not call the monolithic SDLC coordinator inside every OS/Python matrix cell. The four stable required checks own distinct concerns: static/repository quality, one full Linux behavioral run, focused Windows portability, and one package build. The SDLC coordinator remains the local/release orchestration surface, while Release Verification is the only workflow that runs the complete release profile.
+
+Release Verification builds distributions once after the release profile passes. All consumer, workspace, integration, dependency-audit, SBOM, and provenance jobs consume those exact immutable artifacts, and every release-verification job has an explicit execution timeout. Publication resolves and downloads a successful Release Verification run for the exact source revision and therefore never rebuilds or substitutes a later checkout. Production release publication uses a bounded resolver so a release event cannot race an in-progress verification run; manual TestPyPI requires the exact successful run ID.
 
 ## 6. Harden
 
@@ -126,11 +132,6 @@ The release SDLC includes `public-trial-regressions` after external fixture vali
 
 ## Validation environment preparation
 
-`run_sdlc_validation.py` begins by running `prepare_sdlc_validation.py`. The
-preparation step verifies the lockfile, synchronizes the current interpreter with
-the locked `dev` dependency group plus the aggregate `integrations` extra, and
-verifies that every distribution declared by those profiles is installed before
-strict type checking or pytest begins. Individual gates then use the prepared
-environment without dependency resolution. Release identity may be refreshed
-deterministically; governed security baselines and dependency lockfiles are never
-silently rewritten by this preparation step.
+Environment creation is explicit and separate from verification. Run `uv sync --locked --group dev --extra integrations` (or `make sync`) when the validation environment needs to be created or updated. `run_sdlc_validation.py` never performs a sync. It verifies lock freshness with `uv lock --check` and then `verify_validation_environment.py` confirms that every required validation distribution is installed at a version present in the committed `uv.lock`. Individual gates execute with that already-prepared interpreter.
+
+A source change may legitimately stale generated release identity or the promoted security baseline. Those states are not repaired by verification. Use the explicit refresh/promotion commands only after reviewing the candidate, then rerun verification against the materialized state.

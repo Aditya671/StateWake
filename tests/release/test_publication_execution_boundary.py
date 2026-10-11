@@ -209,7 +209,10 @@ def test_testpypi_requires_explicit_dispatch_input(tmp_path: Path) -> None:
     basis, _dist, _verification = _basis(tmp_path, target="testpypi")
     event = tmp_path / "event.json"
     event.write_text(
-        json.dumps({"inputs": {"repository": "testpypi"}}), encoding="utf-8"
+        json.dumps(
+            {"inputs": {"repository": "testpypi", "verification_run_id": "987"}}
+        ),
+        encoding="utf-8",
     )
     env = {
         "GITHUB_EVENT_NAME": "workflow_dispatch",
@@ -233,3 +236,44 @@ def test_testpypi_requires_explicit_dispatch_input(tmp_path: Path) -> None:
         env=env,
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_testpypi_dispatch_can_authorize_selected_verified_revision(
+    tmp_path: Path,
+) -> None:
+    basis, _dist, _verification = _basis(tmp_path, target="testpypi")
+    event = tmp_path / "event.json"
+    event.write_text(
+        json.dumps(
+            {
+                "inputs": {
+                    "repository": "testpypi",
+                    "verification_run_id": "654",
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    result = _run(
+        "record_publication_authorization_from_github.py",
+        [
+            "--basis",
+            str(basis),
+            "--workspace",
+            str(tmp_path / "approval"),
+            "--target",
+            "testpypi",
+        ],
+        env={
+            "GITHUB_EVENT_NAME": "workflow_dispatch",
+            "GITHUB_EVENT_PATH": str(event),
+            "GITHUB_ACTOR": "developer",
+            "GITHUB_REPOSITORY": "example/statewake",
+            "GITHUB_RUN_ID": "333",
+            "GITHUB_RUN_ATTEMPT": "1",
+            "GITHUB_SHA": "f" * 40,
+        },
+    )
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["publication_authorized"] is True

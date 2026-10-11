@@ -18,7 +18,7 @@ This matrix is the executable security-control index. Test references are reposi
 | Deterministic privacy redaction | T12 | `tests/unit/test_privacy.py` |
 | External signing boundary | T13 | `tests/test_key_management.py` |
 | Explicit HTTP request-size limit | T14 | `tests/test_http_api.py` |
-| Release/dependency governance checks | T15 | `tests/test_release_governance.py` |
+| Release/dependency governance checks | T15 | `tests/release/test_supply_chain_provenance.py` |
 
 ## Coverage interpretation
 

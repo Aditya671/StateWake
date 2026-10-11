@@ -32,7 +32,7 @@ Tier 8 does not duplicate the existing release system. It reuses:
 
 - `pyproject.toml` for distribution identity, version, dependency declarations, and build backend;
 - `uv.lock` for locked dependency identity and artifact hashes;
-- `.github/workflows/release-verification.yml` for lock validation, build, checksums, clean-consumer validation, dependency audit, SBOM generation, and build-provenance attestation;
+- `.github/workflows/release-verification.yml` for authoritative release SDLC validation, one exact distribution build, checksums, Python 3.11/3.12/3.13 Linux/Windows consumer validation against those exact bytes, native-SDK compatibility, dependency audit, SBOM generation, and build-provenance attestation;
 - `scripts/release/verify_release_candidate.py` for existing release-candidate gates and deterministic tree evidence;
 - the existing release-governance documents for the human approval and publication boundary.
 
@@ -65,7 +65,7 @@ A Tier 8 provenance record contains at minimum:
 
 `uv.lock` is treated as the authoritative locked dependency state for this repository. Tier 8 verifies that declared runtime dependencies **and every declared optional-extra dependency** are represented in the lock and that the lock itself is digest-bound in the provenance record. This prevents implemented optional adapter packages from silently existing only in source code or documentation.
 
-A package name and version are not treated as sufficient proof of artifact identity. The existing lockfile and CI workflow provide the stronger package/artifact hash and external repository controls; Tier 8 records the lock identity used by the candidate.
+A package name and version are not treated as sufficient proof of artifact identity. The lockfile and Release Verification workflow provide the stronger source identity, exact distribution hashes, immutable workflow-artifact boundary, clean-consumer evidence, and external repository controls; Tier 8 records the lock identity used by the candidate. Publication is permitted to consume only a successful Release Verification run for the exact source revision. Production release events resolve that run with a bounded wait rather than a one-shot lookup, while manual TestPyPI requires an explicit successful run ID. Authorization and permit issuance happen in a non-OIDC preparation job; the protected OIDC publisher only downloads the already-authorized distribution bundle and uploads it.
 
 ## Build provenance boundary
 

@@ -6,7 +6,7 @@ This document defines the final GitHub-side controls required before the next pu
 
 ### Protected `main`
 
-`main` must require pull-request review and the release CI checks. Administrator bypass must be disabled for the required protections.
+`main` must require pull-request review and the stable CI status contexts `quality`, `tests-linux`, `portability-windows`, and `package`. Administrator bypass must be disabled for the required protections. The verifier fails if any one of these exact contexts is absent.
 
 ### Protected release tags
 
@@ -30,7 +30,7 @@ The script is **read-only**. It intentionally fails when a required repository c
 
 In the repository settings:
 
-1. Configure branch protection for `main` with required PR review and required CI checks.
+1. Configure the `main` ruleset/branch protection with required PR review and required status checks `quality`, `tests-linux`, `portability-windows`, and `package`.
 2. Configure an active tag ruleset covering release tags (for example, `v*`).
 3. Enable **Private vulnerability reporting** under the repository's security settings.
 4. Re-run the verification script before the next publication.

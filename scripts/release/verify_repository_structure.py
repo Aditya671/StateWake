@@ -28,7 +28,6 @@ REQUIRED_PATHS: Final[tuple[str, ...]] = (
     "scripts/common/release_scope.py",
     "scripts/common/release_identity.py",
     "scripts/release/run_sdlc_validation.py",
-    "scripts/release/prepare_sdlc_validation.py",
     "scripts/release/refresh_release_identity.py",
     "scripts/release/verify_release_identity.py",
     "tests",
@@ -50,10 +49,87 @@ SEQUENCE_NAME_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"(?:^|/)(?:phase|tier)[-_]?\d", re.IGNORECASE
 )
 
+GITIGNORE_REQUIRED_RULES: Final[frozenset[str]] = frozenset(
+    {
+        ".venv/",
+        "__pycache__/",
+        ".pytest_cache/",
+        ".mypy_cache/",
+        ".ruff_cache/",
+        ".coverage",
+        "coverage/",
+        "htmlcov/",
+        "build/",
+        "dist/",
+        "/verification/",
+        "/data/statewake.db",
+        "/data/statewake.db-wal",
+        "/data/statewake.db-shm",
+        "/data/statewake.db-journal",
+        "/data/statewake/",
+        "/artifacts/",
+        "/receipts/",
+        "/proofs/",
+        "/exports/",
+        "/locks/",
+        "ui/node_modules/",
+        "ui/.next/",
+        "ui/out/",
+        "ui/coverage/",
+        "*.tsbuildinfo",
+        ".env",
+        ".env.*",
+        "!.env.example",
+        "!.env.sample",
+        "!.env.template",
+        "*.log",
+        "*.tmp",
+        ".DS_Store",
+        "Thumbs.db",
+        "!ui/package-lock.json",
+    }
+)
+GITIGNORE_FORBIDDEN_RULES: Final[frozenset[str]] = frozenset(
+    {
+        "*.lock",
+        "uv.lock",
+        "package-lock.json",
+        "verification_manifest.txt",
+        "candidate-fingerprint.txt",
+        "*.jsonl",
+        "data/",
+        "tests/fixtures/",
+        "benchmarks/",
+    }
+)
+
+
+def _gitignore_rules() -> set[str]:
+    """Return normalized non-comment ignore rules from the repository policy."""
+    return {
+        line.strip()
+        for line in (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    }
+
 
 def main() -> int:
     """Verify required authorities and reject duplicate top-level Python scripts."""
     failures: list[str] = []
+
+    gitignore_rules = _gitignore_rules()
+    missing_ignore_rules = sorted(GITIGNORE_REQUIRED_RULES - gitignore_rules)
+    if missing_ignore_rules:
+        failures.append(
+            "missing required .gitignore rules: " + ", ".join(missing_ignore_rules)
+        )
+    forbidden_ignore_rules = sorted(GITIGNORE_FORBIDDEN_RULES & gitignore_rules)
+    if forbidden_ignore_rules:
+        failures.append(
+            "maintained inputs must remain trackable in .gitignore: "
+            + ", ".join(forbidden_ignore_rules)
+        )
+
     for relative in REQUIRED_PATHS:
         if not (ROOT / relative).exists():
             failures.append(f"missing maintained project authority: {relative}")

@@ -125,6 +125,24 @@ def test_corrupt_database_is_classifiable(tmp_path: Path) -> None:
         StateWakeWorkspace.open(root)
 
 
+def test_corrupt_database_is_classifiable_even_with_wal_sidecars(
+    tmp_path: Path,
+) -> None:
+    """Reject damaged database bytes before SQLite can consult WAL sidecars."""
+    root = tmp_path / ".statewake"
+    workspace = StateWakeWorkspace.open(root)
+    workspace.close()
+    wal_path = root / "statewake.db-wal"
+    shm_path = root / "statewake.db-shm"
+    assert wal_path.exists()
+    assert shm_path.exists()
+
+    (root / "statewake.db").write_bytes(b"not a sqlite database")
+
+    with pytest.raises(CorruptWorkspaceDatabaseError):
+        StateWakeWorkspace.open(root)
+
+
 def test_workspace_ingest_delegates_to_existing_statewake_and_indexes_receipt(
     tmp_path: Path,
 ) -> None:

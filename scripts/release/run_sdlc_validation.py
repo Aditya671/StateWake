@@ -42,8 +42,12 @@ def command_plan(profile: str) -> list[tuple[str, list[str]]]:
     python = sys.executable
     common = [
         (
-            "validation-state-stabilization",
-            [python, "scripts/release/prepare_sdlc_validation.py"],
+            "dependency-lock",
+            ["uv", "lock", "--check", "--python", python],
+        ),
+        (
+            "validation-environment",
+            [python, "scripts/release/verify_validation_environment.py"],
         ),
         (
             "release-identity-verify",
@@ -85,6 +89,10 @@ def command_plan(profile: str) -> list[tuple[str, list[str]]]:
         ),
         ("cli-surface", [python, "scripts/release/verify_cli_surface.py"]),
         (
+            "continuous-security-assurance",
+            [python, "scripts/security/verify_continuous_security_assurance.py"],
+        ),
+        (
             "post-check-release-identity-verify",
             [python, "scripts/release/verify_release_identity.py"],
         ),
@@ -121,22 +129,22 @@ def command_plan(profile: str) -> list[tuple[str, list[str]]]:
             [python, "scripts/testing/run_public_trial_regressions.py"],
         ),
         (
-            "continuous-security-assurance",
+            "security-baseline-current",
             [
                 python,
                 "scripts/security/verify_continuous_security_assurance.py",
-                "--promote-on-success",
+                "--no-reverify",
+                "--require-zero-drift",
             ],
-        ),
-        (
-            "final-release-identity-refresh",
-            [python, "scripts/release/refresh_release_identity.py"],
         ),
         (
             "final-release-identity-verify",
             [python, "scripts/release/verify_release_identity.py"],
         ),
-        ("release-candidate", [python, "scripts/release/verify_release_candidate.py"]),
+        (
+            "release-candidate",
+            [python, "scripts/release/verify_release_candidate.py", "--skip-build"],
+        ),
     ]
 
 
